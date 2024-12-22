@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Game Table</title>
+    <link href="mycss.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+    <div class="banner">Current_State_List</div>
+    <button class="bid-button" type="button" id="openBidBoxBtn">Open bid table!</button>
+    <button class="blind-button" type="button" id="submitBidBtn">Reveal blind!</button>
+    <button class="play-button" type="button" id="startPlayBtn">Submit blind!</button>
+    <button class="trick-button" type="button" id="submitTrickBtn">Submit card!</button>
+    <div class="game-table-container">
+        <div class="game-table"></div>
+        <div class="card-row top-cards" id="topCards"></div>
+        <div class="card-row bottom-cards" id="bottomCards"></div>
+        <div class="card-halfrow left-cards" id="leftCards"></div>
+        <div class="card-halfrow right-cards" id="rightCards"></div>
+        <div class="card-row blind-cards" id="blindCards"></div>
+        <div class="my-bid"></div>
+    </div>
+    <div id="bidbox-overlay" class="bidbox-overlay">
+        <div class="bidbox">
+          <span class="close">&times;</span>
+          <table>
+            <tr>
+              <th></th>
+              <th>♠Spades</th>
+              <th>♣Clubs</th>
+              <th style="color:red">♦Diamonds</th>
+              <th style="color:red">♥Hearts</th>
+              <th>No Trump</th>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td><button>40</button></td>
+              <td><button>60</button></td>
+              <td><button>80</button></td>
+              <td><button>100</button></td>
+              <td><button>120</button></td>
+            </tr>
+            <tr>
+              <td>7</td>
+              <td><button>140</button></td>
+              <td><button>160</button></td>
+              <td><button>180</button></td>
+              <td><button>200</button></td>
+              <td><button>220</button></td>
+            </tr>
+            <tr>
+              <td>8</td>
+              <td><button>240</button></td>
+              <td><button>260</button></td>
+              <td><button>280</button></td>
+              <td><button>300</button></td>
+              <td><button>320</button></td>
+            </tr>
+            <tr>
+              <td>9</td>
+              <td><button>340</button></td>
+              <td><button>360</button></td>
+              <td><button>380</button></td>
+              <td><button>400</button></td>
+              <td><button>420</button></td>
+            </tr>
+            <tr>
+              <td>10</td>
+              <td><button>440</button></td>
+              <td><button>460</button></td>
+              <td><button>480</button></td>
+              <td><button>500</button></td>
+              <td><button>520</button></td>
+            </tr>
+          </table>
+        </div>
+    </div>      
+
+    <script src="myjs.js"></script>
+</body>
+</html>
