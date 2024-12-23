@@ -1,4 +1,5 @@
 // help from tahazsh
+// small help from FJolt: Javascript Add Event Listener to Multiple Elements
 
 // Card type definition using JSDoc
 /**
@@ -7,19 +8,45 @@
  * @property {string|number} value
  */
 
-document.getElementById("openBidBoxBtn").addEventListener("click", function() {
-    document.getElementById("bidbox-overlay").style.display = "block";
-});
-  document.getElementsByClassName("close")[0].addEventListener("click", function() {
-    document.getElementById("bidbox-overlay").style.display = "none";
-});
+let gameState = 0
+let bidAmount = -1
 
-class Buttons {
+class BidBox {
     constructor() {
-        this.initializeButtons();
+        this.initializeBidBox();
     }
 
-    async initializeButtons() {
+    async initializeBidBox() {
+        try {
+            document.getElementById("openBidBoxBtn").addEventListener("click", function() {
+                document.getElementById("bidbox").style.display = document.getElementById("bidbox").style.display === "inline" ? "none" : "inline";
+                document.getElementById("bidDisplay").style.display = document.getElementById("bidDisplay").style.display === "inline" ? "none" : "inline";
+            });
+            document.getElementById("closeBidBox").addEventListener("click", function() {
+                document.getElementById("bidbox").style.display = "none";
+                document.getElementById("bidDisplay").style.display = "none";
+            });
+
+            // Style from FJolt
+            Array.prototype.forEach.call(document.getElementsByClassName("bid-amount"), (item) => {
+                item.addEventListener("click", function() {
+                    // can also use this.innerHTML
+                    bidAmount = item.innerHTML
+                    document.getElementById("bidDisplay").innerHTML = "My Bid: ".concat(bidAmount)
+                });
+            });
+        } catch (error) {
+            console.error('Failed to initialize bidbox:', error);
+        }
+    }
+}
+
+class StateButtons {
+    constructor() {
+        this.initializeStateButtons();
+    }
+
+    async initializeStateButtons() {
         try {
             // document.getElementById("openBidBoxBtn")
             document.getElementById("submitBidBtn").style.transform = `translateX(75px)`
@@ -83,26 +110,30 @@ class GameTable {
             return await response.json();
         } catch (error) {
             console.error('Error fetching hand:', error);
-            return this.generateMockHand();
+            return this.generateMockShuffle();
         }
     }
 
-    generateMockHand() {
+    generateMockShuffle() {
         const suits = ['♥', '♦', '♣', '♠'];
-        const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+        const values = ['4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+
         
-        return Array.from({ length: 45 }, () => ({
+        return Array.from({ length: 44 }, () => ({
             suit: suits[Math.floor(Math.random() * suits.length)],
             value: values[Math.floor(Math.random() * values.length)]
-        }));
+        })).concat({
+            suit: "Joker",
+            value: ""
+        });
     }
 
     distributeCards(hand) {
         this.topCards = hand.slice(0, 10);
-        this.bottomCards = hand.slice(10, 20);
-        this.leftCards = hand.slice(20, 30);
-        this.rightCards = hand.slice(30, 40);
-        this.blindCards = hand.slice(40, 45);
+        this.blindCards = hand.slice(10, 15);
+        this.leftCards = hand.slice(15, 25);
+        this.rightCards = hand.slice(25, 35);
+        this.bottomCards = hand.slice(35, 45);
     }
 
     renderCards() {
@@ -191,7 +222,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Initialize the buttons when the script loads
 document.addEventListener('DOMContentLoaded', () => {
-    new Buttons();
+    new StateButtons();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    new BidBox();
 });
 
 // Adapted from Taha Shashtari
@@ -262,7 +297,7 @@ function initCardsState() {
     })
 }
 
-// Adapted from Taha Shashtari
+// From Taha Shashtari
 function getAllCards() {
     let cards = []
     if (!cards?.length) {
@@ -276,29 +311,27 @@ function getIdleCards() {
     return getAllCards().filter((card) => card.classList.contains('is-idle'))
 }
 
-// Adapted from Taha Shashtari
+// From Taha Shashtari
 function updateIdleCardsStateAndPosition() {
     const draggableCardRect = draggableCard.getBoundingClientRect()
-    // const draggableCardY = draggableCardRect.top + draggableCardRect.height / 2
     const draggableCardX = draggableCardRect.left + (draggableCardRect.width / 2)
     const ITEMS_GAP = 10
 
     // Shashtari: "update state"
     getIdleCards().forEach((card) => {
     const cardRect = card.getBoundingClientRect()
-    // const cardY = cardRect.top + cardRect.height / 2
     const cardX = cardRect.left + (cardRect.width / 2)
     if (isCardAbove(card)) {
         if (draggableCardX <= cardX) {
-        card.dataset.isToggled = ''
+            card.dataset.isToggled = ''
         } else {
-        delete card.dataset.isToggled
+            delete card.dataset.isToggled
         }
     } else {
         if (draggableCardX >= cardX) {
-        card.dataset.isToggled = ''
+            card.dataset.isToggled = ''
         } else {
-        delete card.dataset.isToggled
+            delete card.dataset.isToggled
         }
     }
     })
@@ -316,16 +349,17 @@ function updateIdleCardsStateAndPosition() {
     })
 }
 
-// Adapted from Taha Shashtari
+// From Taha Shashtari
 function isCardAbove(card) {
     return card.hasAttribute('data-is-above')
 }
 
-// Adapted from Taha Shashtari
+// From Taha Shashtari
 function isCardToggled(card) {
     return card.hasAttribute('data-is-toggled')
 }      
 
+// From Taha Shashtari
 function unsetCardState() {
     getIdleCards().forEach((card, i) => {
         delete card.dataset.isAbove
@@ -334,6 +368,7 @@ function unsetCardState() {
     })
 }
 
+// From Taha Shashtari
 function applyNewCardsOrder() {
     const reorderedCards = []
   
@@ -360,4 +395,3 @@ function applyNewCardsOrder() {
         cardRow.appendChild(card)
     })
 }
-  

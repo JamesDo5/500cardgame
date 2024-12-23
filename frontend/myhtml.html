@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Game Table</title>
-    <link href="mycss.css" rel="stylesheet" type="text/css">
+    <link href="css8.css" rel="stylesheet" type="text/css">
 </head>
 <body>
-    <div class="banner">Current_State_List</div>
+    <div class="stateBanner">Current_Game_State</div>
     <button class="bid-button" type="button" id="openBidBoxBtn">Open bid table!</button>
     <button class="blind-button" type="button" id="submitBidBtn">Reveal blind!</button>
     <button class="play-button" type="button" id="startPlayBtn">Submit blind!</button>
@@ -18,64 +18,63 @@
         <div class="card-halfrow left-cards" id="leftCards"></div>
         <div class="card-halfrow right-cards" id="rightCards"></div>
         <div class="card-row blind-cards" id="blindCards"></div>
-        <div class="my-bid"></div>
+        <div class="card-row submit-cards" id="submitCards"></div>
+        <div class="bid-display" id="bidDisplay" style="display:none;color:white;">My Bid: 000</div>
     </div>
-    <div id="bidbox-overlay" class="bidbox-overlay">
-        <div class="bidbox">
-          <span class="close">&times;</span>
-          <table>
-            <tr>
-              <th></th>
-              <th>♠Spades</th>
-              <th>♣Clubs</th>
-              <th style="color:red">♦Diamonds</th>
-              <th style="color:red">♥Hearts</th>
-              <th>No Trump</th>
-            </tr>
-            <tr>
-              <td>6</td>
-              <td><button>40</button></td>
-              <td><button>60</button></td>
-              <td><button>80</button></td>
-              <td><button>100</button></td>
-              <td><button>120</button></td>
-            </tr>
-            <tr>
-              <td>7</td>
-              <td><button>140</button></td>
-              <td><button>160</button></td>
-              <td><button>180</button></td>
-              <td><button>200</button></td>
-              <td><button>220</button></td>
-            </tr>
-            <tr>
-              <td>8</td>
-              <td><button>240</button></td>
-              <td><button>260</button></td>
-              <td><button>280</button></td>
-              <td><button>300</button></td>
-              <td><button>320</button></td>
-            </tr>
-            <tr>
-              <td>9</td>
-              <td><button>340</button></td>
-              <td><button>360</button></td>
-              <td><button>380</button></td>
-              <td><button>400</button></td>
-              <td><button>420</button></td>
-            </tr>
-            <tr>
-              <td>10</td>
-              <td><button>440</button></td>
-              <td><button>460</button></td>
-              <td><button>480</button></td>
-              <td><button>500</button></td>
-              <td><button>520</button></td>
-            </tr>
-          </table>
-        </div>
+    <div class="bidbox" id="bidbox">
+      <span class="close-bidbox" id="closeBidBox">&times;</span>
+      <table>
+        <tr>
+          <th></th>
+          <th>♠Spades</th>
+          <th>♣Clubs</th>
+          <th style="color:red;">♦Diamonds</th>
+          <th style="color:red;">♥Hearts</th>
+          <th>No Trump</th>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td><button class="bid-amount" id="bidAmount">40</button></td>
+          <td><button class="bid-amount" id="bidAmount">60</button></td>
+          <td><button class="bid-amount" id="bidAmount">80</button></td>
+          <td><button class="bid-amount" id="bidAmount">100</button></td>
+          <td><button class="bid-amount" id="bidAmount">120</button></td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td><button class="bid-amount" id="bidAmount">140</button></td>
+          <td><button class="bid-amount" id="bidAmount">160</button></td>
+          <td><button class="bid-amount" id="bidAmount">180</button></td>
+          <td><button class="bid-amount" id="bidAmount">200</button></td>
+          <td><button class="bid-amount" id="bidAmount">220</button></td>
+        </tr>
+        <tr>
+          <td>8</td>
+          <td><button class="bid-amount" id="bidAmount">240</button></td>
+          <td><button class="bid-amount" id="bidAmount">260</button></td>
+          <td><button class="bid-amount" id="bidAmount">280</button></td>
+          <td><button class="bid-amount" id="bidAmount">300</button></td>
+          <td><button class="bid-amount" id="bidAmount">320</button></td>
+        </tr>
+        <tr>
+          <td>9</td>
+          <td><button class="bid-amount" id="bidAmount">340</button></td>
+          <td><button class="bid-amount" id="bidAmount">360</button></td>
+          <td><button class="bid-amount" id="bidAmount">380</button></td>
+          <td><button class="bid-amount" id="bidAmount">400</button></td>
+          <td><button class="bid-amount" id="bidAmount">420</button></td>
+        </tr>
+        <tr>
+          <td>10</td>
+          <td><button class="bid-amount" id="bidAmount">440</button></td>
+          <td><button class="bid-amount" id="bidAmount">460</button></td>
+          <td><button class="bid-amount" id="bidAmount">480</button></td>
+          <td><button class="bid-amount" id="bidAmount">500</button></td>
+          <td><button class="bid-amount" id="bidAmount">520</button></td>
+        </tr>
+      </table>
     </div>      
 
-    <script src="myjs.js"></script>
+    <script src="js8.js"></script>
 </body>
 </html>
