@@ -6,6 +6,7 @@ body {
     margin: 0;
     background-color: #203243;
     font-family: Arial, sans-serif;
+    user-select: none;
 }
 
 .stateBanner {
@@ -14,6 +15,13 @@ body {
     top: 10px;
     left: 11px;
     color: white
+}
+
+.standing-bid-display {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    font-size: 2vw;
 }
 
 .bid-button,
@@ -26,6 +34,12 @@ body {
     top: 50px;
     left: 11px;
     padding: 10px 0px;
+}
+.final-bid-display {
+    position: absolute;
+    top: 50px;
+    right: 11px;
+    font-size: 2vw;
 }
 
 .game-table-container {
@@ -85,6 +99,7 @@ body {
 .card-front {
     background-color: white;
     border: 1px solid #7f8c8d;
+    font-size: 1.8vw;
 }
 .card-front.hearts,
 .card-front.diamonds {
@@ -126,7 +141,32 @@ body {
     bottom: 120px;
     left: 50%;
     transform: translateX(-50%);
+    font-size: 2vw;
 }
+.left-bid {
+    position: absolute;
+    bottom: 40%;
+    left: 12%;
+    transform: translateY(-50%);
+    font-size: 2vw;
+}
+.top-bid {
+    position: absolute;
+    top: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 2vw;
+    /* padding: 20px; */
+}
+.right-bid {
+    position: absolute;
+    bottom: 40%;
+    left: 82%;
+    transform: translateY(-50%);
+    font-size: 2vw;
+    /* padding: 20px; */
+}
+
 
 .bidbox {
     display: none;
@@ -151,13 +191,16 @@ table {
     border-collapse: collapse;
     margin: 0 auto;
 }
-th, td {
+/* th, td {
     padding: 10px;
     text-align: center;
-}
-td button {
-    padding: 5px 10px;
-}
-/* button.bid-amount {
-
 } */
+/* td button {
+    padding: 5px 10px;
+} */
+button.bid-amount-button {
+    width: 70px;
+    height: 50px;
+    font-size: 2vw;
+    min-width: fit-content;
+}

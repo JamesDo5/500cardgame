@@ -1,5 +1,6 @@
-// help from tahazsh
-// small help from FJolt: Javascript Add Event Listener to Multiple Elements
+// Code from tahazsh
+// Code from FJolt: Javascript Add Event Listener to Multiple Elements
+// Code from Jess Mitchell of DigitalOcean
 
 // Card type definition using JSDoc
 /**
@@ -8,8 +9,16 @@
  * @property {string|number} value
  */
 
-let gameState = 0
-let bidAmount = -1
+let gametable
+let statebuttons
+let bidbox
+
+// 0 is bidding, 1 is blind exchange, 2 is doing tricks, 3 is scoring and re-deal
+let gameState = 0;
+
+let bidAmount = -1;
+let incomingBid = 280;
+
 
 class BidBox {
     constructor() {
@@ -18,26 +27,36 @@ class BidBox {
 
     async initializeBidBox() {
         try {
-            document.getElementById("openBidBoxBtn").addEventListener("click", function() {
-                document.getElementById("bidbox").style.display = document.getElementById("bidbox").style.display === "inline" ? "none" : "inline";
-                document.getElementById("bidDisplay").style.display = document.getElementById("bidDisplay").style.display === "inline" ? "none" : "inline";
-            });
-            document.getElementById("closeBidBox").addEventListener("click", function() {
-                document.getElementById("bidbox").style.display = "none";
-                document.getElementById("bidDisplay").style.display = "none";
-            });
-
-            // Style from FJolt
-            Array.prototype.forEach.call(document.getElementsByClassName("bid-amount"), (item) => {
+            // Outline from FJolt
+            Array.prototype.forEach.call(document.getElementsByClassName("bid-amount-button"), (item) => {
                 item.addEventListener("click", function() {
                     // can also use this.innerHTML
-                    bidAmount = item.innerHTML
-                    document.getElementById("bidDisplay").innerHTML = "My Bid: ".concat(bidAmount)
+                    bidAmount = item.innerHTML;
+
+                    gameState = 1;
+                    document.getElementById("gameState").innerHTML = "Current_Game_State: ".concat(gameState);
+                    document.getElementById("bidDisplay").innerHTML = "My Bid: ".concat(bidAmount);
+
+                    updateStandingBid();
                 });
             });
+
+            this.disableImpossibleBids();
+
+            document.getElementById("leftBid").innerHTML = "Bid:<br />".concat(100);
+            document.getElementById("topBid").innerHTML = "Bid: ".concat("Pass");
+            document.getElementById("rightBid").innerHTML = "Bid:<br />".concat(300);
         } catch (error) {
             console.error('Failed to initialize bidbox:', error);
         }
+    }
+
+    disableImpossibleBids() {
+        Array.prototype.forEach.call( document.getElementsByClassName("bid-amount-button") , (item) => {
+            if (item.innerHTML <= incomingBid) {
+                item.disabled = true;
+            }
+        });
     }
 }
 
@@ -48,24 +67,19 @@ class StateButtons {
 
     async initializeStateButtons() {
         try {
-            // document.getElementById("openBidBoxBtn")
-            document.getElementById("submitBidBtn").style.transform = `translateX(75px)`
-            document.getElementById("startPlayBtn").style.transform = `translateX(150px)`
-            document.getElementById("submitTrickBtn").style.transform = `translateX(225px)`
+            // document.getElementById("openBidBoxBtn");
+            document.getElementById("submitBidBtn").style.transform = `translateX(75px)`;
+            document.getElementById("startPlayBtn").style.transform = `translateX(150px)`;
+            document.getElementById("submitTrickBtn").style.transform = `translateX(225px)`;
         } catch (error) {
             console.error('Failed to initialize buttons:', error);
         }
     }
 }
 
-let cardRow
-
-let draggableCard
-
-let pointerStartX
-let pointerStartY
-
-let cards = []
+let playerHandCards;
+let blindCards;
+let cards = [];
 
 class GameTable {
     constructor() {
@@ -89,13 +103,16 @@ class GameTable {
             this.distributeCards(hand);
             this.renderCards();
 
-            cardRow = document.getElementById("bottomCards")
+            playerHandCards = document.getElementById("bottomCards");
+            blindCards = document.getElementById("bottomCards");
 
-            if (!cardRow) return
+            if (!playerHandCards) return;
 
-            cardRow.addEventListener('mousedown', dragStart)
+            playerHandCards.addEventListener('mousedown', dragStart);
+            // TODO move this out of here or find way to remove it when doing the blind and card stuff
+            // playerHandCards.addEventListener('mousedown', dragStart);
               
-            document.addEventListener('mouseup', dragEnd)
+            document.addEventListener('mouseup', dragEnd);
         } catch (error) {
             console.error('Failed to initialize game table:', error);
         }
@@ -117,7 +134,6 @@ class GameTable {
     generateMockShuffle() {
         const suits = ['♥', '♦', '♣', '♠'];
         const values = ['4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-
         
         return Array.from({ length: 44 }, () => ({
             suit: suits[Math.floor(Math.random() * suits.length)],
@@ -137,10 +153,7 @@ class GameTable {
     }
 
     renderCards() {
-        this.renderCardRow('topCards', this.topCards, true);
         this.renderCardRow('bottomCards', this.bottomCards, false);
-        this.renderCardDoublerow('leftCards', this.leftCards, true);
-        this.renderCardDoublerow('rightCards', this.rightCards, true);
         this.renderCardRow('blindCards', this.blindCards, true);
     }
 
@@ -149,59 +162,30 @@ class GameTable {
         if (!cardsElement) return;
 
         cardsElement.innerHTML = cards.map(card => 
-            `<div class="card ${faceDown ? 'card-back' : `card-front ${this.getSuitClass(card.suit)}`} is-idle">
+            `<div class="card ${faceDown ? 'card-back' : `card-front ${this.getSuitClass(card.suit)} is-idle`}">
                 ${faceDown ? '?' : `${card.value}${card.suit}`}
              </div>`
         ).join('');
     }
 
-    renderCardDoublerow(rowId, cards, faceDown) {
-        const cardsElement = document.getElementById(rowId);
+    fetchBlind() {
+        // TODO make this function a call to server and if fails use preset this.blindcards 
+        let faceDown = true;
+
+        const cardsElement = document.getElementById('blindCards');
         if (!cardsElement) return;
-        const firstCards = cards.slice(0, 5);
-        const nextCards = cards.slice(5, 10);
 
-        var table = document.createElement('table');
-        var tableBody = document.createElement('tbody');
+        if (cardsElement.childNodes[0].classList.contains('card-back')) {
+            // The goal of this function is to flip the blind so this bool is opposite of what is currently rendered
+            faceDown = false;
+        }
 
-        var tableRowTopCards = document.createElement('tr');
-        var tableCellTopCards = document.createElement('td');
-        tableCellTopCards.classList.add('horizontal-divs');
-        tableCellTopCards.innerHTML = firstCards.map(card => 
-            `<div class="card ${faceDown ? 'card-back' : `card-front ${this.getSuitClass(card.suit)}`}">
+        // Now rerender the blind with the new faceDown
+        cardsElement.innerHTML = this.blindCards.map(card => 
+            `<div class="card ${faceDown ? 'card-back' : `card-front ${this.getSuitClass(card.suit)}`} is-idle">
                 ${faceDown ? '?' : `${card.value}${card.suit}`}
              </div>`
         ).join('');
-
-        var tableRowBottomCards = document.createElement('tr');
-        var tableCellBottomCards = document.createElement('td');
-        tableCellBottomCards.classList.add('horizontal-divs');
-        tableCellBottomCards.innerHTML = nextCards.map(card => 
-            `<div class="card ${faceDown ? 'card-back' : `card-front ${this.getSuitClass(card.suit)}`}">
-                ${faceDown ? '?' : `${card.value}${card.suit}`}
-             </div>`
-        ).join('');
-        
-
-        tableRowTopCards.appendChild(tableCellTopCards);
-        tableRowBottomCards.appendChild(tableCellBottomCards);
-        tableBody.appendChild(tableRowTopCards);
-        tableBody.appendChild(tableRowBottomCards);
-        table.appendChild(tableBody);
-        cardsElement.appendChild(table);
-
-        // rowElement.innerHTML = firstCards.map(card => 
-        //     `<div class="card ${faceDown ? 'card-back' : `card-front ${this.getSuitClass(card.suit)}`}">
-        //         ${faceDown ? '?' : `${card.value}${card.suit}`}
-        //      </div>`
-        // ).join('');
-
-        // var clone = rowElement.cloneNode(true);
-        // clone.innerHTML = nextCards.map(card => 
-        //     `<div class="card ${faceDown ? 'card-back' : `card-front ${this.getSuitClass(card.suit)}`}">
-        //         ${faceDown ? '?' : `${card.value}${card.suit}`}
-        //      </div>`
-        // ).join('');
     }
 
     getSuitClass(suit) {
@@ -210,188 +194,234 @@ class GameTable {
             case '♦': return 'diamonds';
             case '♣': return 'clubs';
             case '♠': return 'spades';
+            case 'Joker': return 'joker';
             default: return '';
         }
     }
 }
 
+
 // Initialize the game table when the script loads
 document.addEventListener('DOMContentLoaded', () => {
-    new GameTable();
+    gametable = new GameTable();
+    // Initialize the buttons when the script loads
+    statebuttons = new StateButtons();
+    bidbox = new BidBox();
 });
 
-// Initialize the buttons when the script loads
-document.addEventListener('DOMContentLoaded', () => {
-    new StateButtons();
+document.getElementById("openBidBoxBtn").addEventListener("click", function() {
+    gameState = 0;
+    document.getElementById("bidbox").style.display = document.getElementById("bidbox").style.display === "inline" ? "none" : "inline";
+    document.getElementById("bidDisplay").style.display = document.getElementById("bidDisplay").style.display === "inline" ? "none" : "inline";
+    document.getElementById("leftBid").style.display = document.getElementById("leftBid").style.display === "inline" ? "none" : "inline";
+    document.getElementById("topBid").style.display = document.getElementById("topBid").style.display === "inline" ? "none" : "inline";
+    document.getElementById("rightBid").style.display = document.getElementById("rightBid").style.display === "inline" ? "none" : "inline";
+    
+    updateStandingBid();
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-    new BidBox();
+document.getElementById("closeBidBox").addEventListener("click", function() {
+    document.getElementById("bidbox").style.display = "none";
+    document.getElementById("bidDisplay").style.display = "none";
 });
+
+
+let allowY = false;
+
+document.getElementById("submitBidBtn").addEventListener("click", function() {
+    if (gameState === 0) {
+        gameState = 1;
+        gametable.fetchBlind();
+        allowY = !allowY;
+        playerHandCards.addEventListener('mousedown', dragStart);    
+    }
+});
+
+// document.getElementById("startPlayBtn").addEventListener("click", async function() {
+// });
+
+function updateStandingBid() {
+    // element.textContent could also be useful here
+    let bidArr = Array.from(document.getElementsByClassName("bid-display")).map(
+        (elem) => 
+        Number.isNaN(Number(elem.innerText.slice(start=-3))) ? 0 : Number(elem.innerText.slice(start=-3))
+    );
+    console.log(bidArr)
+
+    document.getElementById("finalBidDisplay").innerHTML = "Standing Bid: ".concat(Math.max(...bidArr));
+}
+
+
+let draggableCard;
+let pointerStartX;
+let pointerStartY;
 
 // Adapted from Taha Shashtari
 function dragStart(e) {
     
-    if (e.target.classList.contains('card')) {
-        draggableCard = e.target
-        // draggableItem = e.target.closest('.js-item')
+    // if (e.target.classList.contains('card')) {
+    if (e.target.classList.contains('card-front')) {
+        draggableCard = e.target;
     }
+    if (!draggableCard) return;
 
-    if (!draggableCard) return
+    pointerStartX = e.clientX;
+    pointerStartY = e.clientY;
 
-    pointerStartX = e.clientX
-    pointerStartY = e.clientY      
+    initDraggableCard();
+    initCardsState();
 
-    initDraggableCard()
-    initCardsState()
-
-    document.addEventListener('mousemove', drag)
+    document.addEventListener('mousemove', drag);
 }    
 
 // Adapted from Taha Shashtari
 function drag(e) {
-    if (!draggableCard) return
+    if (!draggableCard) return;
 
-    const currentPositionX = e.clientX
-    const pointerOffsetX = currentPositionX - pointerStartX
-    
-    draggableCard.style.transform = `translate(${pointerOffsetX}px, 0px)`
+    const pointerOffsetX = e.clientX - pointerStartX;
+    draggableCard.style.transform = `translate(${pointerOffsetX}px, 0px)`;
 
-    updateIdleCardsStateAndPosition()      
+    if (allowY) {
+        const pointerOffsetY = e.clientY - pointerStartY;
+        draggableCard.style.transform = `translate(${pointerOffsetX}px, ${pointerOffsetY}px)`;
+    }
+
+    updateIdleCardsStateAndPosition();
 }
 
 // Adapted from Taha Shashtari
 function dragEnd() {
-    if (!draggableCard) return
+    if (!draggableCard) return;
 
     // Next to implement
-    applyNewCardsOrder()
+    applyNewCardsOrder();
 
-    cards = []
-    unsetDraggableCard()
-    unsetCardState()
+    cards = [];
+    unsetDraggableCard();
+    unsetCardState();
 
-    document.removeEventListener('mousemove', drag)
+    document.removeEventListener('mousemove', drag);
 }
 
 // Adapted from Taha Shashtari
 function initDraggableCard() {
-    draggableCard.classList.remove('is-idle')
-    draggableCard.classList.add('is-draggable')
+    draggableCard.classList.remove('is-idle');
+    draggableCard.classList.add('is-draggable');
 }
 
 // Adapted from Taha Shashtari
 function unsetDraggableCard() {
-    draggableCard.style = null
-    draggableCard.classList.remove('is-draggable')
-    draggableCard.classList.add('is-idle')
-    draggableCard = null
+    delete draggableCard.style;
+    draggableCard.classList.remove('is-draggable');
+    draggableCard.classList.add('is-idle');
+    draggableCard = null;
 }
 
 // Adapted from Taha Shashtari
 function initCardsState() {
     getIdleCards().forEach((card, i) => {
         if (getAllCards().indexOf(draggableCard) > i) {
-            card.dataset.isAbove = ''
+            card.dataset.isAbove = '';
         }
     })
 }
 
 // From Taha Shashtari
 function getAllCards() {
-    let cards = []
+    let cards = [];
     if (!cards?.length) {
-        cards = Array.from(cardRow.querySelectorAll('.card'))
+        // cards = Array.from(playerHandCards.querySelectorAll('.card'));
+        cards = Array.from(playerHandCards.getElementsByClassName("card"));
     }
-    return cards
+    return cards;
 }
 
 // Adapted from Taha Shashtari
 function getIdleCards() {
-    return getAllCards().filter((card) => card.classList.contains('is-idle'))
+    return getAllCards().filter((card) => card.classList.contains('is-idle'));
 }
 
 // From Taha Shashtari
 function updateIdleCardsStateAndPosition() {
-    const draggableCardRect = draggableCard.getBoundingClientRect()
-    const draggableCardX = draggableCardRect.left + (draggableCardRect.width / 2)
-    const ITEMS_GAP = 10
+    const draggableCardRect = draggableCard.getBoundingClientRect();
+    const draggableCardX = draggableCardRect.left + (draggableCardRect.width / 2);
+    const ITEMS_GAP = 10;
 
     // Shashtari: "update state"
     getIdleCards().forEach((card) => {
-    const cardRect = card.getBoundingClientRect()
-    const cardX = cardRect.left + (cardRect.width / 2)
-    if (isCardAbove(card)) {
-        if (draggableCardX <= cardX) {
-            card.dataset.isToggled = ''
+        const cardRect = card.getBoundingClientRect();
+        const cardX = cardRect.left + (cardRect.width / 2);
+        if (isCardAbove(card)) {
+            if (draggableCardX <= cardX) {
+                card.dataset.isToggled = '';
+            } else {
+                delete card.dataset.isToggled;
+            }
         } else {
-            delete card.dataset.isToggled
+            if (draggableCardX >= cardX) {
+                card.dataset.isToggled = '';
+            } else {
+                delete card.dataset.isToggled;
+            }
         }
-    } else {
-        if (draggableCardX >= cardX) {
-            card.dataset.isToggled = ''
-        } else {
-            delete card.dataset.isToggled
-        }
-    }
     })
 
     // Shashtari: "update position"
     getIdleCards().forEach((card) => {
-    if (isCardToggled(card)) {
-        const direction = isCardAbove(card) ? 1 : -1
-        card.style.transform = `translateX(${
-        direction * (draggableCardRect.width + ITEMS_GAP)
-        }px)`
-    } else {
-        card.style.transform = ''
-    }
+        if (isCardToggled(card)) {
+            const direction = isCardAbove(card) ? 1 : -1;
+            card.style.transform = `translateX(${
+                direction * (draggableCardRect.width + ITEMS_GAP)
+            }px)`;
+        } else {
+            card.style.transform = '';
+        }
     })
 }
 
 // From Taha Shashtari
 function isCardAbove(card) {
-    return card.hasAttribute('data-is-above')
+    return card.hasAttribute('data-is-above');
 }
 
 // From Taha Shashtari
 function isCardToggled(card) {
-    return card.hasAttribute('data-is-toggled')
+    return card.hasAttribute('data-is-toggled');
 }      
 
 // From Taha Shashtari
 function unsetCardState() {
     getIdleCards().forEach((card, i) => {
-        delete card.dataset.isAbove
-        delete card.dataset.isToggled
-        card.style.transform = ''
+        delete card.dataset.isAbove;
+        delete card.dataset.isToggled;
+        card.style.transform = '';
     })
 }
 
 // From Taha Shashtari
 function applyNewCardsOrder() {
-    const reorderedCards = []
+    const reorderedCards = [];
   
     getAllCards().forEach((card, index) => {
         if (card === draggableCard) {
-            return
+            return;
         }
         if (!isCardToggled(card)) {
-            reorderedCards[index] = card
-            return
+            reorderedCards[index] = card;
+            return;
         }
-        const newIndex = isCardAbove(card) ? index + 1 : index - 1
-        reorderedCards[newIndex] = card
+        const newIndex = isCardAbove(card) ? index + 1 : index - 1;
+        reorderedCards[newIndex] = card;
     })
     
     for (let index = 0; index < getAllCards().length; index++) {
-        const card = reorderedCards[index]
+        const card = reorderedCards[index];
         if (typeof card === 'undefined') {
-            reorderedCards[index] = draggableCard
+            reorderedCards[index] = draggableCard;
         }
     }
 
     reorderedCards.forEach((card) => {
-        cardRow.appendChild(card)
+        playerHandCards.appendChild(card);
     })
 }
