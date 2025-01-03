@@ -5,71 +5,70 @@ body {
     height: 100vh;
     margin: 0;
     background-color: #203243;
-    font-family: Arial, sans-serif;
     user-select: none;
-}
-
-.stateBanner {
+  }
+  
+  .stateBanner {
     position: absolute;
     padding: 10px 0px;
     top: 10px;
     left: 11px;
     color: white
-}
-
-.standing-bid-display {
+  }
+  
+  .standing-bid-display {
     position: absolute;
     top: 25px;
     right: 25px;
     font-size: 2vw;
-}
-
-.bid-button,
-.blind-button,
-.play-button, 
-.trick-button {
+  }
+  
+  .bid-button,
+  .blind-button,
+  .play-button, 
+  .trick-button {
     position: absolute;
     width: 70px;
     height: 50px;
     top: 50px;
     left: 11px;
     padding: 10px 0px;
-}
-.final-bid-display {
+  }
+  .final-bid-display {
     position: absolute;
     top: 50px;
     right: 11px;
     font-size: 2vw;
-}
-
-.game-table-container {
+  }
+  
+  .game-table-container {
     position: relative;
     width: 1000px;
     height: 800px;
     display: flex;
     justify-content: center;
     align-items: center;
-}
-.game-table {
+  }
+  .game-table {
     width: 800px;
     height: 600px;
     background-color: #34495e;
     border-radius: 20px;
     position: absolute;
-}
-
-.card-row {
+  }
+  
+  .card-row {
     position: absolute;
     display: flex;
     gap: 10px;
-}
-.card-halfrow {
+  }
+  .card-halfrow {
     position: absolute;
     display: flex;
     gap: 5px;
-}
-
-.card {
+  }
+  
+  .card {
     width: 70px;
     height: 100px;
     background-color: white;
@@ -81,94 +80,94 @@ body {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s;
     will-change: transform;
-}
-.card.is-idle {
+  }
+  .card.is-idle {
     transition: 0.25s ease transform;
     cursor: grab;
-}
-.card.is-draggable {
+  }
+  .card.is-draggable {
     cursor: grabbing;
     z-index: 10;
-}
-
-.card-back {
+  }
+  
+  .card-back {
     background-color: #3498db;
     color: white;
     font-weight: bold;
-}
-.card-front {
+  }
+  .card-front {
     background-color: white;
     border: 1px solid #7f8c8d;
     font-size: 1.8vw;
-}
-.card-front.hearts,
-.card-front.diamonds {
+  }
+  .card-front.hearts,
+  .card-front.diamonds {
     color: red;
-}
-
-.card-front.clubs,
-.card-front.spades {
+  }
+  
+  .card-front.clubs,
+  .card-front.spades {
     color: black;
-}
-
-.top-cards {
+  }
+  
+  .top-cards {
     top: -20px;
     left: 50%;
     transform: translateX(-50%);
-}
-.bottom-cards {
+  }
+  .bottom-cards {
     bottom: -20px;
     left: 50%;
     transform: translateX(-50%);
-}
-.left-cards {
+  }
+  .left-cards {
     left: -200px;
     top: 15%;
     /* transform: translate(-50%, -25%); */
-}
-.right-cards {
+  }
+  .right-cards {
     right: -200px;
     top: 15%;
     /* transform: translate(-50%, -75%); */
-}
-.blind-cards {
+  }
+  .blind-cards {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-}
-.bid-display {
+  }
+  .bid-display {
     position: absolute;
     bottom: 120px;
     left: 50%;
     transform: translateX(-50%);
     font-size: 2vw;
-}
-.left-bid {
+  }
+  .left-bid {
     position: absolute;
     bottom: 40%;
     left: 12%;
     transform: translateY(-50%);
     font-size: 2vw;
-}
-.top-bid {
+  }
+  .top-bid {
     position: absolute;
     top: 120px;
     left: 50%;
     transform: translateX(-50%);
     font-size: 2vw;
     /* padding: 20px; */
-}
-.right-bid {
+  }
+  .right-bid {
     position: absolute;
     bottom: 40%;
     left: 82%;
     transform: translateY(-50%);
     font-size: 2vw;
     /* padding: 20px; */
-}
-
-
-.bidbox {
+  }
+  
+  
+  .bidbox {
     display: none;
     position: absolute;
     top: 50%;
@@ -178,29 +177,30 @@ body {
     padding: 20px;
     border-radius: 5px;
     text-align: center;
-}
-.close-bidbox {
+  }
+  .close-bidbox {
     position: absolute;
     top: 10px;
     right: 10px;
     font-size: 20px;
     font-weight: bold;
     cursor: pointer;
-}
-table {
+  }
+  table {
     border-collapse: collapse;
     margin: 0 auto;
-}
-/* th, td {
+  }
+  /* th, td {
     padding: 10px;
     text-align: center;
-} */
-/* td button {
+  } */
+  /* td button {
     padding: 5px 10px;
-} */
-button.bid-amount-button {
+  } */
+  button.bid-amount-button {
     width: 70px;
     height: 50px;
     font-size: 2vw;
     min-width: fit-content;
-}
+  }
+  
