@@ -20,16 +20,16 @@
       <div class="card card-back">?</div>
     </div>
     <div class="card-row bottom-cards" id="bottomCards">
-      <div class="card card-front spades is-exchangeable is-idle">A♠</div>
-      <div class="card card-front spades is-exchangeable is-idle">A♠</div>
-      <div class="card card-front spades is-exchangeable is-idle">A♠</div>
-      <div class="caard card-front spades is-exchangeable is-idle">A♠</div>
-      <div class="card card-front spades is-exchangeable is-idle">A♠</div>
-      <div class="card card-front spades is-exchangeable is-idle">A♠</div>
-      <div class="card card-front spades is-exchangeable is-idle">A♠</div>
-      <div class="card card-front spades is-exchangeable is-idle">A♠</div>
-      <div class="card card-front spades is-exchangeable is-idle">A♠</div>
-      <div class="card card-front spades is-exchangeable is-idle">A♠</div>
+      <div class="card card-front spades">A♠</div>
+      <div class="card card-front spades">A♠</div>
+      <div class="card card-front spades">A♠</div>
+      <div class="card card-front spades">A♠</div>
+      <div class="card card-front spades">A♠</div>
+      <div class="card card-front spades">A♠</div>
+      <div class="card card-front spades">A♠</div>
+      <div class="card card-front spades">A♠</div>
+      <div class="card card-front spades">A♠</div>
+      <div class="card card-front spades">A♠</div>
     </div>
     <div class="card-halfrow left-cards" id="leftCards">
       <table>
@@ -80,14 +80,14 @@
       </table>
     </div>
     <div class="card-row blind-cards" id="blindCards">
-      <div class="card card-back is-exchangeable is-idle">?</div>
-      <div class="card card-back is-exchangeable is-idle">?</div>
-      <div class="card card-back is-exchangeable is-idle">?</div>
-      <div class="card card-back is-exchangeable is-idle">?</div>
-      <div class="card card-back is-exchangeable is-idle">?</div>
+      <div class="card card-back">?</div>
+      <div class="card card-back">?</div>
+      <div class="card card-back">?</div>
+      <div class="card card-back">?</div>
+      <div class="card card-back">?</div>
     </div>
     <div class="card-row submit-cards" id="submitCards"></div>
-    <div class="bid-display my-bid bid-display" id="bidDisplay" style="display:none;color:white;">My Bid: 000</div>
+    <div class="bottom-bid my-bid bid-display" id="bottomBid" style="display:none;color:white;">My Bid: 000</div>
     <div class="left-bid other-bid bid-display" id="leftBid" style="display:none;color:white;">Bid:<br />000</div>
     <div class="top-bid other-bid bid-display" id="topBid" style="display:none;color:white;">Bid: 000</div>
     <div class="right-bid other-bid bid-display" id="rightBid" style="display:none;color:white;">Bid:<br />000</div>
@@ -151,215 +151,6 @@
   </div>      
 </template>
 
-<style scoped>
-.james-stuff {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  margin: 0;
-  background-color: #203243;
-  font-family: Arial, sans-serif;
-  user-select: none;
-}
-
-.stateBanner {
-  position: absolute;
-  padding: 10px 0px;
-  top: 10px;
-  left: 11px;
-  color: white
-}
-
-.standing-bid-display {
-  position: absolute;
-  top: 25px;
-  right: 25px;
-  font-size: 2vw;
-}
-
-.bid-button,
-.blind-button,
-.play-button, 
-.trick-button {
-  position: absolute;
-  width: 70px;
-  height: 50px;
-  top: 50px;
-  left: 11px;
-  padding: 10px 0px;
-}
-.final-bid-display {
-  position: absolute;
-  top: 50px;
-  right: 11px;
-  font-size: 2vw;
-}
-
-.game-table-container {
-  position: relative;
-  width: 1000px;
-  height: 800px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.game-table {
-  width: 800px;
-  height: 600px;
-  background-color: #34495e;
-  border-radius: 20px;
-  position: absolute;
-}
-
-.card-row {
-  position: absolute;
-  display: flex;
-  gap: 10px;
-}
-.card-halfrow {
-  position: absolute;
-  display: flex;
-  gap: 5px;
-}
-
-.card {
-  width: 70px;
-  height: 100px;
-  background-color: white;
-  border-radius: 8px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 16px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s;
-  will-change: transform;
-}
-.card.is-idle {
-  transition: 0.25s ease transform;
-  cursor: grab;
-}
-.card.is-draggable {
-  cursor: grabbing;
-  z-index: 10;
-}
-
-.card-back {
-  background-color: #3498db;
-  color: white;
-  font-weight: bold;
-}
-.card-front {
-  background-color: white;
-  border: 1px solid #7f8c8d;
-  font-size: 1.8vw;
-}
-.card-front.hearts,
-.card-front.diamonds {
-  color: red;
-}
-
-.card-front.clubs,
-.card-front.spades {
-  color: black;
-}
-
-.top-cards {
-  top: -20px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-.bottom-cards {
-  bottom: -20px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-.left-cards {
-  left: -200px;
-  top: 15%;
-  /* transform: translate(-50%, -25%); */
-}
-.right-cards {
-  right: -200px;
-  top: 15%;
-  /* transform: translate(-50%, -75%); */
-}
-.blind-cards {
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-.bid-display {
-  position: absolute;
-  bottom: 120px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 2vw;
-}
-.left-bid {
-  position: absolute;
-  bottom: 40%;
-  left: 12%;
-  transform: translateY(-50%);
-  font-size: 2vw;
-}
-.top-bid {
-  position: absolute;
-  top: 120px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 2vw;
-  /* padding: 20px; */
-}
-.right-bid {
-  position: absolute;
-  bottom: 40%;
-  left: 82%;
-  transform: translateY(-50%);
-  font-size: 2vw;
-  /* padding: 20px; */
-}
-
-
-.bidbox {
-  display: none;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: white;
-  padding: 20px;
-  border-radius: 5px;
-  text-align: center;
-}
-.close-bidbox {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  font-size: 20px;
-  font-weight: bold;
-  cursor: pointer;
-}
-table {
-  border-collapse: collapse;
-  margin: 0 auto;
-}
-/* th, td {
-  padding: 10px;
-  text-align: center;
-} */
-/* td button {
-  padding: 5px 10px;
-} */
-button.bid-amount-button {
-  width: 70px;
-  height: 50px;
-  font-size: 2vw;
-  min-width: fit-content;
-}
-</style>
-
 <script setup>
 import { ref, onMounted } from 'vue';
 // import draggable from 'vuedraggable';
@@ -402,7 +193,7 @@ class BidBox {
 
                     gameState = 1;
                     document.getElementById("gameState").innerHTML = "Current_Game_State: ".concat(gameState);
-                    document.getElementById("bidDisplay").innerHTML = "My Bid: ".concat(bidAmount);
+                    document.getElementById("bottomBid").innerHTML = "My Bid: ".concat(bidAmount);
 
                     updateStandingBid();
                 });
@@ -410,9 +201,9 @@ class BidBox {
 
             this.disableImpossibleBids();
 
-            document.getElementById("leftBid").innerHTML = "Bid:<br />".concat(100);
-            document.getElementById("topBid").innerHTML = "Bid: ".concat("Pass");
-            document.getElementById("rightBid").innerHTML = "Bid:<br />".concat(300);
+            document.getElementById("leftBid").innerHTML = "Bid:<br />".concat("Pass");
+            document.getElementById("topBid").innerHTML = "Bid: ".concat(100);
+            document.getElementById("rightBid").innerHTML = "Bid:<br />".concat(280);
         } catch (error) {
             console.error('Failed to initialize bidbox:', error);
         }
@@ -444,8 +235,6 @@ class StateButtons {
     }
 }
 
-let playerHandCards;
-let blindCards;
 let cards = [];
 
 class GameTable {
@@ -470,16 +259,6 @@ class GameTable {
             this.distributeCards(hand);
             this.renderCards();
 
-            playerHandCards = document.getElementById("bottomCards");
-            blindCards = document.getElementById("bottomCards");
-
-            if (!playerHandCards) return;
-
-            playerHandCards.addEventListener('mousedown', dragStart);
-            // TODO move this out of here or find way to remove it when doing the blind and card stuff
-            // playerHandCards.addEventListener('mousedown', dragStart);
-              
-            document.addEventListener('mouseup', dragEnd);
         } catch (error) {
             console.error('Failed to initialize game table:', error);
         }
@@ -529,7 +308,7 @@ class GameTable {
         if (!cardsElement) return;
 
         cardsElement.innerHTML = cards.map(card => 
-            `<div class="card ${faceDown ? 'card-back' : `card-front ${this.getSuitClass(card.suit)} is-idle`}">
+            `<div class="card ${faceDown ? 'card-back' : `card-front ${this.getSuitClass(card.suit)} `}">
                 ${faceDown ? '?' : `${card.value}${card.suit}`}
              </div>`
         ).join('');
@@ -549,7 +328,7 @@ class GameTable {
 
         // Now rerender the blind with the new faceDown
         cardsElement.innerHTML = this.blindCards.map(card => 
-            `<div class="card ${faceDown ? 'card-back' : `card-front ${this.getSuitClass(card.suit)}`} is-idle">
+            `<div class="card ${faceDown ? 'card-back' : `card-front ${this.getSuitClass(card.suit)}`} ">
                 ${faceDown ? '?' : `${card.value}${card.suit}`}
              </div>`
         ).join('');
@@ -579,7 +358,7 @@ onMounted(() => {
     document.getElementById("openBidBoxBtn").addEventListener("click", function() {
         gameState = 0;
         document.getElementById("bidbox").style.display = document.getElementById("bidbox").style.display === "inline" ? "none" : "inline";
-        document.getElementById("bidDisplay").style.display = document.getElementById("bidDisplay").style.display === "inline" ? "none" : "inline";
+        document.getElementById("bottomBid").style.display = document.getElementById("bottomBid").style.display === "inline" ? "none" : "inline";
         document.getElementById("leftBid").style.display = document.getElementById("leftBid").style.display === "inline" ? "none" : "inline";
         document.getElementById("topBid").style.display = document.getElementById("topBid").style.display === "inline" ? "none" : "inline";
         document.getElementById("rightBid").style.display = document.getElementById("rightBid").style.display === "inline" ? "none" : "inline";
@@ -589,7 +368,7 @@ onMounted(() => {
 
     document.getElementById("closeBidBox").addEventListener("click", function() {
         document.getElementById("bidbox").style.display = "none";
-        document.getElementById("bidDisplay").style.display = "none";
+        document.getElementById("bottomBid").style.display = "none";
     });
 
 
@@ -600,14 +379,15 @@ onMounted(() => {
             gameState = 1;
             gametable.fetchBlind();
             allowY = !allowY;
-            playerHandCards.addEventListener('mousedown', dragStart);    
         }
     });
 
     // document.getElementById("startPlayBtn").addEventListener("click", async function() {
     // });
     var el = document.getElementById('bottomCards');
-    var sortable = Sortable.create(el);
+    // TODO: make this animation slower, the param doesn't seem to be affecting it rn
+    var sortable = new Sortable(el, {animation: 1000} );
+    // var sortable = Sortable.create(el);
 })
 
 
@@ -615,7 +395,8 @@ function updateStandingBid() {
     // element.textContent could also be useful here
     let bidArr = Array.from(document.getElementsByClassName("bid-display")).map(
         (elem) => 
-        Number.isNaN(Number(elem.innerText.slice(start=-3))) ? 0 : Number(elem.innerText.slice(start=-3))
+        Number.isNaN(Number(elem.innerText.slice( -3, undefined ))) ? 0 : Number(elem.innerText.slice( -3, undefined ))
+        // Number.isNaN(Number(elem.innerText.slice(start=-3))) ? 0 : Number(elem.innerText.slice(start=-3))
     );
     console.log(bidArr)
 

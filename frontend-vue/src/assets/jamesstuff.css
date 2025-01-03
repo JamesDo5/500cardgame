@@ -81,14 +81,6 @@ body {
     transition: transform 0.2s;
     will-change: transform;
   }
-  .card.is-idle {
-    transition: 0.25s ease transform;
-    cursor: grab;
-  }
-  .card.is-draggable {
-    cursor: grabbing;
-    z-index: 10;
-  }
   
   .card-back {
     background-color: #3498db;
@@ -99,6 +91,10 @@ body {
     background-color: white;
     border: 1px solid #7f8c8d;
     font-size: 1.8vw;
+    cursor: grab;
+  }
+  .sortable-chosen {
+    cursor: grabbing;
   }
   .card-front.hearts,
   .card-front.diamonds {
@@ -123,12 +119,10 @@ body {
   .left-cards {
     left: -200px;
     top: 15%;
-    /* transform: translate(-50%, -25%); */
   }
   .right-cards {
     right: -200px;
     top: 15%;
-    /* transform: translate(-50%, -75%); */
   }
   .blind-cards {
     top: 50%;
@@ -155,7 +149,6 @@ body {
     left: 50%;
     transform: translateX(-50%);
     font-size: 2vw;
-    /* padding: 20px; */
   }
   .right-bid {
     position: absolute;
@@ -163,7 +156,6 @@ body {
     left: 82%;
     transform: translateY(-50%);
     font-size: 2vw;
-    /* padding: 20px; */
   }
   
   
@@ -190,13 +182,6 @@ body {
     border-collapse: collapse;
     margin: 0 auto;
   }
-  /* th, td {
-    padding: 10px;
-    text-align: center;
-  } */
-  /* td button {
-    padding: 5px 10px;
-  } */
   button.bid-amount-button {
     width: 70px;
     height: 50px;
