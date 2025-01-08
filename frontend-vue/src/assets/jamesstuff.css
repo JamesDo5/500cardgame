@@ -129,6 +129,15 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
   }
+  .submit-cards {
+    top: 78%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 2px dashed #7f8c8d;
+    padding: 10px;
+    min-width: 70px;
+    min-height: 100px;    
+  }
   .bid-display {
     position: absolute;
     bottom: 120px;

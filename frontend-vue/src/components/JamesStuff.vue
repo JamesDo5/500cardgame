@@ -148,7 +148,7 @@
     </table>
     <!-- <button class="pass-button" type="button" id="passBidBtn" style="font-size:2vw">Pass</button> -->
     <button class="bid-amount-button" type="button" id="passBidBtn" style="font-size:2vw">Pass</button>
-  </div>      
+  </div>
 </template>
 
 <script setup>
@@ -179,241 +179,281 @@ let incomingBid = 280;
 
 
 class BidBox {
-    constructor() {
-        this.initializeBidBox();
-    }
+  constructor() {
+    this.initializeBidBox();
+  }
 
-    async initializeBidBox() {
-        try {
-            // Outline from FJolt
-            Array.prototype.forEach.call(document.getElementsByClassName("bid-amount-button"), (item) => {
-                item.addEventListener("click", function() {
-                    // can also use this.innerHTML
-                    bidAmount = item.innerHTML;
+  async initializeBidBox() {
+    try {
+      // Outline from FJolt
+      Array.prototype.forEach.call(document.getElementsByClassName("bid-amount-button"), (item) => {
+        item.addEventListener("click", function () {
+          // can also use this.innerHTML
+          bidAmount = item.innerHTML;
 
-                    gameState = 1;
-                    document.getElementById("gameState").innerHTML = "Current_Game_State: ".concat(gameState);
-                    document.getElementById("bottomBid").innerHTML = "My Bid: ".concat(bidAmount);
+          gameState = 1;
+          document.getElementById("gameState").innerHTML = "Current_Game_State: ".concat(gameState);
+          document.getElementById("bottomBid").innerHTML = "My Bid: ".concat(bidAmount);
 
-                    updateStandingBid();
-                });
-            });
-
-            this.disableImpossibleBids();
-
-            document.getElementById("leftBid").innerHTML = "Bid:<br />".concat("Pass");
-            document.getElementById("topBid").innerHTML = "Bid: ".concat(100);
-            document.getElementById("rightBid").innerHTML = "Bid:<br />".concat(280);
-        } catch (error) {
-            console.error('Failed to initialize bidbox:', error);
-        }
-    }
-
-    disableImpossibleBids() {
-        Array.prototype.forEach.call( document.getElementsByClassName("bid-amount-button") , (item) => {
-            if (item.innerHTML <= incomingBid) {
-                item.disabled = true;
-            }
+          updateStandingBid();
         });
+      });
+
+      this.disableImpossibleBids();
+
+      document.getElementById("leftBid").innerHTML = "Bid:<br />".concat("Pass");
+      document.getElementById("topBid").innerHTML = "Bid: ".concat(100);
+      document.getElementById("rightBid").innerHTML = "Bid:<br />".concat(280);
+    } catch (error) {
+      console.error('Failed to initialize bidbox:', error);
     }
+  }
+
+  disableImpossibleBids() {
+    Array.prototype.forEach.call(document.getElementsByClassName("bid-amount-button"), (item) => {
+      if (item.innerHTML <= incomingBid) {
+        item.disabled = true;
+      }
+    });
+  }
 }
 
 class StateButtons {
-    constructor() {
-        this.initializeStateButtons();
-    }
+  constructor() {
+    this.initializeStateButtons();
+  }
 
-    async initializeStateButtons() {
-        try {
-            // document.getElementById("openBidBoxBtn");
-            document.getElementById("submitBidBtn").style.transform = `translateX(75px)`;
-            document.getElementById("startPlayBtn").style.transform = `translateX(150px)`;
-            document.getElementById("submitTrickBtn").style.transform = `translateX(225px)`;
-        } catch (error) {
-            console.error('Failed to initialize buttons:', error);
-        }
+  async initializeStateButtons() {
+    try {
+      // document.getElementById("openBidBoxBtn");
+      document.getElementById("submitBidBtn").style.transform = `translateX(75px)`;
+      document.getElementById("startPlayBtn").style.transform = `translateX(150px)`;
+      document.getElementById("submitTrickBtn").style.transform = `translateX(225px)`;
+    } catch (error) {
+      console.error('Failed to initialize buttons:', error);
     }
+  }
 }
 
 let cards = [];
 let sortableHandCards;
 let sortableBlindCards;
+let sortableSubmitCards;
 
 class GameTable {
-    constructor() {
-        /** @type {Card[]} */
-        this.topCards = [];
-        /** @type {Card[]} */
-        this.bottomCards = [];
-        /** @type {Card[]} */
-        this.leftCards = [];
-        /** @type {Card[]} */
-        this.rightCards = [];
-        /** @type {Card[]} */
-        this.blindCards = [];
+  constructor() {
+    /** @type {Card[]} */
+    this.topCards = [];
+    /** @type {Card[]} */
+    this.bottomCards = [];
+    /** @type {Card[]} */
+    this.leftCards = [];
+    /** @type {Card[]} */
+    this.rightCards = [];
+    /** @type {Card[]} */
+    this.blindCards = [];
 
-        this.initializeTable();
+    this.initializeTable();
+  }
+
+  async initializeTable() {
+    try {
+      const hand = await this.fetchHand();
+      this.distributeCards(hand);
+      this.renderCards();
+
+    } catch (error) {
+      console.error('Failed to initialize game table:', error);
     }
+  }
 
-    async initializeTable() {
-        try {
-            const hand = await this.fetchHand();
-            this.distributeCards(hand);
-            this.renderCards();
-
-        } catch (error) {
-            console.error('Failed to initialize game table:', error);
-        }
+  async fetchHand() {
+    try {
+      const response = await fetch('http://localhost:8080/gethand');
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching hand:', error);
+      return this.generateMockShuffle();
     }
+  }
 
-    async fetchHand() {
-        try {
-            const response = await fetch('http://localhost:8080/gethand');
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return await response.json();
-        } catch (error) {
-            console.error('Error fetching hand:', error);
-            return this.generateMockShuffle();
-        }
-    }
+  generateMockShuffle() {
+    const suits = ['♥', '♦', '♣', '♠'];
+    const values = ['4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 
-    generateMockShuffle() {
-        const suits = ['♥', '♦', '♣', '♠'];
-        const values = ['4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-        
-        return Array.from({ length: 44 }, () => ({
-            suit: suits[Math.floor(Math.random() * suits.length)],
-            value: values[Math.floor(Math.random() * values.length)]
-        })).concat({
-            suit: "Joker",
-            value: ""
-        });
-    }
+    return Array.from({ length: 44 }, () => ({
+      suit: suits[Math.floor(Math.random() * suits.length)],
+      value: values[Math.floor(Math.random() * values.length)]
+    })).concat({
+      suit: "Joker",
+      value: ""
+    });
+  }
 
-    distributeCards(hand) {
-        this.topCards = hand.slice(0, 10);
-        this.blindCards = hand.slice(10, 15);
-        this.leftCards = hand.slice(15, 25);
-        this.rightCards = hand.slice(25, 35);
-        this.bottomCards = hand.slice(35, 45);
-    }
+  distributeCards(hand) {
+    this.topCards = hand.slice(0, 10);
+    this.blindCards = hand.slice(10, 15);
+    this.leftCards = hand.slice(15, 25);
+    this.rightCards = hand.slice(25, 35);
+    this.bottomCards = hand.slice(35, 45);
+  }
 
-    renderCards() {
-        this.renderCardRow('bottomCards', this.bottomCards, false);
-        this.renderCardRow('blindCards', this.blindCards, true);
-    }
+  renderCards() {
+    this.renderCardRow('bottomCards', this.bottomCards, false);
+    this.renderCardRow('blindCards', this.blindCards, true);
+  }
 
-    renderCardRow(rowId, cards, faceDown) {
-        const cardsElement = document.getElementById(rowId);
-        if (!cardsElement) return;
+  renderCardRow(rowId, cards, faceDown) {
+    const cardsElement = document.getElementById(rowId);
+    if (!cardsElement) return;
 
-        cardsElement.innerHTML = cards.map(card => 
-            `<div class="card ${faceDown ? 'card-back' : `card-front ${this.getSuitClass(card.suit)} `}">
+    cardsElement.innerHTML = cards.map(card =>
+      `<div class="card ${faceDown ? 'card-back' : `card-front ${this.getSuitClass(card.suit)} `}">
                 ${faceDown ? '?' : `${card.value}${card.suit}`}
              </div>`
-        ).join('');
+    ).join('');
+  }
+
+  fetchBlind() {
+    // TODO make this function a call to server and if fails use preset this.blindcards 
+    let faceDown = true;
+
+    const cardsElement = document.getElementById('blindCards');
+    if (!cardsElement) return;
+
+    if (cardsElement.childNodes[0].classList.contains('card-back')) {
+      // The goal of this function is to flip the blind so this bool is opposite of what is currently rendered
+      faceDown = false;
     }
 
-    fetchBlind() {
-        // TODO make this function a call to server and if fails use preset this.blindcards 
-        let faceDown = true;
-
-        const cardsElement = document.getElementById('blindCards');
-        if (!cardsElement) return;
-
-        if (cardsElement.childNodes[0].classList.contains('card-back')) {
-            // The goal of this function is to flip the blind so this bool is opposite of what is currently rendered
-            faceDown = false;
-        }
-
-        // Now rerender the blind with the new faceDown
-        cardsElement.innerHTML = this.blindCards.map(card => 
-            `<div class="card ${faceDown ? 'card-back' : `card-front ${this.getSuitClass(card.suit)}`} ">
+    // Now rerender the blind with the new faceDown
+    cardsElement.innerHTML = this.blindCards.map(card =>
+      `<div class="card ${faceDown ? 'card-back' : `card-front ${this.getSuitClass(card.suit)}`} ">
                 ${faceDown ? '?' : `${card.value}${card.suit}`}
              </div>`
-        ).join('');
+    ).join('');
 
-        // Note the use of faceDown to determine whether they are disabled
-        sortableBlindCards.option("disabled", faceDown); // set
+    // Note the use of faceDown to determine whether they are disabled
+    sortableBlindCards.option("disabled", faceDown); // set
+  }
+
+  submitBlind() {
+    const cardsElement = document.getElementById('blindCards');
+    if (!cardsElement) return;
+
+    let blindSubmitArr = []
+
+    if (! cardsElement.childNodes.length === 5) {
+      // TODO raise error to user
+      console.log("houston we have a problem! can't submit more or fewer than 5 cards")
     }
 
-    getSuitClass(suit) {
-        switch(suit) {
-            case '♥': return 'hearts';
-            case '♦': return 'diamonds';
-            case '♣': return 'clubs';
-            case '♠': return 'spades';
-            case 'Joker': return 'joker';
-            default: return '';
-        }
+    for (let i = 0; i < cardsElement.childNodes.length; i++) {
+      if (cardsElement.childNodes[i].classList.contains('card-back')) {
+        // TODO raise error to user
+        console.log("houston we have a problem! can't submit cards which are facedown")
+      }
+      blindSubmitArr.push(cardsElement.childNodes[i].innerHTML)
     }
+
+    // TODO the code to send blind to server. If it worked do this block
+    if (true) {
+      sortableBlindCards.option("disabled", true);
+      sortableSubmitCards.option("disabled", false);
+    }
+  }
+
+  getSuitClass(suit) {
+    switch (suit) {
+      case '♥': return 'hearts';
+      case '♦': return 'diamonds';
+      case '♣': return 'clubs';
+      case '♠': return 'spades';
+      case 'Joker': return 'joker';
+      default: return '';
+    }
+  }
 }
 
 onMounted(() => {
-    // Initialize the game table when the script loads
-    document.addEventListener('DOMContentLoaded', () => {
-        gametable = new GameTable();
-        // Initialize the buttons when the script loads
-        statebuttons = new StateButtons();
-        bidbox = new BidBox();
-    });
+  // Initialize the game table when the script loads
+  document.addEventListener('DOMContentLoaded', () => {
+    gametable = new GameTable();
+    // Initialize the buttons when the script loads
+    statebuttons = new StateButtons();
+    bidbox = new BidBox();
+  });
 
-    document.getElementById("openBidBoxBtn").addEventListener("click", function() {
-        gameState = 0;
-        document.getElementById("bidbox").style.display = document.getElementById("bidbox").style.display === "inline" ? "none" : "inline";
-        document.getElementById("bottomBid").style.display = document.getElementById("bottomBid").style.display === "inline" ? "none" : "inline";
-        document.getElementById("leftBid").style.display = document.getElementById("leftBid").style.display === "inline" ? "none" : "inline";
-        document.getElementById("topBid").style.display = document.getElementById("topBid").style.display === "inline" ? "none" : "inline";
-        document.getElementById("rightBid").style.display = document.getElementById("rightBid").style.display === "inline" ? "none" : "inline";
-        
-        updateStandingBid();
-    });
+  document.getElementById("openBidBoxBtn").addEventListener("click", function () {
+    gameState = 0;
+    document.getElementById("bidbox").style.display = document.getElementById("bidbox").style.display === "inline" ? "none" : "inline";
+    document.getElementById("bottomBid").style.display = document.getElementById("bottomBid").style.display === "inline" ? "none" : "inline";
+    document.getElementById("leftBid").style.display = document.getElementById("leftBid").style.display === "inline" ? "none" : "inline";
+    document.getElementById("topBid").style.display = document.getElementById("topBid").style.display === "inline" ? "none" : "inline";
+    document.getElementById("rightBid").style.display = document.getElementById("rightBid").style.display === "inline" ? "none" : "inline";
 
-    document.getElementById("closeBidBox").addEventListener("click", function() {
-        document.getElementById("bidbox").style.display = "none";
-        document.getElementById("bottomBid").style.display = "none";
-    });
+    updateStandingBid();
+  });
+
+  document.getElementById("closeBidBox").addEventListener("click", function () {
+    document.getElementById("bidbox").style.display = "none";
+    document.getElementById("bottomBid").style.display = "none";
+  });
 
 
-    let allowY = false;
+  let allowY = false;
 
-    document.getElementById("submitBidBtn").addEventListener("click", function() {
-        if (gameState === 0) {
-            gameState = 1;
-            gametable.fetchBlind();
-            allowY = !allowY;
-        }
-    });
+  document.getElementById("submitBidBtn").addEventListener("click", function () {
+    if (gameState === 0) {
+      gameState = 1;
+      gametable.fetchBlind();
+      allowY = !allowY;
+    }
+  });
 
-    // document.getElementById("startPlayBtn").addEventListener("click", async function() {
-    // });
-    // TODO: make this animation slower, the param doesn't seem to be affecting it rn
-    // var sortable = new Sortable(el, {group: 'shared', animation: 1000} );
-    // var sortable = Sortable.create(el);
+  document.getElementById("startPlayBtn").addEventListener("click", function () {
+    gametable.submitBlind();
+    if (gameState === 0) {
+      gameState = 1;
+      gametable.fetchBlind();
+      allowY = !allowY;
+    }
+  });
 
-    sortableHandCards = new Sortable(
-      document.getElementById('bottomCards'),
-      {disabled: false, group: 'shared', animation: 1000}
-    );
-    sortableBlindCards = new Sortable(
-      document.getElementById('blindCards'),
-      {disabled: true, group: 'shared', animation: 1000}
-    );
+  // document.getElementById("startPlayBtn").addEventListener("click", async function() {
+  // });
+  // TODO: make this animation slower, the param doesn't seem to be affecting it rn
+  // var sortable = new Sortable(el, {group: 'shared', animation: 1000} );
+  // var sortable = Sortable.create(el);
+
+  sortableHandCards = new Sortable(
+    document.getElementById('bottomCards'),
+    { disabled: false, group: 'shared', animation: 1000 }
+  );
+  sortableBlindCards = new Sortable(
+    document.getElementById('blindCards'),
+    { disabled: true, group: 'shared', animation: 1000 }
+  );
+  sortableSubmitCards = new Sortable(
+    document.getElementById('submitCards'),
+    { disabled: true, group: 'shared', animation: 1000 }
+  );
 })
 
 
 function updateStandingBid() {
-    // element.textContent could also be useful here
-    let bidArr = Array.from(document.getElementsByClassName("bid-display")).map(
-        (elem) => 
-        Number.isNaN(Number(elem.innerText.slice( -3, undefined ))) ? 0 : Number(elem.innerText.slice( -3, undefined ))
-        // Number.isNaN(Number(elem.innerText.slice(start=-3))) ? 0 : Number(elem.innerText.slice(start=-3))
-    );
-    console.log(bidArr)
+  // element.textContent could also be useful here
+  let bidArr = Array.from(document.getElementsByClassName("bid-display")).map(
+    (elem) =>
+      Number.isNaN(Number(elem.innerText.slice(-3, undefined))) ? 0 : Number(elem.innerText.slice(-3, undefined))
+    // Number.isNaN(Number(elem.innerText.slice(start=-3))) ? 0 : Number(elem.innerText.slice(start=-3))
+  );
+  console.log(bidArr)
 
-    document.getElementById("finalBidDisplay").innerHTML = "Standing Bid: ".concat(Math.max(...bidArr));
+  document.getElementById("finalBidDisplay").innerHTML = "Standing Bid: ".concat(Math.max(...bidArr));
 }
 
 </script>
