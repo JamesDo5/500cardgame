@@ -236,6 +236,8 @@ class StateButtons {
 }
 
 let cards = [];
+let sortableHandCards;
+let sortableBlindCards;
 
 class GameTable {
     constructor() {
@@ -332,6 +334,9 @@ class GameTable {
                 ${faceDown ? '?' : `${card.value}${card.suit}`}
              </div>`
         ).join('');
+
+        // Note the use of faceDown to determine whether they are disabled
+        sortableBlindCards.option("disabled", faceDown); // set
     }
 
     getSuitClass(suit) {
@@ -384,10 +389,18 @@ onMounted(() => {
 
     // document.getElementById("startPlayBtn").addEventListener("click", async function() {
     // });
-    var el = document.getElementById('bottomCards');
     // TODO: make this animation slower, the param doesn't seem to be affecting it rn
-    var sortable = new Sortable(el, {animation: 1000} );
+    // var sortable = new Sortable(el, {group: 'shared', animation: 1000} );
     // var sortable = Sortable.create(el);
+
+    sortableHandCards = new Sortable(
+      document.getElementById('bottomCards'),
+      {disabled: false, group: 'shared', animation: 1000}
+    );
+    sortableBlindCards = new Sortable(
+      document.getElementById('blindCards'),
+      {disabled: true, group: 'shared', animation: 1000}
+    );
 })
 
 
