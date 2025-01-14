@@ -421,6 +421,7 @@ onMounted(() => {
 
   document.getElementById("openBidBoxBtn").addEventListener("click", function () {
     gameState = 0;
+
     document.getElementById("bidbox").style.display = document.getElementById("bidbox").style.display === "inline" ? "none" : "inline";
     document.getElementById("bottomBid").style.display = document.getElementById("bottomBid").style.display === "inline" ? "none" : "inline";
     document.getElementById("leftBid").style.display = document.getElementById("leftBid").style.display === "inline" ? "none" : "inline";
@@ -428,7 +429,7 @@ onMounted(() => {
     document.getElementById("rightBid").style.display = document.getElementById("rightBid").style.display === "inline" ? "none" : "inline";
 
     // For aesthetics the box should go away here. Also, inline-block was necessary for cards to stack horizontally instead of vertically.
-    document.getElementById("submitCards").style.display = document.getElementById("submitCards").style.display === "none" ? "inline-block" : "none";
+    document.getElementById("submitCards").style.display = document.getElementById("submitCards").style.display === "none" ? "flex" : "none";
 
     updateStandingBid();
   });
@@ -444,7 +445,6 @@ onMounted(() => {
 
   document.getElementById("submitBidBtn").addEventListener("click", function () {
     if (gametable.fetchBlind() === 0) {
-      console.log("fetchBlind() === 0")
       // TODO game state manipulation stuff on success
     }
     if (gameState === 0) {
