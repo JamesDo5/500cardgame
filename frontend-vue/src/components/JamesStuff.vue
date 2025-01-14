@@ -32,52 +32,36 @@
       <div class="card card-front spades">A♠</div>
     </div>
     <div class="card-halfrow left-cards" id="leftCards">
-      <table>
-        <tbody>
-          <tr>
-            <td class="horizontal-divs">
-              <div class="card card-back">?</div>
-              <div class="card card-back">?</div>
-              <div class="card card-back">?</div>
-              <div class="card card-back">?</div>
-              <div class="card card-back">?</div>
-            </td>
-          </tr>
-          <tr>
-            <td class="horizontal-divs">
-              <div class="card card-back">?</div>
-              <div class="card card-back">?</div>
-              <div class="card card-back">?</div>
-              <div class="card card-back">?</div>
-              <div class="card card-back">?</div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="section">
+        <div class="card card-back section-member">?</div>
+        <div class="card card-back section-member">?</div>
+        <div class="card card-back section-member">?</div>
+        <div class="card card-back section-member">?</div>
+        <div class="card card-back section-member">?</div>
+      </div>
+      <div class="section">
+        <div class="card card-back section-member">?</div>
+        <div class="card card-back section-member">?</div>
+        <div class="card card-back section-member">?</div>
+        <div class="card card-back section-member">?</div>
+        <div class="card card-back section-member">?</div>
+      </div>
     </div>
     <div class="card-halfrow right-cards" id="rightCards">
-      <table>
-        <tbody>
-          <tr>
-            <td class="horizontal-divs">
-              <div class="card card-back">?</div>
-              <div class="card card-back">?</div>
-              <div class="card card-back">?</div>
-              <div class="card card-back">?</div>
-              <div class="card card-back">?</div>
-            </td>
-          </tr>
-          <tr>
-            <td class="horizontal-divs">
-              <div class="card card-back">?</div>
-              <div class="card card-back">?</div>
-              <div class="card card-back">?</div>
-              <div class="card card-back">?</div>
-              <div class="card card-back">?</div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="section">
+        <div class="card card-back section-member">?</div>
+        <div class="card card-back section-member">?</div>
+        <div class="card card-back section-member">?</div>
+        <div class="card card-back section-member">?</div>
+        <div class="card card-back section-member">?</div>
+      </div>
+      <div class="section">
+        <div class="card card-back section-member">?</div>
+        <div class="card card-back section-member">?</div>
+        <div class="card card-back section-member">?</div>
+        <div class="card card-back section-member">?</div>
+        <div class="card card-back section-member">?</div>
+      </div>
     </div>
     <div class="card-row blind-cards" id="blindCards">
       <div class="card card-back">?</div>
@@ -186,11 +170,11 @@ class BidBox {
       // Outline from FJolt
       Array.prototype.forEach.call(document.getElementsByClassName("bid-amount-button"), (item) => {
         item.addEventListener("click", function () {
-          // can also use this.innerHTML
           // bidAmount = item.innerHTML;
 
           gameState = 1;
           document.getElementById("gameState").innerHTML = "Current_Game_State: ".concat(gameState);
+          // can also use this.innerHTML
           document.getElementById("bottomBid").innerHTML = "My Bid: ".concat(item.innerHTML);
 
           updateStandingBid();
@@ -442,7 +426,9 @@ onMounted(() => {
     document.getElementById("leftBid").style.display = document.getElementById("leftBid").style.display === "inline" ? "none" : "inline";
     document.getElementById("topBid").style.display = document.getElementById("topBid").style.display === "inline" ? "none" : "inline";
     document.getElementById("rightBid").style.display = document.getElementById("rightBid").style.display === "inline" ? "none" : "inline";
-    document.getElementById("submitCards").style.display = document.getElementById("submitCards").style.display === "none" ? "inline" : "none";
+
+    // For aesthetics the box should go away here. Also, inline-block was necessary for cards to stack horizontally instead of vertically.
+    document.getElementById("submitCards").style.display = document.getElementById("submitCards").style.display === "none" ? "inline-block" : "none";
 
     updateStandingBid();
   });

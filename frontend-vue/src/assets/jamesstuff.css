@@ -65,7 +65,14 @@ body {
   .card-halfrow {
     position: absolute;
     display: flex;
+    flex-direction: column;
     gap: 5px;
+  }
+  .section {
+    display: flex;
+    gap: 10px;
+  }
+  .section-member {
   }
   
   .card {
@@ -117,12 +124,12 @@ body {
     transform: translateX(-50%);
   }
   .left-cards {
-    left: -200px;
-    top: 15%;
+    left: -35%;
+    top: 37.5%;
   }
   .right-cards {
-    right: -200px;
-    top: 15%;
+    right: -35%;
+    top: 37.5%;
   }
   .blind-cards {
     top: 50%;
