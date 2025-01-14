@@ -1,9 +1,9 @@
 <template class="james-stuff">
   <div class="stateBanner" id="gameState">Current_Game_State</div>
-  <button class="bid-button" type="button" id="openBidBoxBtn">Open bid table!</button>
-  <button class="blind-button" type="button" id="submitBidBtn">Reveal blind!</button>
-  <button class="play-button" type="button" id="startPlayBtn">Submit blind!</button>
-  <button class="trick-button" type="button" id="submitTrickBtn">Submit card!</button>
+  <button class="bid-button" type="button" id="openBidBoxBtn" style="z-index:100;">Open bid table!</button>
+  <button class="blind-button" type="button" id="submitBidBtn" style="z-index:100;">Reveal blind!</button>
+  <button class="play-button" type="button" id="startPlayBtn" style="z-index:100;">Submit blind!</button>
+  <button class="trick-button" type="button" id="submitTrickBtn" style="z-index:100;">Submit card!</button>
   <div class="standing-bid-display" id="finalBidDisplay" style="color:white;">Standing Bid: 000</div>
   <div class="game-table-container">
     <div class="game-table"></div>
@@ -174,9 +174,7 @@ let bidbox
 // 0 is bidding, 1 is blind exchange, 2 is doing tricks, 3 is scoring and re-deal
 let gameState = 0;
 
-let bidAmount = -1;
-let incomingBid = 280;
-
+let test_var_incomingbid = 140
 
 class BidBox {
   constructor() {
@@ -189,11 +187,11 @@ class BidBox {
       Array.prototype.forEach.call(document.getElementsByClassName("bid-amount-button"), (item) => {
         item.addEventListener("click", function () {
           // can also use this.innerHTML
-          bidAmount = item.innerHTML;
+          // bidAmount = item.innerHTML;
 
           gameState = 1;
           document.getElementById("gameState").innerHTML = "Current_Game_State: ".concat(gameState);
-          document.getElementById("bottomBid").innerHTML = "My Bid: ".concat(bidAmount);
+          document.getElementById("bottomBid").innerHTML = "My Bid: ".concat(item.innerHTML);
 
           updateStandingBid();
         });
@@ -202,17 +200,21 @@ class BidBox {
       this.disableImpossibleBids();
 
       document.getElementById("leftBid").innerHTML = "Bid:<br />".concat("Pass");
-      document.getElementById("topBid").innerHTML = "Bid: ".concat(100);
-      document.getElementById("rightBid").innerHTML = "Bid:<br />".concat(280);
+      document.getElementById("topBid").innerHTML = "Bid: ".concat(80);
+      document.getElementById("rightBid").innerHTML = "Bid:<br />".concat(140);
     } catch (error) {
       console.error('Failed to initialize bidbox:', error);
     }
   }
 
   disableImpossibleBids() {
+    const incomingBid = updateStandingBid();
+    console.log("incomingBid:",incomingBid)
+
     Array.prototype.forEach.call(document.getElementsByClassName("bid-amount-button"), (item) => {
-      if (item.innerHTML <= incomingBid) {
-        item.disabled = true;
+      // if (item.innerHTML <= incomingBid) {
+      if (item.innerHTML <= test_var_incomingbid) {
+          item.disabled = true;
       }
     });
   }
@@ -318,19 +320,19 @@ class GameTable {
   }
 
   fetchBlind() {
-    // TODO make this function a call to server and if fails use preset this.blindcards 
+    // TODO make this function a call to server and if fails use preset this.blindcards if in testing env
     let faceDown = true;
 
-    const cardsElement = document.getElementById('blindCards');
-    if (!cardsElement) return;
+    const blindElement = document.getElementById('blindCards');
+    if (!blindElement) return;
 
-    if (cardsElement.childNodes[0].classList.contains('card-back')) {
+    if (blindElement.childNodes[0].classList.contains('card-back')) {
       // The goal of this function is to flip the blind so this bool is opposite of what is currently rendered
       faceDown = false;
     }
 
     // Now rerender the blind with the new faceDown
-    cardsElement.innerHTML = this.blindCards.map(card =>
+    blindElement.innerHTML = this.blindCards.map(card =>
       `<div class="card ${faceDown ? 'card-back' : `card-front ${this.getSuitClass(card.suit)}`} ">
                 ${faceDown ? '?' : `${card.value}${card.suit}`}
              </div>`
@@ -338,32 +340,78 @@ class GameTable {
 
     // Note the use of faceDown to determine whether they are disabled
     sortableBlindCards.option("disabled", faceDown); // set
+
+    return 0
   }
 
   submitBlind() {
-    const cardsElement = document.getElementById('blindCards');
-    if (!cardsElement) return;
+    const blindElement = document.getElementById('blindCards');
+    if (!blindElement) return 1;
+
+    // Disable sort during this function to prevent edge case inconsistencies
+    sortableBlindCards.option("disabled", true);
 
     let blindSubmitArr = []
 
-    if (! cardsElement.childNodes.length === 5) {
+    console.log("blindElement.childNodes.length:",blindElement.childNodes.length)
+    if (!(blindElement.childNodes.length === 5)) {
       // TODO raise error to user
-      console.log("houston we have a problem! can't submit more or fewer than 5 cards")
+      console.log("houston we have a problem! can't submit more or fewer than 5 card blind")
+      // Reenable sorting so user can fix the issue
+      sortableBlindCards.option("disabled", false);
+      return 1
     }
 
-    for (let i = 0; i < cardsElement.childNodes.length; i++) {
-      if (cardsElement.childNodes[i].classList.contains('card-back')) {
+    for (let i = 0; i < blindElement.childNodes.length; i++) {
+      if (blindElement.childNodes[i].classList.contains('card-back')) {
         // TODO raise error to user
         console.log("houston we have a problem! can't submit cards which are facedown")
+        blindSubmitArr = []
+        sortableBlindCards.option("disabled", false);
+        return 1
       }
-      blindSubmitArr.push(cardsElement.childNodes[i].innerHTML)
+      blindSubmitArr.push(blindElement.childNodes[i].innerHTML)
     }
 
     // TODO the code to send blind to server. If it worked do this block
     if (true) {
-      sortableBlindCards.option("disabled", true);
       sortableSubmitCards.option("disabled", false);
+      blindElement.innerHTML = "";
     }
+
+    return 0
+  }
+
+  submitTrick() {
+    const submitElement = document.getElementById('submitCards');
+    if (!submitElement) return 1;
+
+    // Disable sort during this function to prevent edge case inconsistencies
+    sortableSubmitCards.option("disabled", true);
+
+    if (!(submitElement.childNodes.length === 1)) {
+      // TODO raise error to user
+      console.log("houston we have a problem! can't submit more or fewer than 1 card for trick")
+      // Reenable sorting so user can fix the issue
+      sortableSubmitCards.option("disabled", false);
+      return 1
+    }
+
+    if (submitElement.childNodes[0].classList.contains('card-back')) {
+      console.log("houston we have a problem! can't submit cards which are facedown")
+      blindSubmitArr = []
+      sortableSubmitCards.option("disabled", false);
+      return 1
+    }
+
+    // TODO the code to send trick card to server. If it worked do this block
+    if (true) {
+      submitElement.innerHTML = "";
+    }
+
+    // Reenable sorting so next card can be played
+    sortableSubmitCards.option("disabled", false);
+    return 0
   }
 
   getSuitClass(suit) {
@@ -394,32 +442,46 @@ onMounted(() => {
     document.getElementById("leftBid").style.display = document.getElementById("leftBid").style.display === "inline" ? "none" : "inline";
     document.getElementById("topBid").style.display = document.getElementById("topBid").style.display === "inline" ? "none" : "inline";
     document.getElementById("rightBid").style.display = document.getElementById("rightBid").style.display === "inline" ? "none" : "inline";
+    document.getElementById("submitCards").style.display = document.getElementById("submitCards").style.display === "none" ? "inline" : "none";
 
     updateStandingBid();
   });
 
   document.getElementById("closeBidBox").addEventListener("click", function () {
-    document.getElementById("bidbox").style.display = "none";
-    document.getElementById("bottomBid").style.display = "none";
+    document.getElementById("bidbox").style.display = document.getElementById("bidbox").style.display === "inline" ? "none" : "inline";
+    document.getElementById("bottomBid").style.display = document.getElementById("bottomBid").style.display === "inline" ? "none" : "inline";
+    document.getElementById("leftBid").style.display = document.getElementById("leftBid").style.display === "inline" ? "none" : "inline";
+    document.getElementById("topBid").style.display = document.getElementById("topBid").style.display === "inline" ? "none" : "inline";
+    document.getElementById("rightBid").style.display = document.getElementById("rightBid").style.display === "inline" ? "none" : "inline";
   });
 
 
-  let allowY = false;
-
   document.getElementById("submitBidBtn").addEventListener("click", function () {
+    if (gametable.fetchBlind() === 0) {
+      console.log("fetchBlind() === 0")
+      // TODO game state manipulation stuff on success
+    }
     if (gameState === 0) {
-      gameState = 1;
-      gametable.fetchBlind();
-      allowY = !allowY;
+      gameState = 0;
+      // gametable.fetchBlind();
     }
   });
 
   document.getElementById("startPlayBtn").addEventListener("click", function () {
-    gametable.submitBlind();
+    if (gametable.submitBlind() === 0) {
+      // TODO game state manipulation stuff on success
+    }
     if (gameState === 0) {
-      gameState = 1;
-      gametable.fetchBlind();
-      allowY = !allowY;
+      gameState = 0;
+    }
+  });
+
+  document.getElementById("submitTrickBtn").addEventListener("click", function () {
+    if (gametable.submitTrick() === 0) {
+      // TODO game state manipulation stuff on success
+    }
+    if (gameState === 0) {
+      gameState = 0;
     }
   });
 
@@ -454,6 +516,19 @@ function updateStandingBid() {
   console.log(bidArr)
 
   document.getElementById("finalBidDisplay").innerHTML = "Standing Bid: ".concat(Math.max(...bidArr));
+  return Math.max(...bidArr)
+}
+
+function displayBidWinner() {
+
+}
+
+function displayTrickWinner() {
+
+}
+
+function displayGameWinner() {
+
 }
 
 </script>
