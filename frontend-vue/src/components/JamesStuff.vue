@@ -1,15 +1,39 @@
 <template class="james-stuff">
   <div class="stateBanner" id="gameState">Current_Game_State</div>
-  <button class="bid-button" type="button" id="openBidBoxBtn" style="z-index:100;">Open bid table!</button>
-  <button class="blind-button" type="button" id="submitBidBtn" style="z-index:100;">Reveal blind!</button>
-  <button class="play-button" type="button" id="startPlayBtn" style="z-index:100;">Submit blind!</button>
-  <button class="trick-button" type="button" id="submitTrickBtn" style="z-index:100;">Submit card!</button>
+  <div class="dev-button-container">
+    <button class="bid-button dev-button" type="button" id="openBidBoxBtn" style="z-index:100;">Open bid table!</button>
+    <button class="blind-button dev-button" type="button" id="submitBidBtn" style="z-index:100;">Reveal blind!</button>
+    <button class="play-button dev-button" type="button" id="startPlayBtn" style="z-index:100;">Submit blind!</button>
+    <button class="trick-button dev-button" type="button" id="submitTrickBtn" style="z-index:100;">Submit card!</button>
+    <button class="incoming-trick-button dev-button" type="button" id="incomingTrickBtn" style="z-index:100;">Other play!</button>
+    <button class="discard-blind-button dev-button" type="button" id="blindFinishBtn" style="z-index:100;">Someone finished blind!</button>
+    <button class="game-over-button dev-button" type="button" id="gameOverBtn" style="z-index:100;">Game over!</button>
+  </div>
   <div class="standing-bid-display" id="finalBidDisplay" style="color:white;">Standing Bid: 000</div>
   <div class="game-table-container">
-    <div class="game-table"></div>
+    <div class="game-table">
+      <!-- New stuff -->
+      <img class="card card-played card-played-left" id="playedCardLeft" src="../assets/mystery_card_cropped.jpg">
+      <img class="card card-played card-played-top" id="playedCardTop" src="../assets/mystery_card_cropped.jpg">
+      <img class="card card-played card-played-right" id="playedCardRight" src="../assets/mystery_card_cropped.jpg">
+      <img class="card card-played card-played-bottom" id="playedCardBottom" src="../assets/mystery_card_cropped.jpg">
+      <!-- New stuff end -->
+      <div class="card-row submit-cards" id="submitCards"></div>
+      <!-- New stuff start again -->
+      <div class="card-stack won-tricks-bottom" id="wonTricksBottom"></div>
+      <div class="card-stack won-tricks-left" id="wonTricksLeft"></div>
+      <div class="card-stack won-tricks-top" id="wonTricksTop"></div>
+      <div class="card-stack won-tricks-right" id="wonTricksRight"></div>
+      <div class="card-stack discard-blind" id="blindDiscard"></div>
+      <!-- New stuff end again -->
+      <div class="bottom-bid my-bid bid-display" id="bottomBid" style="display:none;color:white;">My Bid: 000</div>
+      <div class="left-bid other-bid bid-display" id="leftBid" style="display:none;color:white;">Bid:<br />000</div>
+      <div class="top-bid other-bid bid-display" id="topBid" style="display:none;color:white;">Bid: 000</div>
+      <div class="right-bid other-bid bid-display" id="rightBid" style="display:none;color:white;">Bid:<br />000</div>
+    </div>
     <div class="card-row top-cards" id="topCards">
-      <div class="card card-back">?</div>
-      <div class="card card-back">?</div>
+      <img class="card card-back" src="../assets/cat_cardback.jpg">
+      <img class="card card-back" src="../assets/cat_cardback.jpg">
       <div class="card card-back">?</div>
       <div class="card card-back">?</div>
       <div class="card card-back">?</div>
@@ -20,21 +44,21 @@
       <div class="card card-back">?</div>
     </div>
     <div class="card-row bottom-cards" id="bottomCards">
-      <div class="card card-front spades">A♠</div>
-      <div class="card card-front spades">A♠</div>
-      <div class="card card-front spades">A♠</div>
-      <div class="card card-front spades">A♠</div>
-      <div class="card card-front spades">A♠</div>
-      <div class="card card-front spades">A♠</div>
-      <div class="card card-front spades">A♠</div>
-      <div class="card card-front spades">A♠</div>
-      <div class="card card-front spades">A♠</div>
-      <div class="card card-front spades">A♠</div>
+      <div class="card card-front spades">4♠</div>
+      <div class="card card-front spades">4♠</div>
+      <div class="card card-front spades">4♠</div>
+      <div class="card card-front spades">4♠</div>
+      <div class="card card-front spades">4♠</div>
+      <div class="card card-front spades">4♠</div>
+      <div class="card card-front spades">4♠</div>
+      <div class="card card-front spades">4♠</div>
+      <div class="card card-front spades">4♠</div>
+      <div class="card card-front spades">4♠</div>
     </div>
     <div class="card-halfrow left-cards" id="leftCards">
       <div class="section">
-        <div class="card card-back section-member">?</div>
-        <div class="card card-back section-member">?</div>
+        <img class="card card-back section-member" src="../assets/cat_cardback.jpg">
+        <img class="card card-back section-member" src="../assets/cat_cardback.jpg">
         <div class="card card-back section-member">?</div>
         <div class="card card-back section-member">?</div>
         <div class="card card-back section-member">?</div>
@@ -49,8 +73,8 @@
     </div>
     <div class="card-halfrow right-cards" id="rightCards">
       <div class="section">
-        <div class="card card-back section-member">?</div>
-        <div class="card card-back section-member">?</div>
+        <img class="card card-back section-member" src="../assets/cat_cardback.jpg">
+        <img class="card card-back section-member" src="../assets/cat_cardback.jpg">
         <div class="card card-back section-member">?</div>
         <div class="card card-back section-member">?</div>
         <div class="card card-back section-member">?</div>
@@ -64,17 +88,12 @@
       </div>
     </div>
     <div class="card-row blind-cards" id="blindCards">
-      <div class="card card-back">?</div>
-      <div class="card card-back">?</div>
+      <img class="card card-back" src="../assets/cat_cardback.jpg">
+      <img class="card card-back" src="../assets/cat_cardback.jpg">
       <div class="card card-back">?</div>
       <div class="card card-back">?</div>
       <div class="card card-back">?</div>
     </div>
-    <div class="card-row submit-cards" id="submitCards"></div>
-    <div class="bottom-bid my-bid bid-display" id="bottomBid" style="display:none;color:white;">My Bid: 000</div>
-    <div class="left-bid other-bid bid-display" id="leftBid" style="display:none;color:white;">Bid:<br />000</div>
-    <div class="top-bid other-bid bid-display" id="topBid" style="display:none;color:white;">Bid: 000</div>
-    <div class="right-bid other-bid bid-display" id="rightBid" style="display:none;color:white;">Bid:<br />000</div>
   </div>
   <div class="bidbox" id="bidbox">
     <span class="close-bidbox" id="closeBidBox">&times;</span>
@@ -154,6 +173,7 @@ import Sortable from 'sortablejs';
 let gametable
 let statebuttons
 let bidbox
+let current_played_tricks_arr = []
 
 // 0 is bidding, 1 is blind exchange, 2 is doing tricks, 3 is scoring and re-deal
 let gameState = 0;
@@ -204,26 +224,12 @@ class BidBox {
   }
 }
 
-class StateButtons {
-  constructor() {
-    this.initializeStateButtons();
-  }
-
-  async initializeStateButtons() {
-    try {
-      // document.getElementById("openBidBoxBtn");
-      document.getElementById("submitBidBtn").style.transform = `translateX(75px)`;
-      document.getElementById("startPlayBtn").style.transform = `translateX(150px)`;
-      document.getElementById("submitTrickBtn").style.transform = `translateX(225px)`;
-    } catch (error) {
-      console.error('Failed to initialize buttons:', error);
-    }
-  }
-}
-
 let cards = [];
 let sortableHandCards;
 let sortableBlindCards;
+// TODO try to limit submitCards to only 1 item after gameplay starts, perhaps with filter class on the cards in hand
+// ... if there's already one in the submit box -- {filter: '.filtered'}
+// However this may confuse user if trying to change submitted card out by adding one then removing one
 let sortableSubmitCards;
 
 class GameTable {
@@ -398,6 +404,10 @@ class GameTable {
     return 0
   }
 
+  incomingTrickPlay() {
+    const helloTODO = 1;
+  }
+
   getSuitClass(suit) {
     switch (suit) {
       case '♥': return 'hearts';
@@ -411,11 +421,12 @@ class GameTable {
 }
 
 onMounted(() => {
+  // 0 is to the player, 1 is to the left, 2 is top, and 3 is to the right
+  let lastWinner = -1;
+
   // Initialize the game table when the script loads
   document.addEventListener('DOMContentLoaded', () => {
     gametable = new GameTable();
-    // Initialize the buttons when the script loads
-    statebuttons = new StateButtons();
     bidbox = new BidBox();
   });
 
@@ -471,11 +482,40 @@ onMounted(() => {
     }
   });
 
-  // document.getElementById("startPlayBtn").addEventListener("click", async function() {
-  // });
-  // TODO: make this animation slower, the param doesn't seem to be affecting it rn
-  // var sortable = new Sortable(el, {group: 'shared', animation: 1000} );
-  // var sortable = Sortable.create(el);
+  document.getElementById("incomingTrickBtn").addEventListener("click", function () {
+    // TODO this does nothing right now!
+    let person = prompt("Who won the last trick?", "0 is you, 1 is to your left");
+
+    lastWinner = Math.floor(Math.random() * 4)
+    if (lastWinner === 0) {
+      console.log("Waiting for this player")
+    } else {
+      const helloTODO = 1;
+    }
+
+  });
+
+  document.getElementById("blindFinishBtn").addEventListener("click", function () {
+    const helloTODO = 1;
+
+    if (gametable.submitTrick() === 0) {
+      // TODO game state manipulation stuff on success
+    }
+    if (gameState === 0) {
+      gameState = 0;
+    }
+  });
+
+  document.getElementById("gameOverBtn").addEventListener("click", function () {
+    const helloTODO = 1;
+
+    if (gametable.submitTrick() === 0) {
+      // TODO game state manipulation stuff on success
+    }
+    if (gameState === 0) {
+      gameState = 0;
+    }
+  });
 
   sortableHandCards = new Sortable(
     document.getElementById('bottomCards'),
@@ -518,3 +558,99 @@ function displayGameWinner() {
 }
 
 </script>
+
+<style scoped>
+.dev-button-container {
+  position: absolute
+}
+.dev-button {
+  position: relative;
+  width: 70px;
+  height: 50px;
+  top: 0px;
+  left: -70%;
+  padding: 10px 0px;
+}
+
+/* There is no other sub-class, this is just facedown tricks and blind */
+.card-stack {
+  width: 70px;
+  height: 100px;
+  border-radius: 8px;
+  align-items: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+  will-change: transform;
+  background-color: #3498db;
+  color: white;
+  font-weight: bold;
+  position: absolute;
+  display: none;
+}
+.won-tricks-left {
+  top: 60%;
+  left: 8%;
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+.won-tricks-top {
+  top: 10%;
+  left: 35%;
+  transform: translate(-50%, -50%) rotate(180deg);
+}
+.won-tricks-right {
+  top: 40%;
+  left: 92%;
+  transform: translate(-50%, -50%) rotate(270deg);
+}
+.won-tricks-bottom {
+  top: 90%;
+  left: 70%;
+  /* No idea why but putting this translate in card-stack created completely different behavior...? */
+  transform: translate(-50%, -50%);
+}
+.discard-blind {
+  top: 90%;
+  left: 25%;
+  transform: translate(-50%, -50%) rotate(0deg);
+  /* transform: translate(-50%, -50%) rotate(270deg); */
+}
+
+.card-played {
+  position: absolute;
+  display: none;
+}
+.card-played-left {
+  top: 50%;
+  left: 40%;
+  transform: translate(-50%, -50%) rotate(90deg);
+  z-index: 3;
+}
+.card-played-top {
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(180deg);
+  z-index: 2;
+}
+.card-played-right {
+  top: 50%;
+  left: 60%;
+  transform: translate(-50%, -50%) rotate(270deg);
+  z-index: 1;
+}
+.card-played-bottom {
+  top: 60%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+}
+
+.submit-cards {
+  bottom: -40px;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px dashed #7f8c8d;
+  padding: 10px;
+  min-width: 70px;
+  min-height: 100px;
+}
+</style>
