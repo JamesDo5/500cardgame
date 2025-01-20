@@ -147,14 +147,13 @@
 
 <script setup>
 // Some code from FJolt: Javascript Add Event Listener to Multiple Elements
-import { ref, onMounted, inject } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useStore } from 'vuex'
 import Sortable from 'sortablejs';
 
 
 let bidbox
 let current_played_tricks_arr = []
-const { gameTable, updategameTable } = inject('gameTable')
 let test_var_incomingbid = 140
 const store = useStore()
 const emit = defineEmits(['gametable-ready'])
@@ -436,11 +435,9 @@ onMounted(() => {
     const gt = new GameTable()
     bidbox = new BidBox();
 
-    updategameTable(gt)
     store.commit('setSharedGameTable', gt)
     store.commit('setSharedNumber', 77777)
-    console.log('we set gt state:',gt)
-    console.log('logging gt get:',store.state.sharedGameTable)
+    console.log('JamesStuff logging gt get:',store.state.sharedGameTable)
 
     emit('gametable-ready')
   });
