@@ -18,116 +18,112 @@
 </template>
 
 <script setup>
-import { onMounted, inject, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useStore } from 'vuex'
 
 
-let isMounted = false;
-
 function startDevButtons() {
-    let gameTable = inject('gameTable');
-    let gameState = inject('gameState');
-    const store = useStore();
-    console.log('IN DEVBUTTONS ACCESSING STATE',store.state.sharedNumber)
-    console.log('IN DEVBUTTONS sharedGameTable',store.state.sharedGameTable)
+    console.log('IN DEVBUTTONS startDevButtons')
+    onMounted(() => {
+        const store = useStore();
+        console.log('IN DEVBUTTONS ACCESSING STATE',store.state.sharedNumber)
+        console.log('IN DEVBUTTONS sharedGameTable',store.state.sharedGameTable)
 
-    let storedGameTable = store.state.sharedGameTable;
+        let storedGameTable = store.state.sharedGameTable;
 
-    document.getElementById("openBidBoxBtn").addEventListener("click", function () {
-        gameState = 0;
-
-        document.getElementById("bidbox").style.display = document.getElementById("bidbox").style.display === "inline" ? "none" : "inline";
-        document.getElementById("bottomBid").style.display = document.getElementById("bottomBid").style.display === "inline" ? "none" : "inline";
-        document.getElementById("leftBid").style.display = document.getElementById("leftBid").style.display === "inline" ? "none" : "inline";
-        document.getElementById("topBid").style.display = document.getElementById("topBid").style.display === "inline" ? "none" : "inline";
-        document.getElementById("rightBid").style.display = document.getElementById("rightBid").style.display === "inline" ? "none" : "inline";
-
-        // For aesthetics the box should go away here. Also, inline-block was necessary for cards to stack horizontally instead of vertically.
-        document.getElementById("submitCards").style.display = document.getElementById("submitCards").style.display === "none" ? "flex" : "none";
-
-        updateStandingBid();
-    });
-
-    document.getElementById("closeBidBox").addEventListener("click", function () {
-        document.getElementById("bidbox").style.display = document.getElementById("bidbox").style.display === "inline" ? "none" : "inline";
-        document.getElementById("bottomBid").style.display = document.getElementById("bottomBid").style.display === "inline" ? "none" : "inline";
-        document.getElementById("leftBid").style.display = document.getElementById("leftBid").style.display === "inline" ? "none" : "inline";
-        document.getElementById("topBid").style.display = document.getElementById("topBid").style.display === "inline" ? "none" : "inline";
-        document.getElementById("rightBid").style.display = document.getElementById("rightBid").style.display === "inline" ? "none" : "inline";
-    });
-
-
-    document.getElementById("submitBidBtn").addEventListener("click", function () {
-        storedGameTable.fetchBlind();
-        if (gameTable.fetchBlind() === 0) {
-            // TODO game state manipulation stuff on success
-        }
-        if (gameState === 0) {
+        document.getElementById("openBidBoxBtn").addEventListener("click", function () {
             gameState = 0;
-            // gameTable.fetchBlind();
-        }
-    });
 
-    document.getElementById("startPlayBtn").addEventListener("click", function () {
-        storedGameTable.submitBlind();
-        if (gameTable.submitBlind() === 0) {
-            // TODO game state manipulation stuff on success
-        }
-        if (gameState === 0) {
-            gameState = 0;
-        }
-    });
+            document.getElementById("bidbox").style.display = document.getElementById("bidbox").style.display === "inline" ? "none" : "inline";
+            document.getElementById("bottomBid").style.display = document.getElementById("bottomBid").style.display === "inline" ? "none" : "inline";
+            document.getElementById("leftBid").style.display = document.getElementById("leftBid").style.display === "inline" ? "none" : "inline";
+            document.getElementById("topBid").style.display = document.getElementById("topBid").style.display === "inline" ? "none" : "inline";
+            document.getElementById("rightBid").style.display = document.getElementById("rightBid").style.display === "inline" ? "none" : "inline";
 
-    document.getElementById("submitTrickBtn").addEventListener("click", function () {
-        if (gameTable.submitTrick() === 0) {
-            // TODO game state manipulation stuff on success
-        }
-        if (gameState === 0) {
-            gameState = 0;
-        }
-    });
+            // For aesthetics the box should go away here. Also, inline-block was necessary for cards to stack horizontally instead of vertically.
+            document.getElementById("submitCards").style.display = document.getElementById("submitCards").style.display === "none" ? "flex" : "none";
 
-    document.getElementById("incomingTrickBtn").addEventListener("click", function () {
-        // TODO this does nothing right now!
-        let person = prompt("Who won the last trick?", "0 is you, 1 is to your left");
+            updateStandingBid();
+        });
 
-        lastWinner = Math.floor(Math.random() * 4)
-        if (lastWinner === 0) {
-            console.log("Waiting for this player")
-        } else {
+        document.getElementById("closeBidBox").addEventListener("click", function () {
+            document.getElementById("bidbox").style.display = document.getElementById("bidbox").style.display === "inline" ? "none" : "inline";
+            document.getElementById("bottomBid").style.display = document.getElementById("bottomBid").style.display === "inline" ? "none" : "inline";
+            document.getElementById("leftBid").style.display = document.getElementById("leftBid").style.display === "inline" ? "none" : "inline";
+            document.getElementById("topBid").style.display = document.getElementById("topBid").style.display === "inline" ? "none" : "inline";
+            document.getElementById("rightBid").style.display = document.getElementById("rightBid").style.display === "inline" ? "none" : "inline";
+        });
+
+
+        document.getElementById("submitBidBtn").addEventListener("click", function () {
+            storedGameTable.fetchBlind();
+            if (gameTable.fetchBlind() === 0) {
+                // TODO game state manipulation stuff on success
+            }
+            if (gameState === 0) {
+                gameState = 0;
+                // gameTable.fetchBlind();
+            }
+        });
+
+        document.getElementById("startPlayBtn").addEventListener("click", function () {
+            storedGameTable.submitBlind();
+            if (gameTable.submitBlind() === 0) {
+                // TODO game state manipulation stuff on success
+            }
+            if (gameState === 0) {
+                gameState = 0;
+            }
+        });
+
+        document.getElementById("submitTrickBtn").addEventListener("click", function () {
+            if (gameTable.submitTrick() === 0) {
+                // TODO game state manipulation stuff on success
+            }
+            if (gameState === 0) {
+                gameState = 0;
+            }
+        });
+
+        document.getElementById("incomingTrickBtn").addEventListener("click", function () {
+            // TODO this does nothing right now!
+            let person = prompt("Who won the last trick?", "0 is you, 1 is to your left");
+
+            lastWinner = Math.floor(Math.random() * 4)
+            if (lastWinner === 0) {
+                console.log("Waiting for this player")
+            } else {
+                const helloTODO = 1;
+            }
+
+        });
+
+        document.getElementById("blindFinishBtn").addEventListener("click", function () {
             const helloTODO = 1;
-        }
 
-    });
+            if (gameTable.submitTrick() === 0) {
+                // TODO game state manipulation stuff on success
+            }
+            if (gameState === 0) {
+                gameState = 0;
+            }
+        });
 
-    document.getElementById("blindFinishBtn").addEventListener("click", function () {
-        const helloTODO = 1;
+        document.getElementById("gameOverBtn").addEventListener("click", function () {
+            const helloTODO = 1;
 
-        if (gameTable.submitTrick() === 0) {
-            // TODO game state manipulation stuff on success
-        }
-        if (gameState === 0) {
-            gameState = 0;
-        }
-    });
-
-    document.getElementById("gameOverBtn").addEventListener("click", function () {
-        const helloTODO = 1;
-
-        if (gameTable.submitTrick() === 0) {
-            // TODO game state manipulation stuff on success
-        }
-        if (gameState === 0) {
-            gameState = 0;
-        }
-    });
+            if (gameTable.submitTrick() === 0) {
+                // TODO game state manipulation stuff on success
+            }
+            if (gameState === 0) {
+                gameState = 0;
+            }
+        });
+    })
 }
 
 defineExpose({startDevButtons})
 
-onMounted(() => {
-    isMounted = true;
-})
 </script>
 
 <style scoped>

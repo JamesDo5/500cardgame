@@ -1,46 +1,10 @@
 <script setup>
 import JamesStuff from './components/JamesStuff.vue'
 import DevButtons from './components/DevButtons.vue'
-import { provide, ref } from 'vue'
+import { ref } from 'vue'
 
 
-const gameTable = ref(null);
-function updategameTable(newgameTable) {
-  gameTable.value = newgameTable;
-}
-provide('gameTable', {
-  gameTable,
-  updategameTable
-})
-
-const gameState = ref(0);
-function updategameState(newgameState) {
-  gameState.value = newgameState;
-}
-provide('gameState', {
-  gameState,
-  updategameState
-})
-
-const lastWinner = ref(-1);
-function updatelastWinner(newlastWinner) {
-  lastWinner.value = newlastWinner;
-}
-provide('lastWinner', {
-  lastWinner,
-  updatelastWinner
-})
-
-const bidBox = ref(null);
-function updatebidBox(newbidBox) {
-  bidBox.value = newbidBox;
-}
-provide('bidBox', {
-  bidBox,
-  updatebidBox
-})
-
-// Bus the game table ready event to the dev buttons
+// Bus the game table ready event to siblings
 const devButtonsRef = ref(null);
 function gameTableReadyBus() {
   devButtonsRef.value.startDevButtons();
