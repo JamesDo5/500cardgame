@@ -1,14 +1,5 @@
 <template class="james-stuff">
   <div class="stateBanner" id="gameState">Current_Game_State</div>
-  <div class="dev-button-container">
-    <button class="bid-button dev-button" type="button" id="openBidBoxBtn" style="z-index:100;">Open bid table!</button>
-    <button class="blind-button dev-button" type="button" id="submitBidBtn" style="z-index:100;">Reveal blind!</button>
-    <button class="play-button dev-button" type="button" id="startPlayBtn" style="z-index:100;">Submit blind!</button>
-    <button class="trick-button dev-button" type="button" id="submitTrickBtn" style="z-index:100;">Submit card!</button>
-    <button class="incoming-trick-button dev-button" type="button" id="incomingTrickBtn" style="z-index:100;">Other play!</button>
-    <button class="discard-blind-button dev-button" type="button" id="blindFinishBtn" style="z-index:100;">Someone finished blind!</button>
-    <button class="game-over-button dev-button" type="button" id="gameOverBtn" style="z-index:100;">Game over!</button>
-  </div>
   <div class="standing-bid-display" id="finalBidDisplay" style="color:white;">Standing Bid: 000</div>
   <div class="game-table-container">
     <div class="game-table">
@@ -155,30 +146,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-// import draggable from 'vuedraggable';
+// Some code from FJolt: Javascript Add Event Listener to Multiple Elements
+import { ref, onMounted, inject } from 'vue';
+import { useStore } from 'vuex'
 import Sortable from 'sortablejs';
 
-// <!-- /* MY CODE STARTS */ -->
 
-// Code from FJolt: Javascript Add Event Listener to Multiple Elements
-
-// Card type definition using JSDoc
-/**
- * @typedef {Object} Card
- * @property {string} suit
- * @property {string|number} value
- */
-
-let gametable
-let statebuttons
 let bidbox
 let current_played_tricks_arr = []
-
-// 0 is bidding, 1 is blind exchange, 2 is doing tricks, 3 is scoring and re-deal
-let gameState = 0;
-
+const { gameTable, updategameTable } = inject('gameTable')
 let test_var_incomingbid = 140
+const store = useStore()
+const emit = defineEmits(['gametable-ready'])
+
 
 class BidBox {
   constructor() {
@@ -213,12 +193,12 @@ class BidBox {
 
   disableImpossibleBids() {
     const incomingBid = updateStandingBid();
-    console.log("incomingBid:",incomingBid)
+    console.log("incomingBid:", incomingBid)
 
     Array.prototype.forEach.call(document.getElementsByClassName("bid-amount-button"), (item) => {
       // if (item.innerHTML <= incomingBid) {
       if (item.innerHTML <= test_var_incomingbid) {
-          item.disabled = true;
+        item.disabled = true;
       }
     });
   }
@@ -343,7 +323,7 @@ class GameTable {
 
     let blindSubmitArr = []
 
-    console.log("blindElement.childNodes.length:",blindElement.childNodes.length)
+    console.log("blindElement.childNodes.length:", blindElement.childNodes.length)
     if (!(blindElement.childNodes.length === 5)) {
       // TODO raise error to user
       console.log("houston we have a problem! can't submit more or fewer than 5 card blind")
@@ -420,118 +400,6 @@ class GameTable {
   }
 }
 
-onMounted(() => {
-  // 0 is to the player, 1 is to the left, 2 is top, and 3 is to the right
-  let lastWinner = -1;
-
-  // Initialize the game table when the script loads
-  document.addEventListener('DOMContentLoaded', () => {
-    gametable = new GameTable();
-    bidbox = new BidBox();
-  });
-
-  document.getElementById("openBidBoxBtn").addEventListener("click", function () {
-    gameState = 0;
-
-    document.getElementById("bidbox").style.display = document.getElementById("bidbox").style.display === "inline" ? "none" : "inline";
-    document.getElementById("bottomBid").style.display = document.getElementById("bottomBid").style.display === "inline" ? "none" : "inline";
-    document.getElementById("leftBid").style.display = document.getElementById("leftBid").style.display === "inline" ? "none" : "inline";
-    document.getElementById("topBid").style.display = document.getElementById("topBid").style.display === "inline" ? "none" : "inline";
-    document.getElementById("rightBid").style.display = document.getElementById("rightBid").style.display === "inline" ? "none" : "inline";
-
-    // For aesthetics the box should go away here. Also, inline-block was necessary for cards to stack horizontally instead of vertically.
-    document.getElementById("submitCards").style.display = document.getElementById("submitCards").style.display === "none" ? "flex" : "none";
-
-    updateStandingBid();
-  });
-
-  document.getElementById("closeBidBox").addEventListener("click", function () {
-    document.getElementById("bidbox").style.display = document.getElementById("bidbox").style.display === "inline" ? "none" : "inline";
-    document.getElementById("bottomBid").style.display = document.getElementById("bottomBid").style.display === "inline" ? "none" : "inline";
-    document.getElementById("leftBid").style.display = document.getElementById("leftBid").style.display === "inline" ? "none" : "inline";
-    document.getElementById("topBid").style.display = document.getElementById("topBid").style.display === "inline" ? "none" : "inline";
-    document.getElementById("rightBid").style.display = document.getElementById("rightBid").style.display === "inline" ? "none" : "inline";
-  });
-
-
-  document.getElementById("submitBidBtn").addEventListener("click", function () {
-    if (gametable.fetchBlind() === 0) {
-      // TODO game state manipulation stuff on success
-    }
-    if (gameState === 0) {
-      gameState = 0;
-      // gametable.fetchBlind();
-    }
-  });
-
-  document.getElementById("startPlayBtn").addEventListener("click", function () {
-    if (gametable.submitBlind() === 0) {
-      // TODO game state manipulation stuff on success
-    }
-    if (gameState === 0) {
-      gameState = 0;
-    }
-  });
-
-  document.getElementById("submitTrickBtn").addEventListener("click", function () {
-    if (gametable.submitTrick() === 0) {
-      // TODO game state manipulation stuff on success
-    }
-    if (gameState === 0) {
-      gameState = 0;
-    }
-  });
-
-  document.getElementById("incomingTrickBtn").addEventListener("click", function () {
-    // TODO this does nothing right now!
-    let person = prompt("Who won the last trick?", "0 is you, 1 is to your left");
-
-    lastWinner = Math.floor(Math.random() * 4)
-    if (lastWinner === 0) {
-      console.log("Waiting for this player")
-    } else {
-      const helloTODO = 1;
-    }
-
-  });
-
-  document.getElementById("blindFinishBtn").addEventListener("click", function () {
-    const helloTODO = 1;
-
-    if (gametable.submitTrick() === 0) {
-      // TODO game state manipulation stuff on success
-    }
-    if (gameState === 0) {
-      gameState = 0;
-    }
-  });
-
-  document.getElementById("gameOverBtn").addEventListener("click", function () {
-    const helloTODO = 1;
-
-    if (gametable.submitTrick() === 0) {
-      // TODO game state manipulation stuff on success
-    }
-    if (gameState === 0) {
-      gameState = 0;
-    }
-  });
-
-  sortableHandCards = new Sortable(
-    document.getElementById('bottomCards'),
-    { disabled: false, group: 'shared', animation: 1000 }
-  );
-  sortableBlindCards = new Sortable(
-    document.getElementById('blindCards'),
-    { disabled: true, group: 'shared', animation: 1000 }
-  );
-  sortableSubmitCards = new Sortable(
-    document.getElementById('submitCards'),
-    { disabled: true, group: 'shared', animation: 1000 }
-  );
-})
-
-
 function updateStandingBid() {
   // element.textContent could also be useful here
   let bidArr = Array.from(document.getElementsByClassName("bid-display")).map(
@@ -557,21 +425,42 @@ function displayGameWinner() {
 
 }
 
+onMounted(() => {
+  // 0 is to the player, 1 is to the left, 2 is top, and 3 is to the right
+  let lastWinner = -1;
+  // 0 is bidding, 1 is blind exchange, 2 is doing tricks, 3 is scoring and re-deal
+  let gameState = 0;
+
+  // Initialize the game table when the script loads
+  document.addEventListener('DOMContentLoaded', () => {
+    const gt = new GameTable()
+    bidbox = new BidBox();
+
+    updategameTable(gt)
+    store.commit('setSharedGameTable', gt)
+    store.commit('setSharedNumber', 77777)
+    console.log('we set gt state:',gt)
+    console.log('logging gt get:',store.state.sharedGameTable)
+
+    emit('gametable-ready')
+  });
+
+  sortableHandCards = new Sortable(
+    document.getElementById('bottomCards'),
+    { disabled: false, group: 'shared', animation: 1000 }
+  );
+  sortableBlindCards = new Sortable(
+    document.getElementById('blindCards'),
+    { disabled: true, group: 'shared', animation: 1000 }
+  );
+  sortableSubmitCards = new Sortable(
+    document.getElementById('submitCards'),
+    { disabled: true, group: 'shared', animation: 1000 }
+  );
+})
 </script>
 
 <style scoped>
-.dev-button-container {
-  position: absolute
-}
-.dev-button {
-  position: relative;
-  width: 70px;
-  height: 50px;
-  top: 0px;
-  left: -70%;
-  padding: 10px 0px;
-}
-
 /* There is no other sub-class, this is just facedown tricks and blind */
 .card-stack {
   width: 70px;
@@ -587,27 +476,32 @@ function displayGameWinner() {
   position: absolute;
   display: none;
 }
+
 .won-tricks-left {
   top: 60%;
   left: 8%;
   transform: translate(-50%, -50%) rotate(90deg);
 }
+
 .won-tricks-top {
   top: 10%;
   left: 35%;
   transform: translate(-50%, -50%) rotate(180deg);
 }
+
 .won-tricks-right {
   top: 40%;
   left: 92%;
   transform: translate(-50%, -50%) rotate(270deg);
 }
+
 .won-tricks-bottom {
   top: 90%;
   left: 70%;
   /* No idea why but putting this translate in card-stack created completely different behavior...? */
   transform: translate(-50%, -50%);
 }
+
 .discard-blind {
   top: 90%;
   left: 25%;
@@ -619,24 +513,28 @@ function displayGameWinner() {
   position: absolute;
   display: none;
 }
+
 .card-played-left {
   top: 50%;
   left: 40%;
   transform: translate(-50%, -50%) rotate(90deg);
   z-index: 3;
 }
+
 .card-played-top {
   top: 40%;
   left: 50%;
   transform: translate(-50%, -50%) rotate(180deg);
   z-index: 2;
 }
+
 .card-played-right {
   top: 50%;
   left: 60%;
   transform: translate(-50%, -50%) rotate(270deg);
   z-index: 1;
 }
+
 .card-played-bottom {
   top: 60%;
   left: 50%;
