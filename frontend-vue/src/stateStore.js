@@ -2,15 +2,12 @@ import Vuex from 'vuex'
 
 export default new Vuex.Store({
     state: {
-        sharedNumber: -1,
         sharedGameTable: null,
         sharedBidBox: null,
-        sharedGameState: 0
+        sharedGameState: 0,
+        sharedHandCards: [],
     },
     mutations: {
-        setSharedNumber(state, n) {
-            state.sharedNumber = n;
-        },
         setSharedGameTable(state, obj) {
             state.sharedGameTable = obj;
         },
@@ -19,6 +16,9 @@ export default new Vuex.Store({
         },
         setSharedGameState(state, n) {
             state.sharedGameState = n;
+        },
+        setSharedHandCards(state, arr) {
+            state.sharedHandCards = arr;
         }
     }
 });

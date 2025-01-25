@@ -1,20 +1,34 @@
 <script setup>
-import JamesStuff from './components/JamesStuff.vue'
-import DevButtons from './components/DevButtons.vue'
-import { ref } from 'vue'
+import Websockets from './components/Websockets.vue'
+import Game from './components/Game.vue'
 
+// TODO CHANGE THIS WITH WEBSOCKET
+ifGame = true;
 
-// Bus the game table ready event to siblings
-const devButtonsRef = ref(null);
-function gameTableReadyBus() {
-  devButtonsRef.value.startDevButtons();
-}
-
+// STUFF FROM KILLED SUBCOMPONENTS
+// defineProps({
+//   msg: {
+//     type: String,
+//     required: true,
+//   },
+// })
+{/* <h1 class="green">{{ msg }}</h1> */}
+// Got stuck? Ask your question on
+//     <a href="https://chat.vuejs.org" target="_blank" rel="noopener">Vue Land</a>
+//     (our official Discord server), or
+//     <a href="https://stackoverflow.com/questions/tagged/vue.js" target="_blank" rel="noopener"
+//       >StackOverflow</a
+// If you need to test your components and web pages, check out
+//     <a href="https://vitest.dev/" target="_blank" rel="noopener">Vite</a>
+//     and
+//     <a href="https://www.cypress.io/" target="_blank" rel="noopener">Cypress</a>
+//     /
+//     <a href="https://playwright.dev/" target="_blank" rel="noopener">Playwright</a>.
 </script>
 
 <template>
-  <JamesStuff @gametable-ready="gameTableReadyBus"/>
-  <DevButtons ref="devButtonsRef"/>
+  <Game v-if="ifGame"/>
+  <Websockets />
   <!-- <header>
     <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
 

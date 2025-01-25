@@ -1,4 +1,4 @@
-<template class="james-stuff">
+<template>
     <div class="dev-button-container">
         <button class="bid-button dev-button" type="button" id="openBidBoxBtn" style="z-index:100;">Open bid
             table!</button>
@@ -6,12 +6,12 @@
             blind!</button>
         <button class="play-button dev-button" type="button" id="startPlayBtn" style="z-index:100;">Submit
             blind!</button>
-        <button class="trick-button dev-button" type="button" id="submitTrickBtn" style="z-index:100;">Submit
-            card!</button>
-        <button class="incoming-trick-button dev-button" type="button" id="incomingTrickBtn" style="z-index:100;">Other
-            play!</button>
         <button class="discard-blind-button dev-button" type="button" id="blindFinishBtn" style="z-index:100;">Someone
             finished blind!</button>
+        <button class="trick-button dev-button" type="button" id="submitTrickBtn" style="z-index:100;">Submit
+            card!</button>
+        <button class="incoming-trick-button dev-button" type="button" id="incomingTrickBtn" style="z-index:100;">Advance trick!</button>
+        <!-- Don't think I need this button v -->
         <button class="game-over-button dev-button" type="button" id="gameOverBtn" style="z-index:100;">Game
             over!</button>
     </div>
@@ -25,6 +25,7 @@ const store = useStore();
 
 function startDevButtons() {
     let storedGameTable = store.state.sharedGameTable;
+    let gameState = store.state.sharedGameState;
 
     document.getElementById("openBidBoxBtn").addEventListener("click", function () {
         gameState = 0;
