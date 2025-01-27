@@ -99,12 +99,12 @@ import Sortable from 'sortablejs';
 const store = useStore()
 let gameState = store.state.sharedGameState; // 0 is bidding, 1 is blind exchange, 2 is doing tricks, 3 is scoring and re-deal
 let handCards = store.state.sharedHandCards;
+const STANDALONE = true;
 const emit = defineEmits(['gametable-ready'])
 
 class GameTable {
     constructor() {
         // Array of strings
-        this.bottomCards = [];
         this.blindCards = [];
         this.submitCards = [];
         // v These are strings because they can only ever be one card
@@ -124,10 +124,15 @@ class GameTable {
 
     async initializeTable() {
         try {
-            const hand = await this.fetchHand();
-            this.distributeCards(hand);
-            this.renderCards();
-
+            // No need to render blind during normal play until websocket sends this player blind
+            // this.renderBlind(this.blindCards, true)
+            if (STANDALONE) {
+                const shuffle = this.generateMockShuffle();
+                this.blindCards = shuffle.slice(10, 15);
+                store.commit('setSharedHandCards', shuffle.slice(35, 45))
+                this.renderHand(handCards)
+                this.renderBlind(this.blindCards, true)
+            }
         } catch (error) {
             console.error('Failed to initialize game table:', error);
         }
@@ -135,21 +140,8 @@ class GameTable {
         // this.renderInitialCards();
     }
 
-    async fetchHand() {
-        try {
-            const response = await fetch('http://localhost:8080/gethand');
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return await response.json();
-        } catch (error) {
-            console.error('Error fetching hand:', error);
-            return this.generateMockShuffle();
-        }
-    }
-
     generateMockShuffle() {
-        const values = ['4', '5', '6', '7', '8', '9', '10', 'j', 'q', 'k', 'a'];
+        const values = ['4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
         const suits = ['h', 'd', 'c', 's'];
         // let possibilities = values.reduce((acc, v) => {return acc.concat(suits.map(s => ({value:v,suit:s})));}, []).concat({value:'',suit:'j'});
         let possibilities = values.flatMap(v => suits.map(s => ({ value: v, suit: s }))).concat({ value: '', suit: 'j' });
@@ -174,19 +166,6 @@ class GameTable {
         // });
     }
 
-    distributeCards(hand) {
-        // this.topCards = hand.slice(0, 10);
-        this.blindCards = hand.slice(10, 15);
-        // this.leftCards = hand.slice(15, 25);
-        // this.rightCards = hand.slice(25, 35);
-        this.bottomCards = hand.slice(35, 45);
-    }
-
-    renderCards() {
-        this.renderCardRow('bottomCards', this.bottomCards, false);
-        this.renderCardRow('blindCards', this.blindCards, true);
-    }
-
     renderCardRow(rowId, cards, faceDown) {
         const cardsElement = document.getElementById(rowId);
         if (!cardsElement) return;
@@ -196,6 +175,35 @@ class GameTable {
                 ${faceDown ? '?' : `${card.value}${card.suit}`}
              </div>`
         ).join('');
+    }
+
+    renderHand(cardsArr) {
+        const cardsElement = document.getElementById('bottomCards');
+        if (!cardsElement) return;
+
+        cardsElement.innerHTML = cardsArr.map(card =>
+            `<img class="card ${`card-front ${this.getSuitClass(card.suit)} `}" src="../assets/${card.value}${card.suit}.jpeg">`
+        ).join('');
+    }
+
+    renderBlind(cardsArr, faceDown) {
+        let fD = faceDown;
+
+        const cardsElement = document.getElementById('blindCards');
+        if (!cardsElement) return;
+
+        if (cardsElement.childNodes[0].classList.contains('card-back')) {
+            // The goal of this function is to flip the blind so this bool is opposite of what is currently rendered
+            fD = false;
+        }
+
+        cardsElement.innerHTML = cardsArr.map(card =>
+            `<img class="card ${fD ? 'card-back' : `card-front ${this.getSuitClass(card.suit)} `}" src="../assets/${fD ? 'cat_cardback' : `${card.value}${card.suit}`}.jpeg">`
+        ).join('');
+
+
+        // <img class="card card-back section-member" src="../assets/cat_cardback.jpg">
+        // <img class="card card-back" src="../assets/cat_cardback.jpg">
     }
 
     fetchBlind() {

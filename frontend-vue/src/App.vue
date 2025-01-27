@@ -1,9 +1,19 @@
 <script setup>
 import Websockets from './components/Websockets.vue'
-import Game from './components/Game.vue'
+// import GamePage from './components/GamePage.vue'
+import GameTable from './components/GameTable.vue'
+import DevButtons from './components/DevButtons.vue'
+import { ref } from 'vue'
+
+
+// Bus the game table ready event to siblings
+const devButtonsRef = ref(null);
+function gameTableIsReady() {
+  devButtonsRef.value.startDevButtons();
+}
 
 // TODO CHANGE THIS WITH WEBSOCKET
-ifGame = true;
+let ifGame = true;
 
 // STUFF FROM KILLED SUBCOMPONENTS
 // defineProps({
@@ -27,8 +37,10 @@ ifGame = true;
 </script>
 
 <template>
-  <Game v-if="ifGame"/>
   <Websockets />
+  <!-- <GamePage /> -->
+  <GameTable v-if="ifGame" @gametable-ready="gameTableIsReady"/>
+  <DevButtons v-if="ifGame" ref="devButtonsRef"/>
   <!-- <header>
     <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
 

@@ -52,12 +52,12 @@ function startDevButtons() {
 
 
     document.getElementById("submitBidBtn").addEventListener("click", function () {
-        if (storedGameTable.fetchBlind() === 0) {
+        if (storedGameTable.renderBlind() === 0) {
             // TODO game state manipulation stuff on success
         }
         if (gameState === 0) {
             gameState = 0;
-            // gameTable.fetchBlind();
+            // gameTable.renderBlind();
         }
     });
 

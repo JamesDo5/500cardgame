@@ -2,6 +2,7 @@ import Vuex from 'vuex'
 
 export default new Vuex.Store({
     state: {
+        // The blind is shared as part of the game table
         sharedGameTable: null,
         sharedBidBox: null,
         sharedGameState: 0,
