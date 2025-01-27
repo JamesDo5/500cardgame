@@ -1,6 +1,6 @@
 <script setup>
 import Websockets from './components/Websockets.vue'
-// import GamePage from './components/GamePage.vue'
+import GamePage from './components/GamePage.vue'
 import GameTable from './components/GameTable.vue'
 import DevButtons from './components/DevButtons.vue'
 import { ref } from 'vue'
@@ -38,7 +38,7 @@ let ifGame = true;
 
 <template>
   <Websockets />
-  <!-- <GamePage /> -->
+  <GamePage v-if="ifGame" />
   <GameTable v-if="ifGame" @gametable-ready="gameTableIsReady"/>
   <DevButtons v-if="ifGame" ref="devButtonsRef"/>
   <!-- <header>

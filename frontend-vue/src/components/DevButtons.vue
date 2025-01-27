@@ -18,8 +18,9 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+// import { onMounted, ref } from 'vue';
 import { useStore } from 'vuex'
+import { updateStandingBid } from './GamePage.vue';
 const store = useStore();
 
 
