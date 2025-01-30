@@ -20,13 +20,13 @@
 <script setup>
 // import { onMounted, ref } from 'vue';
 import { useStore } from 'vuex'
-import { updateStandingBid } from './GamePage.vue';
 
 const store = useStore();
 
 
 function startDevButtons() {
     let storedGameTable = store.state.sharedGameTable;
+    let storedBidBox = store.state.sharedBidBox;
     let gameState = store.state.sharedGameState;
 
     document.getElementById("openBidBoxBtn").addEventListener("click", function () {
@@ -41,7 +41,7 @@ function startDevButtons() {
         // For aesthetics the box should go away here. Also, inline-block was necessary for cards to stack horizontally instead of vertically.
         document.getElementById("submitCards").style.display = document.getElementById("submitCards").style.display === "none" ? "flex" : "none";
 
-        updateStandingBid();
+        storedBidBox.updateStandingBid();
     });
 
     document.getElementById("closeBidBox").addEventListener("click", function () {
@@ -54,7 +54,7 @@ function startDevButtons() {
 
 
     document.getElementById("submitBidBtn").addEventListener("click", function () {
-        if (storedGameTable.renderBlind() === 0) {
+        if (storedGameTable.TESTFUNCswitchBlindFD() === 0) {
             // TODO game state manipulation stuff on success
         }
         if (gameState === 0) {
@@ -83,7 +83,9 @@ function startDevButtons() {
 
     document.getElementById("incomingTrickBtn").addEventListener("click", function () {
         // TODO this does nothing right now!
-        let person = prompt("Who won the last trick?", "0 is you, 1 is to your left");
+        let leader = prompt("Who won the last trick?", "0 is you, 1 is left, 2 top, 3 right.");
+        let leader2 = storedGameTable.lastTrickWinner;
+        // if leader 
 
         lastWinner = Math.floor(Math.random() * 4)
         if (lastWinner === 0) {

@@ -82,7 +82,7 @@ class BidBox {
                     document.getElementById("gameState").innerHTML = "Current_Game_State: ".concat(gameState);
                     // can also use this.innerHTML
                     document.getElementById("bottomBid").innerHTML = "My Bid: ".concat(item.innerHTML);
-                    updateStandingBid();
+                    this.updateStandingBid();
                 });
             });
             this.disableImpossibleBids();
@@ -94,7 +94,7 @@ class BidBox {
         }
     }
     disableImpossibleBids() {
-        const incomingBid = updateStandingBid();
+        const incomingBid = this.updateStandingBid();
         console.log("incomingBid:", incomingBid)
         Array.prototype.forEach.call(document.getElementsByClassName("bid-amount-button"), (item) => {
             // if (item.innerHTML <= incomingBid) {
@@ -103,19 +103,17 @@ class BidBox {
             }
         });
     }
-    
-}
-
-function updateStandingBid() {
-    // element.textContent could also be useful here
-    let bidArr = Array.from(document.getElementsByClassName("bid-display")).map(
-        (elem) =>
-            Number.isNaN(Number(elem.innerText.slice(-3, undefined))) ? 0 : Number(elem.innerText.slice(-3, undefined))
-        // Number.isNaN(Number(elem.innerText.slice(start=-3))) ? 0 : Number(elem.innerText.slice(start=-3))
-    );
-    console.log(bidArr)
-    document.getElementById("finalBidDisplay").innerHTML = "Standing Bid: ".concat(Math.max(...bidArr));
-    return Math.max(...bidArr)
+    updateStandingBid() {
+        // element.textContent could also be useful here
+        const bidArr = Array.from(document.getElementsByClassName("bid-display")).map(
+            (elem) =>
+                Number.isNaN(Number(elem.innerText.slice(-3, undefined))) ? 0 : Number(elem.innerText.slice(-3, undefined))
+            // Number.isNaN(Number(elem.innerText.slice(start=-3))) ? 0 : Number(elem.innerText.slice(start=-3))
+        );
+        console.log(bidArr)
+        document.getElementById("finalBidDisplay").innerHTML = "Standing Bid: ".concat(Math.max(...bidArr));
+        return Math.max(...bidArr)
+    }
 }
 
 onMounted(() => {
@@ -125,6 +123,26 @@ onMounted(() => {
     store.commit('setSharedBidBox', bidbox)
 })
 
-defineExpose({updateStandingBid})
-
 </script>
+
+<style scoped>
+.bidbox {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  text-align: center;
+}
+.close-bidbox {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+}
+</style>

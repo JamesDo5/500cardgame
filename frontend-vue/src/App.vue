@@ -3,7 +3,7 @@ import Websockets from './components/Websockets.vue'
 import GamePage from './components/GamePage.vue'
 import GameTable from './components/GameTable.vue'
 import DevButtons from './components/DevButtons.vue'
-import { ref } from 'vue'
+import { ref, provide } from 'vue'
 
 
 // Bus the game table ready event to siblings
@@ -11,6 +11,10 @@ const devButtonsRef = ref(null);
 function gameTableIsReady() {
   devButtonsRef.value.startDevButtons();
 }
+
+// Doing provide/inject instead of state storage for immutable stuff
+provide('cardSuits', new Set(['h', 'd', 'c', 's', 'j']))
+provide('cardValues', new Set(['4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']))
 
 // TODO CHANGE THIS WITH WEBSOCKET
 let ifGame = true;
