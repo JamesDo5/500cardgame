@@ -101,6 +101,8 @@ let gameState = store.state.sharedGameState; // 0 is bidding, 1 is blind exchang
 let handCards = store.state.sharedHandCards;
 const DEV_STANDALONE = true;
 const emit = defineEmits(['gametable-ready'])
+const allowedSuits = inject('cardSuits')
+const allowedVals = inject('cardValues')
 
 class GameTable {
     constructor() {
@@ -108,7 +110,7 @@ class GameTable {
         this.blindCards = []; // Not sure this one specifically will be necessary since the WS will call the func
         this.submitCards = [];
         // Array of strings which are card signatures. 0 is you, 1 is left, 2 top, 3 right.
-        this.playedCards =  Array(4);
+        this.playedCards = ['', '', '', ''];
         // 0 is you, 1 is left, 2 top, 3 right
         this.lastTrickWinner = -1;
         // These are counts just tracking how high a stack is
@@ -131,57 +133,11 @@ class GameTable {
             // animation: 1000,
             disabled: false,
             group: 'shared', 
-            // Element is dropped into the list from another list
-            onAdd: function (evt) {
-                // The id of the element
-                evt.from.id
-                // If I get this retooled to put each image in a div I think this works well. One other benefit is that I think it will make the dragging cleaner. Will see.
-                evt.item.textContent
-                // If I wanna be lazy and write a function to parse out the card value from the src
-                cardSig = this.parseCardFromSrc(evt.item.src);
-                // I don't think storing order in state is important because we won't be locally rerendering, aside from full page reload
-            },
-            // Element is removed from the list into another list
-            onRemove: function (/**Event*/evt) {
-                // same properties as onEnd
-            },
-            // Element dragging ended
-            onEnd: function (/**Event*/evt) {
-                var itemEl = evt.item;  // dragged HTMLElement
-                evt.to;    // target list
-                evt.from;  // previous list
-                evt.oldIndex;  // element's old index within old parent
-                evt.newIndex;  // element's new index within new parent
-                evt.oldDraggableIndex; // element's old index within old parent, only counting draggable elements
-                evt.newDraggableIndex; // element's new index within new parent, only counting draggable elements
-                evt.clone // the clone element
-                evt.pullMode;  // when item is in another sortable: `"clone"` if cloning, `true` if moving
-            },
         });
         this.sortableBlindCards = new Sortable(document.getElementById('blindCards'), {
             // animation: 1000,
             disabled: true,
             group: 'shared', 
-            // Element is dropped into the list from another list
-            onAdd: function (/**Event*/evt) {
-                // same properties as onEnd
-            },
-            // Element is removed from the list into another list
-            onRemove: function (/**Event*/evt) {
-                // same properties as onEnd
-            },
-            // Element dragging ended
-            onEnd: function (/**Event*/evt) {
-                var itemEl = evt.item;  // dragged HTMLElement
-                evt.to;    // target list
-                evt.from;  // previous list
-                evt.oldIndex;  // element's old index within old parent
-                evt.newIndex;  // element's new index within new parent
-                evt.oldDraggableIndex; // element's old index within old parent, only counting draggable elements
-                evt.newDraggableIndex; // element's new index within new parent, only counting draggable elements
-                evt.clone // the clone element
-                evt.pullMode;  // when item is in another sortable: `"clone"` if cloning, `true` if moving
-            },
         });
         // TODO try to limit submitCards to only 1 item after gameplay starts, perhaps with filter class on the cards in hand
         // ... if there's already one in the submit box -- {filter: '.filtered'}
@@ -250,8 +206,8 @@ class GameTable {
         return src.slice(18,jpg_index)
     }
 
-    drawCard(card) {
-        return `<img class="card ${faceDown ? 'card-back' : `card-front ${this.getSuitClass(card.suit)} `}" src="/src/assets/cards/${faceDown ? 'cat_cardback' : `${card.value}${card.suit}`}.jpeg">`
+    drawCard(card, fd) {
+        return `<img class="card ${fd ? 'card-back' : `card-front ${this.getSuitClass(card.suit)} `}" src="/src/assets/cards/${fd ? 'cat_cardback' : `${card.value}${card.suit}`}.jpeg">`
     }
 
     getPosFromInt(pos) {
@@ -296,7 +252,7 @@ class GameTable {
         }
 
         // Now rerender the blind with the new faceDown
-        cardsElement.innerHTML = this.blindCards.map(card =>drawCard(card)).join('');
+        cardsElement.innerHTML = this.blindCards.map(card =>this.drawCard(card,faceDown)).join('');
 
         // Note the use of faceDown to determine whether they are disabled
         this.sortableBlindCards.option("disabled", faceDown); // set
@@ -402,24 +358,22 @@ class GameTable {
         // Expecting pos as integer, 0 is you, 1 is left, 2 top, 3 right.
 
         // IF THIS DOESNT WORK MOVE ALLOWES SUITS etc INTO TABLE OBJECT (regrettably)
-        // allowedSuits = inject('cardSuits')
-        // allowedVals = inject('cardValues')
-        if (!inject('cardSuits').has(sui)) {
+        if (!allowedSuits.has(sui)) {
             console.log("Hol* freakin moly we got a fake suit. Not allowed! :",sui);
             return 1;
         }
-        if (!inject('cardValues').has(val)) {
+        if (!allowedVals.has(val)) {
             console.log("Hol* freakin moly we got a fake value. Not allowed! :",val);
             return 1;
         }
         if (pos < 0 || pos > 3) {
-            console.log("Hol* freakin moly we got a fake position. Not allowed! :",pos,"pos yields",getPosFromInt(pos));
+            console.log("Hol* freakin moly we got a fake position. Not allowed! :",pos,"pos yields",this.getPosFromInt(pos));
             return 1;
         }
 
         if (!this.playedCards[pos] === '') {
             // TODO SEND ERROR MESSAGE TO SERVER AND SET UP RESILIENCY HERE
-            console.log("Hol* moly there's already a card in",getPosFromInt(pos),".",getPosFromInt(pos),"needs to wait their turn!");
+            console.log("Hol* moly there's already a card in",this.getPosFromInt(pos),".",this.getPosFromInt(pos),"needs to wait their turn!");
             return 1;
         }
 
@@ -427,12 +381,12 @@ class GameTable {
         this.playedCards[pos] = val + sui;
 
         // Visually render new card
-        document.getElementById('playedCard' + getPosFromInt(pos)).src = "/src/assets/cards/" + val + sui + ".jpeg";
-        document.getElementById('playedCard' + getPosFromInt(pos)).className += " " + this.getSuitClass(sui);
-        document.getElementById('playedCard' + getPosFromInt(pos)).display = inline;
+        document.getElementById('playedCard' + this.getPosFromInt(pos)).src = "/src/assets/cards/" + val + sui + ".jpeg";
+        document.getElementById('playedCard' + this.getPosFromInt(pos)).className += " " + this.getSuitClass(sui);
+        document.getElementById('playedCard' + this.getPosFromInt(pos)).display = "inline";
 
-        if (isTrickOver()) {
-            endTrick();
+        if (this.isTrickOver()) {
+            this.endTrick();
         }
 
         return 0
@@ -474,13 +428,13 @@ class GameTable {
 }
 
 onMounted(() => {
-    const gt = new GameTable()
+    const gt = new GameTable();
 
     // VueX state
-    store.commit('setSharedGameTable', gt)
+    store.commit('setSharedGameTable', gt);
 
     // Event bus to the parent who will activate other things relying on game table to load
-    emit('gametable-ready')
+    emit('gametable-ready');
 })
 </script>
 

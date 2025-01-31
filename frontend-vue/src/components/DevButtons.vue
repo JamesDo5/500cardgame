@@ -25,7 +25,7 @@ const store = useStore();
 
 
 function startDevButtons() {
-    let storedGameTable = store.state.sharedGameTable;
+    let storedGameTable = store.getters.getGameTable();
     let storedBidBox = store.state.sharedBidBox;
     let gameState = store.state.sharedGameState;
 
@@ -54,6 +54,7 @@ function startDevButtons() {
 
 
     document.getElementById("submitBidBtn").addEventListener("click", function () {
+        store.getters.getSharedHandCards();
         if (storedGameTable.TESTFUNCswitchBlindFD() === 0) {
             // TODO game state manipulation stuff on success
         }
@@ -84,16 +85,19 @@ function startDevButtons() {
     document.getElementById("incomingTrickBtn").addEventListener("click", function () {
         let leader = storedGameTable.lastTrickWinner;
         if (storedGameTable.lastTrickWinner === -1) {
-            leader = prompt("Who won the bid?", "0 is you, 1 is left, 2 top, 3 right.");
+            leader = parseInt(prompt("Who won the bid?", "0 is you, 1 is left, 2 top, 3 right."));
         }
+        storedGameTable.lastTrickWinner = leader;
 
         // Find who plays next in this trick
         let nextPlayer = -1;
         for (let i = 0; i < 4; i++) {
             if (storedGameTable.playedCards[(leader+i)%4] === '') {
+                console.log("DEBUG found next player:", (leader+i)%4 );
                 nextPlayer = (leader+i)%4;
                 break;
             }
+            // console.log("DEBUG storedGameTable.playedCards",i,storedGameTable.playedCards[i])
         }
         // Check to make sure there's a next player and it's not this player
         if (nextPlayer === -1) {
@@ -107,7 +111,7 @@ function startDevButtons() {
 
         // Dispatch a random trick play (4h in this case)
         // storedGameTable.incomingTrickCard(pos, val, sui);
-        storedGameTable.incomingTrickCard((leader+i)%4, 4, 'h');
+        storedGameTable.incomingTrickCard(nextPlayer, '4', 'h');
     });
 
     document.getElementById("blindFinishBtn").addEventListener("click", function () {

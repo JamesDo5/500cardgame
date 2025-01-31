@@ -39,7 +39,9 @@ export default new Vuex.Store({
     getters: {
         // No getters for mapArrIDsTo because it doesn't mutate so can be accessed directly
         // No getters for gameTable nor bidBox because they are object ptrs and react correctly without
-
+        getGameTable: (state) => () => {
+            return state.gameTable;
+        },
         getGameState: (state) => () => {
             return state.gameState;
         },
