@@ -82,18 +82,32 @@ function startDevButtons() {
     });
 
     document.getElementById("incomingTrickBtn").addEventListener("click", function () {
-        // TODO this does nothing right now!
-        let leader = prompt("Who won the last trick?", "0 is you, 1 is left, 2 top, 3 right.");
-        let leader2 = storedGameTable.lastTrickWinner;
-        // if leader 
-
-        lastWinner = Math.floor(Math.random() * 4)
-        if (lastWinner === 0) {
-            console.log("Waiting for this player")
-        } else {
-            const helloTODO = 1;
+        let leader = storedGameTable.lastTrickWinner;
+        if (storedGameTable.lastTrickWinner === -1) {
+            leader = prompt("Who won the bid?", "0 is you, 1 is left, 2 top, 3 right.");
         }
 
+        // Find who plays next in this trick
+        let nextPlayer = -1;
+        for (let i = 0; i < 4; i++) {
+            if (storedGameTable.playedCards[(leader+i)%4] === '') {
+                nextPlayer = (leader+i)%4;
+                break;
+            }
+        }
+        // Check to make sure there's a next player and it's not this player
+        if (nextPlayer === -1) {
+            console.log("OOPS Literally me when I missed the end of game somehow. Everyone has played but we have incoming trick!")
+            return;
+        }
+        if (nextPlayer === 0) {
+            console.log("Me when I'm the leader so I'm waiting for my own trick :}")
+            return;
+        }
+
+        // Dispatch a random trick play (4h in this case)
+        // storedGameTable.incomingTrickCard(pos, val, sui);
+        storedGameTable.incomingTrickCard((leader+i)%4, 4, 'h');
     });
 
     document.getElementById("blindFinishBtn").addEventListener("click", function () {

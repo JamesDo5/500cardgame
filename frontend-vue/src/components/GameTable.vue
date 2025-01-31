@@ -104,14 +104,11 @@ const emit = defineEmits(['gametable-ready'])
 
 class GameTable {
     constructor() {
-        // Array of strings
-        this.blindCards = []; // Not sure this will be necessary since the WS will call the func
+        // Array of strings which are card signatures
+        this.blindCards = []; // Not sure this one specifically will be necessary since the WS will call the func
         this.submitCards = [];
-        // These are strings because they can only ever be one card
-        this.playedCardLeft = '';
-        this.playedCardTop = '';
-        this.playedCardRight = '';
-        this.playedCardBottom = '';
+        // Array of strings which are card signatures. 0 is you, 1 is left, 2 top, 3 right.
+        this.playedCards =  Array(4);
         // 0 is you, 1 is left, 2 top, 3 right
         this.lastTrickWinner = -1;
         // These are counts just tracking how high a stack is
@@ -141,7 +138,7 @@ class GameTable {
                 // If I get this retooled to put each image in a div I think this works well. One other benefit is that I think it will make the dragging cleaner. Will see.
                 evt.item.textContent
                 // If I wanna be lazy and write a function to parse out the card value from the src
-                evt.item.src
+                cardSig = this.parseCardFromSrc(evt.item.src);
                 // I don't think storing order in state is important because we won't be locally rerendering, aside from full page reload
             },
             // Element is removed from the list into another list
@@ -243,8 +240,35 @@ class GameTable {
         // });
     }
 
+    parseCardFromSrc(src) {
+        jpg_index = src.search(".jpeg");
+        if (jpg_index-18 > 3) {
+            // TODO raise error
+            console.log("Umm Houston? That's not a card front:",src.slice(18,jpg_index))
+        }
+        // 18 chars gets past /src/assets/cards/
+        return src.slice(18,jpg_index)
+    }
+
     drawCard(card) {
         return `<img class="card ${faceDown ? 'card-back' : `card-front ${this.getSuitClass(card.suit)} `}" src="/src/assets/cards/${faceDown ? 'cat_cardback' : `${card.value}${card.suit}`}.jpeg">`
+    }
+
+    getPosFromInt(pos) {
+        // TODO maybe implement out of bounds checking
+        const posArr = ["Bottom", "Left", "Top", "Right"];
+        return posArr[pos]
+    }
+    
+    getSuitClass(suit) {
+        switch (suit) {
+            case 'h': return 'hearts';
+            case 'd': return 'diamonds';
+            case 'c': return 'clubs';
+            case 's': return 'spades';
+            case 'j': return 'joker';
+            default: return '';
+        }
     }
 
     renderHand(cardsArr) {
@@ -340,7 +364,7 @@ class GameTable {
 
         if (!(submitElement.childNodes.length === 1)) {
             // TODO raise error to user
-            console.log("houston we have a problem! can't submit more or fewer than 1 card for trick")
+            console.log("houston we have a problem! can't submit more or fewer than 1 card for trick:",submitElement.childNodes.length)
             // Reenable sorting so user can fix the issue
             this.sortableSubmitCards.option("disabled", false);
             return 1
@@ -353,11 +377,20 @@ class GameTable {
             return 1
         }
 
+        if (!this.playedCards[0] === '') {
+            // TODO raise this error to user, they should get a little indicator that it's not allowed yet
+            console.log("houston we have a problem! can't submit next trick before this one's over. current card:",this.playedCards[0])
+            return 1
+        }
+
         // TODO the code to send trick card to server. If it worked do this block
         if (true) {
+            // Push card from submit box into played card table section
             playedCardBottomElement.style.display = "inline";
             playedCardBottomElement.src = submitElement.childNodes[0].src;
             submitElement.innerHTML = "";
+            // Change state tracker
+            this.playedCards[0] = this.parseCardFromSrc(submitElement.childNodes[0].src);
         }
 
         // Reenable sorting so next card can be played
@@ -366,7 +399,9 @@ class GameTable {
     }
 
     incomingTrickCard(pos, val, sui) {
-        // IF THIS DOESNT WORK MOVE IT INTO TABLE OBJECT (regrettably)
+        // Expecting pos as integer, 0 is you, 1 is left, 2 top, 3 right.
+
+        // IF THIS DOESNT WORK MOVE ALLOWES SUITS etc INTO TABLE OBJECT (regrettably)
         // allowedSuits = inject('cardSuits')
         // allowedVals = inject('cardValues')
         if (!inject('cardSuits').has(sui)) {
@@ -377,53 +412,64 @@ class GameTable {
             console.log("Hol* freakin moly we got a fake value. Not allowed! :",val);
             return 1;
         }
-
-        switch (pos) {
-            case 'bottom':
-                if (!this.playedCardBottom == '') {
-                    // TODO SEND ERROR MESSAGE TO SERVER AND SET Up RESILIENCY HERE
-                    console.log("Hol* moly there's already a card in bottom. Bottom needs to wait their turn!");
-                    return 1;
-                }
-                this.playedCardBottom = val + sui;
-                break;
-            case 'left':
-                if (!this.playedCardLeft == '') {
-                    console.log("Hol* moly there's already a card in left. Left needs to wait their turn!");
-                    return 1;
-                }
-                this.playedCardLeft = val + sui;
-                break;
-            case 'top':
-                if (!this.playedCardTop == '') {
-                    console.log("Hol* moly there's already a card in top. Top needs to wait their turn!");
-                    return 1;
-                }
-                this.playedCardTop = val + sui;
-                break;
-            case 'right':
-                if (!this.playedCardRight == '') {
-                    console.log("Hol* moly there's already a card in right. Right needs to wait their turn!");
-                    return 1;
-                }
-                this.playedCardRight = val + sui;
-                break;
-            default:
-                console.log("Hol* freakin moly we got a fake position. Not allowed! :",pos);
-                return 1;
+        if (pos < 0 || pos > 3) {
+            console.log("Hol* freakin moly we got a fake position. Not allowed! :",pos,"pos yields",getPosFromInt(pos));
+            return 1;
         }
+
+        if (!this.playedCards[pos] === '') {
+            // TODO SEND ERROR MESSAGE TO SERVER AND SET UP RESILIENCY HERE
+            console.log("Hol* moly there's already a card in",getPosFromInt(pos),".",getPosFromInt(pos),"needs to wait their turn!");
+            return 1;
+        }
+
+        // Update this trick's state (source of truth)
+        this.playedCards[pos] = val + sui;
+
+        // Visually render new card
+        document.getElementById('playedCard' + getPosFromInt(pos)).src = "/src/assets/cards/" + val + sui + ".jpeg";
+        document.getElementById('playedCard' + getPosFromInt(pos)).className += " " + this.getSuitClass(sui);
+        document.getElementById('playedCard' + getPosFromInt(pos)).display = inline;
+
+        if (isTrickOver()) {
+            endTrick();
+        }
+
         return 0
     }
 
-    getSuitClass(suit) {
-        switch (suit) {
-            case 'h': return 'hearts';
-            case 'd': return 'diamonds';
-            case 'c': return 'clubs';
-            case 's': return 'spades';
-            case 'j': return 'joker';
-            default: return '';
+    isTrickOver() {
+        if (this.lastTrickWinner === -1) {
+            // TODO expose this error to user? Maybe add resiliency
+            console.log("This is not good. LastTrickWinner is not set but we are in doTrickOverCheck. Trick state:",this.playedCards)
         }
+        const didFullArrPlay = !this.playedCards.includes("");
+        const didLastPlayerPlay = !this.playedCards[(this.lastTrickWinner + 1)%4] === "";
+        if (!didFullArrPlay === didLastPlayerPlay) {
+            // TODO add resiliency ask server here
+            console.log("This is not good. Not everyone has played but the last player did somehow. Trick state:",this.playedCards)
+        }
+
+        return didLastPlayerPlay
+    }
+
+    endTrick() {
+        sendTrickResultToServer();
+
+        // Clear the arr storing the trick
+        this.playedCards = ['', '', '', ''];
+
+        // Clear the cards rendered
+        playedCards = document.getElementsByClassName("card-played");
+        for (var i = 0; i < playedCards.length; i++) {
+            playedCards.item(i).src = "../assets/cards/cat_cardback.jpeg";
+        }
+
+    }
+
+    sendTrickResultToServer() {
+        // TODO send to server over ws
+        return;
     }
 }
 
