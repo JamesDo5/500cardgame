@@ -16,20 +16,6 @@ body {
   color: white
 }
 
-.standing-bid-display {
-  position: absolute;
-  top: 25px;
-  right: 25px;
-  font-size: 2vw;
-}
-
-.final-bid-display {
-  position: absolute;
-  top: 50px;
-  right: 11px;
-  font-size: 2vw;
-}
-
 .game-table-container {
   position: relative;
   width: 1000px;
@@ -124,44 +110,4 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-}
-.bid-display {
-  position: absolute;
-  bottom: 120px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 2vw;
-}
-.left-bid {
-  position: absolute;
-  bottom: 40%;
-  left: 12%;
-  transform: translateY(-50%);
-  font-size: 2vw;
-}
-.top-bid {
-  position: absolute;
-  top: 120px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 2vw;
-}
-.right-bid {
-  position: absolute;
-  bottom: 40%;
-  left: 82%;
-  transform: translateY(-50%);
-  font-size: 2vw;
-}
-
-
-table {
-  border-collapse: collapse;
-  margin: 0 auto;
-}
-button.bid-amount-button {
-  width: 70px;
-  height: 50px;
-  font-size: 2vw;
-  min-width: fit-content;
 }

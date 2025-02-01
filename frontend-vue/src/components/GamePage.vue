@@ -2,6 +2,19 @@
     <div class="stateBanner" id="gameState">Current_Game_State</div>
     <div class="standing-bid-display" id="finalBidDisplay" style="color:white;">Standing Bid: 000</div>
     <div class="bidbox" id="bidbox">
+        <!-- <div class="bottom-bid my-bid bid-display" id="bottomBid" style="display:none;color:white;">My Bid: 000
+        </div>
+        <div class="left-bid other-bid bid-display" id="leftBid" style="display:none;color:white;">Bid:<br />000
+        </div>
+        <div class="top-bid other-bid bid-display" id="topBid" style="display:none;color:white;">Bid: 000</div>
+        <div class="right-bid other-bid bid-display" id="rightBid" style="display:none;color:white;">Bid:<br />000
+        </div> -->
+        <div class="bottom-bid my-bid bid-display" id="bottomBid" style="color:white;">My Bid: 000</div>
+        <div class="left-bid other-bid bid-display" id="leftBid" style="color:white;">Bid:<br />000
+        </div>
+        <div class="top-bid other-bid bid-display" id="topBid" style="color:white;">Bid: 000</div>
+        <div class="right-bid other-bid bid-display" id="rightBid" style="color:white;">Bid:<br />000
+        </div>
         <span class="close-bidbox" id="closeBidBox">&times;</span>
         <table>
             <tbody>
@@ -65,24 +78,26 @@ import { ref, onMounted } from 'vue';
 import { useStore } from 'vuex'
 
 const store = useStore()
-let gameState = store.state.sharedGameState; // 0 is bidding, 1 is blind exchange, 2 is doing tricks, 3 is scoring and re-deal
-let test_var_incomingbid = 140
+let gameState = store.state.sharedGameState; //-1:uninitialized, 0:dealing/shuffling, 1:hands dealt, 2:I bid, 3:all bids in, blind dealt, 4:I submitted blind, 5:trick play, 6:game over
+let dealer = store.state.dealer;
 
 class BidBox {
     constructor() {
+        // -1 is none, 0 is 'Pass', 40+ is a bid
+        this.bids = [-1, -1, -1, -1];
+
         this.initializeBidBox();
     }
+
     async initializeBidBox() {
         try {
             // Outline from FJolt
             Array.prototype.forEach.call(document.getElementsByClassName("bid-amount-button"), (item) => {
                 item.addEventListener("click", function () {
-                    // bidAmount = item.innerHTML;
-                    store.commit('setSharedGameState', 1)
-                    document.getElementById("gameState").innerHTML = "Current_Game_State: ".concat(gameState);
+
                     // can also use this.innerHTML
                     document.getElementById("bottomBid").innerHTML = "My Bid: ".concat(item.innerHTML);
-                    this.updateStandingBid();
+                    this.calcAndUpdateVisualStandingBid();
                 });
             });
             this.disableImpossibleBids();
@@ -93,17 +108,18 @@ class BidBox {
             console.error('Failed to initialize bidbox:', error);
         }
     }
+
     disableImpossibleBids() {
-        const incomingBid = this.updateStandingBid();
+        const incomingBid = this.calcAndUpdateVisualStandingBid();
         console.log("incomingBid:", incomingBid)
         Array.prototype.forEach.call(document.getElementsByClassName("bid-amount-button"), (item) => {
-            // if (item.innerHTML <= incomingBid) {
-            if (item.innerHTML <= test_var_incomingbid) {
+            if (item.innerHTML <= this.highestBid) {
                 item.disabled = true;
             }
         });
     }
-    updateStandingBid() {
+
+    calcAndUpdateVisualStandingBid() {
         // element.textContent could also be useful here
         const bidArr = Array.from(document.getElementsByClassName("bid-display")).map(
             (elem) =>
@@ -114,9 +130,124 @@ class BidBox {
         document.getElementById("finalBidDisplay").innerHTML = "Standing Bid: ".concat(Math.max(...bidArr));
         return Math.max(...bidArr)
     }
+
+    updateBidDisplays() {
+        dealer = store.getters.getDealer();
+        let index2PosName = ["bottom","left","top","right"]
+
+        for (let i = 0; i < 4; i++) {
+            let pos = (dealer+i) % 4
+
+            if (this.bids[pos] === -1) {
+                console.log("INFO updated bid displays from",dealer,"to",pos,". Any others haven't bid yet.")
+                break;
+            }
+            // Get rid of this function... edit: why? Seems to detect if anything went wrong in bidding
+            if (this.bids[pos] < this.bids[(pos-1)%4]  && pos !== dealer  && this.bids[pos] > 0) {
+                console.log("ERROR Illegal bid found at",pos,":",this.bids[pos],"is < prev bidder:",this.bids[(pos-1)%4],". Dealer was:",dealer)
+                break;
+            }
+
+            let prefix = "Bid:<br />";
+            if (pos === 0) {
+                // document.getElementById(index2PosName[pos] + "Bid").innerHTML = "My Bid: ".concat(thisPosBid);
+                prefix = "My Bid: ";
+            }
+            if (pos === 2) {
+                // document.getElementById(index2PosName[pos] + "Bid").innerHTML = "Bid: ".concat(thisPosBid);
+                prefix = "Bid: ";
+            }
+            
+            // document.getElementById(index2PosName[pos] + "Bid").innerHTML = "Bid:<br />".concat(thisPosBid);
+            document.getElementById(index2PosName[pos] + "Bid").innerHTML = prefix.concat(this.bids[pos]);
+
+            if (this.bids[pos] === 0) {
+                document.getElementById(index2PosName[pos] + "Bid").innerHTML = prefix.concat("Pass");
+            }
+        }
+
+        document.getElementById("finalBidDisplay").innerHTML = "Standing Bid: ".concat(calculateHighestBid);
+
+        return 0
+    }
+
+    calculateHighestBid() {
+        return Math.max(...this.bids)
+    }
+
+    submitBid() {
+        let myBid = 
+            Number.isNaN(Number(document.getElementById("bottomBid").innerText.slice(-3, undefined))) ? 
+            0 : 
+            Number(document.getElementById("bottomBid").innerText.slice(-3, undefined));
+
+        if (this.bids[0] !== -1) {
+            // TODO raise this error to user, they should get a little indicator that they already bid somehow
+            console.log("WARN somehow we already have our bid:",this.bids[0],"but we will update it to:",myBid);
+            return 1;
+        }
+
+        // Update bids source of truth
+        this.bids[0] = myBid;
+
+        // TODO the code to send bid to server. If it worked do this block
+        if (true) {
+            // Push card from submit box into played card table section
+            playedCardBottomElement.style.display = "inline";
+            playedCardBottomElement.src = submitElement.childNodes[0].src;
+            submitElement.innerHTML = "";
+            // Change state tracker
+            this.playedCards[0] = this.parseCardFromSrc(submitElement.childNodes[0].src);
+        }
+    }
+
+    incomingBid(pos,bid) {
+        // Expecting pos as integer, 0 is you, 1 is left, 2 top, 3 right.
+
+        if (bid <= calculateHighestBid() && bid !== 0) {
+            console.log("Incoming bid not allowed, highest current bid:",this.highestBid,"But incoming bid:",bid);
+            return 1;
+        }
+        if (pos < 0 || pos > 3) {
+            console.log("Fake position not allowed:",pos,"is >3 or <0");
+            return 1;
+        }
+        if (this.bids[pos] !== -1) {
+            // TODO SEND error MESSAGE TO SERVER AND SET UP RESILIENCY HERE
+            console.log("ERROR There's already a bid for pos",pos,".");
+            return 1;
+        }
+
+        // TODO check who dealt and whether this pos is actually next bidder (THIS IS IN DEV BUTTONS FOR NOW)
+
+        // Update bids source of truth
+        this.bids[pos] = bid;
+
+        // Visually render bids
+        this.calcAndUpdateVisualStandingBid();
+        // OR
+        this.updateBidDisplays();
+
+        if (this.isBiddingOver()) {
+            this.endBidding();
+        }
+
+        return 0
+    }
+
+    isBiddingOver() {
+        // pass
+    }
+
+    endBidding() {
+        // pass
+    }
 }
 
 onMounted(() => {
+    // store.commit('setSharedGameState', 1)
+    document.getElementById("gameState").innerHTML = "Current_Game_State: ".concat(gameState);
+
     const bidbox = new BidBox();
 
     // VueX state
@@ -144,5 +275,59 @@ onMounted(() => {
   font-size: 20px;
   font-weight: bold;
   cursor: pointer;
+}
+
+.standing-bid-display {
+  position: absolute;
+  top: 25px;
+  right: 25px;
+  font-size: 2vw;
+}
+
+.final-bid-display {
+  position: absolute;
+  top: 50px;
+  right: 11px;
+  font-size: 2vw;
+}
+
+.bid-display {
+  position: absolute;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 2vw;
+}
+.left-bid {
+  position: absolute;
+  bottom: 40%;
+  left: 12%;
+  transform: translateY(-50%);
+  font-size: 2vw;
+}
+.top-bid {
+  position: absolute;
+  top: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 2vw;
+}
+.right-bid {
+  position: absolute;
+  bottom: 40%;
+  left: 82%;
+  transform: translateY(-50%);
+  font-size: 2vw;
+}
+
+table {
+  border-collapse: collapse;
+  margin: 0 auto;
+}
+button.bid-amount-button {
+  width: 70px;
+  height: 50px;
+  font-size: 2vw;
+  min-width: fit-content;
 }
 </style>

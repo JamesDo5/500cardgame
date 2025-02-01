@@ -17,13 +17,6 @@
             <div class="card-stack won-tricks-right" id="wonTricksRight"></div>
             <div class="card-stack discard-blind" id="blindDiscard"></div>
             <!-- New stuff end again -->
-            <div class="bottom-bid my-bid bid-display" id="bottomBid" style="display:none;color:white;">My Bid: 000
-            </div>
-            <div class="left-bid other-bid bid-display" id="leftBid" style="display:none;color:white;">Bid:<br />000
-            </div>
-            <div class="top-bid other-bid bid-display" id="topBid" style="display:none;color:white;">Bid: 000</div>
-            <div class="right-bid other-bid bid-display" id="rightBid" style="display:none;color:white;">Bid:<br />000
-            </div>
         </div>
         <div class="card-row top-cards" id="topCards">
             <img class="card card-back" src="../assets/cards/cat_cardback.jpeg">
@@ -107,13 +100,13 @@ const allowedVals = inject('cardValues')
 class GameTable {
     constructor() {
         // Array of strings which are card signatures
-        this.blindCards = []; // Not sure this one specifically will be necessary since the WS will call the func
+        this.blindCards = []; // Only if this player got blind, store after sending to server in case we need to re-send
         this.submitCards = [];
         // Array of strings which are card signatures. 0 is you, 1 is left, 2 top, 3 right.
         this.playedCards = ['', '', '', ''];
         // 0 is you, 1 is left, 2 top, 3 right
         this.lastTrickWinner = -1;
-        // These are counts just tracking how high a stack is
+        // These are counts just tracking how high a stack is. Max 10.
         this.wonTricksBottom = 0;
         this.wonTricksLeft = 0;
         this.wonTricksTop = 0;
@@ -261,6 +254,9 @@ class GameTable {
     }
 
     renderBlind(cardsArr, faceDown) {
+        // Store the blind in the source of truth
+        this.blindCards = cardsArr.map(card => card.value + card.suit);
+
         const cardsElement = document.getElementById('blindCards');
         if (!cardsElement) return;
 
@@ -301,13 +297,31 @@ class GameTable {
             blindSubmitArr.push(blindElement.childNodes[i].innerHTML)
         }
 
-        // TODO the code to send blind to server. If it worked do this block
-        if (true) {
-            this.sortableSubmitCards.option("disabled", false);
-            blindElement.innerHTML = "";
+        // TODO the code to send blind to server. If NOT worked do this block
+        if (!true) {
+            if (store.getters.getGameState() === 3) {
+                store.commit('setGameState', 4);
+            }
+            return 1
         }
 
+        lastTrickWinner = 0;
+        this.sortableSubmitCards.option("disabled", false);
+        blindElement.innerHTML = "";
+        this.incomingBlindDiscard(lastTrickWinner);
         return 0
+    }
+
+    incomingBlindDiscard(pos) {
+        if (!pos === lastTrickWinner)
+
+        document.getElementById('blindDiscard').style.display = "inline";
+
+        // TODO move the blind discard to correct player's position
+
+        if (store.getters.getGameState() === 3) {
+            store.commit('setGameState', 5);
+        }
     }
 
     submitTrick() {
@@ -367,13 +381,15 @@ class GameTable {
             return 1;
         }
         if (pos < 0 || pos > 3) {
-            console.log("Hol* freakin moly we got a fake position. Not allowed! :",pos,"pos yields",this.getPosFromInt(pos));
+            console.log("Hol* mol* we got a fake position. Not allowed! :",pos,"pos yields",this.getPosFromInt(pos));
             return 1;
         }
 
+        // TODO check who led and whether this pos is actually next (THIS IS IN DEV BUTTONS FOR NOW)
+
         if (!this.playedCards[pos] === '') {
-            // TODO SEND ERROR MESSAGE TO SERVER AND SET UP RESILIENCY HERE
-            console.log("Hol* moly there's already a card in",this.getPosFromInt(pos),".",this.getPosFromInt(pos),"needs to wait their turn!");
+            // TODO SEND error MESSAGE TO SERVER AND SET UP RESILIENCY HERE
+            console.log("ERROR there's already a card in",this.getPosFromInt(pos),".",this.getPosFromInt(pos),"needs to wait until next turn!");
             return 1;
         }
 
@@ -383,7 +399,13 @@ class GameTable {
         // Visually render new card
         document.getElementById('playedCard' + this.getPosFromInt(pos)).src = "/src/assets/cards/" + val + sui + ".jpeg";
         document.getElementById('playedCard' + this.getPosFromInt(pos)).className += " " + this.getSuitClass(sui);
-        document.getElementById('playedCard' + this.getPosFromInt(pos)).display = "inline";
+        document.getElementById('playedCard' + this.getPosFromInt(pos)).style.display = "inline";
+
+        // console.log("DEBUG playedCard",this.getPosFromInt(pos),":",
+        //     window.getComputedStyle(
+        //         document.getElementById('playedCard' + this.getPosFromInt(pos))
+        //     ).display
+        // )
 
         if (this.isTrickOver()) {
             this.endTrick();
@@ -415,7 +437,7 @@ class GameTable {
 
         // Clear the cards rendered
         playedCards = document.getElementsByClassName("card-played");
-        for (var i = 0; i < playedCards.length; i++) {
+        for (let i = 0; i < playedCards.length; i++) {
             playedCards.item(i).src = "../assets/cards/cat_cardback.jpeg";
         }
 
@@ -487,6 +509,7 @@ onMounted(() => {
     /* transform: translate(-50%, -50%) rotate(270deg); */
 }
 
+/* class="card card-played card-played-left" */
 .card-played {
     position: absolute;
     display: none;

@@ -1,7 +1,9 @@
 <template>
     <div>
-        <input v-model="message" @keyup.enter="sendMessage">
-        <button @click="sendMessage">Send</button>
+        <!-- <input v-model="message" @keyup.enter="sendMessage">
+        <button @click="sendMessage">Send</button> -->
+        <input v-model="message" @keyup.enter="sendMessage" style="display:none;">
+        <button @click="sendMessage" style="display:none;">Send</button>
         <ul>
             <li v-for="msg in messages">{{ msg }}</li>
         </ul>
