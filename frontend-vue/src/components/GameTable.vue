@@ -189,6 +189,14 @@ class GameTable {
         // });
     }
 
+    parseCardFromStr(cardStr) {
+        if (cardStr.slice(-1) === "j") {
+            return {val:"", sui:"j"}
+        }
+
+        return {val:cardStr.slice(-1), sui:cardStr.slice(0,-1)}
+    }
+
     parseCardFromSrc(src) {
         jpg_index = src.search(".jpeg");
         if (jpg_index-18 > 3) {
@@ -365,6 +373,11 @@ class GameTable {
 
         // Reenable sorting so next card can be played
         this.sortableSubmitCards.option("disabled", false);
+
+        if (this.isTrickOver()) {
+            this.endTrick();
+        }
+
         return 0
     }
 
@@ -417,7 +430,7 @@ class GameTable {
     isTrickOver() {
         if (this.lastTrickWinner === -1) {
             // TODO expose this error to user? Maybe add resiliency
-            console.log("This is not good. LastTrickWinner is not set but we are in doTrickOverCheck. Trick state:",this.playedCards)
+            console.log("This is not good. LastTrickWinner is not set but we're checking isTrickOver(). Trick state:",this.playedCards)
         }
         const didFullArrPlay = !this.playedCards.includes("");
         const didLastPlayerPlay = !this.playedCards[(this.lastTrickWinner + 1)%4] === "";
@@ -430,7 +443,10 @@ class GameTable {
     }
 
     endTrick() {
-        sendTrickResultToServer();
+        lastTrickWinner = getTrickWinner();
+
+        // TODO
+        // sendTrickResultToServer();
 
         // Clear the arr storing the trick
         this.playedCards = ['', '', '', ''];
@@ -443,9 +459,92 @@ class GameTable {
 
     }
 
-    sendTrickResultToServer() {
-        // TODO send to server over ws
-        return;
+    getTrickWinner() {
+        let faceCardValues = new Map([['J',11],['Q',12],['K',13],['A',14]]);
+        let trumpSuit = store.getters.getTrumpSuit();
+        let specialTrump;
+        switch (trumpSuit) {
+            case 'n':
+                specialTrump = new Map();
+                break;
+            case 's':
+                specialTrump = new Map([['Jc',15],['Js',16],['j',17]]);
+                break;
+            case 'c':
+                specialTrump = new Map([['Js',15],['Jc',16],['j',17]]);
+                break;
+            case 'd':
+                specialTrump = new Map([['Jh',15],['Jd',16],['j',17]]);
+                break;
+            case 'h':
+                specialTrump = new Map([['Jd',15],['Jh',16],['j',17]]);
+                break;
+            default:
+                console.log(`ERROR Sorry, we are out of ${trumpSuit}.`);
+        }
+
+        let {_, ledSuit} = this.parseCardFromStr(this.playedCards[lastTrickWinner]);
+        if (specialTrump.has(this.playedCards[lastTrickWinner])) {
+            ledSuit = trumpSuit;
+        }
+
+        // Having to check for notrump AGAIN!?!?
+        // if(trumpSuit === 'n') {
+        //     trumpSuit = ledSuit;
+        // }
+        // MIGHT NOT NEED! ^^^^^^
+
+        let winningValue = 0, winningSuit = 'x';
+        // let {winningValue, winningSuit} = this.parseCardFromStr(this.playedCards[currentTrickWinner]);
+        // if (specialTrump.has(this.playedCards[currentTrickWinner])) {
+        //     winningSuit = trumpSuit;
+        // }
+        // if (faceCardValues.has(winningValue)) {
+        //     winningValue = specialTrump.get(winningValue);
+        // }
+
+        let currentTrickWinner = 0;
+        let value, suit;
+        for (let i = 0; i < this.playedCards.length; i++) {
+            ( {value, suit} = this.parseCardFromStr(this.playedCards[i]) );
+            
+            if (specialTrump.has(this.playedCards[i])) {
+                suit = trumpSuit;
+                value = specialTrump.get(this.playedCards[i]);
+            }
+            if (faceCardValues.has(value)) {
+                value = specialTrump.get(value);
+            }
+
+            // TODO remove this init edge case need
+            if (winningSuit === 'x') {
+                currentTrickWinner = i;
+                winningValue = value;
+                winningSuit = suit;
+                continue;
+            }
+
+            if (suit === trumpSuit && winningSuit !== trumpSuit) {
+                currentTrickWinner = i;
+                winningValue = value;
+                winningSuit = suit;
+                continue;
+            }
+            if (suit === ledSuit && winningSuit !== ledSuit && winningSuit !== trumpSuit) {
+                currentTrickWinner = i;
+                winningValue = value;
+                winningSuit = suit;
+                continue;
+            }
+            if (suit === winningSuit && value > winningValue) {
+                currentTrickWinner = i;
+                winningValue = value;
+                winningSuit = suit;
+                continue;
+            }
+        }
+
+        return currentTrickWinner
     }
 }
 

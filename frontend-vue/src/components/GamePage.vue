@@ -150,28 +150,26 @@ class BidBox {
 
             let prefix = "Bid:<br />";
             if (pos === 0) {
-                // document.getElementById(index2PosName[pos] + "Bid").innerHTML = "My Bid: ".concat(thisPosBid);
                 prefix = "My Bid: ";
             }
             if (pos === 2) {
-                // document.getElementById(index2PosName[pos] + "Bid").innerHTML = "Bid: ".concat(thisPosBid);
                 prefix = "Bid: ";
             }
-            
-            // document.getElementById(index2PosName[pos] + "Bid").innerHTML = "Bid:<br />".concat(thisPosBid);
+
             document.getElementById(index2PosName[pos] + "Bid").innerHTML = prefix.concat(this.bids[pos]);
 
+            // 0 is pass
             if (this.bids[pos] === 0) {
                 document.getElementById(index2PosName[pos] + "Bid").innerHTML = prefix.concat("Pass");
             }
         }
 
-        document.getElementById("finalBidDisplay").innerHTML = "Standing Bid: ".concat(calculateHighestBid);
+        document.getElementById("finalBidDisplay").innerHTML = "Standing Bid: ".concat(getHighestBid);
 
         return 0
     }
 
-    calculateHighestBid() {
+    getHighestBid() {
         return Math.max(...this.bids)
     }
 
@@ -201,10 +199,10 @@ class BidBox {
         }
     }
 
-    incomingBid(pos,bid) {
+    incomingBid(pos, bid) {
         // Expecting pos as integer, 0 is you, 1 is left, 2 top, 3 right.
 
-        if (bid <= calculateHighestBid() && bid !== 0) {
+        if (bid <= getHighestBid() && bid !== 0) {
             console.log("Incoming bid not allowed, highest current bid:",this.highestBid,"But incoming bid:",bid);
             return 1;
         }
@@ -224,8 +222,6 @@ class BidBox {
         this.bids[pos] = bid;
 
         // Visually render bids
-        this.calcAndUpdateVisualStandingBid();
-        // OR
         this.updateBidDisplays();
 
         if (this.isBiddingOver()) {
@@ -236,7 +232,19 @@ class BidBox {
     }
 
     isBiddingOver() {
-        // pass
+
+        // if (this.lastTrickWinner === -1) {
+        //     // TODO expose this error to user? Maybe add resiliency
+        //     console.log("This is not good. LastTrickWinner is not set but we are in doTrickOverCheck. Trick state:",this.playedCards)
+        // }
+        // const didFullArrPlay = !this.playedCards.includes("");
+        // const didLastPlayerPlay = !this.playedCards[(this.lastTrickWinner + 1)%4] === "";
+        // if (!didFullArrPlay === didLastPlayerPlay) {
+        //     // TODO add resiliency ask server here
+        //     console.log("This is not good. Not everyone has played but the last player did somehow. Trick state:",this.playedCards)
+        // }
+
+        // return didLastPlayerPlay
     }
 
     endBidding() {

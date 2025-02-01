@@ -50,11 +50,10 @@ function startDevButtons() {
                 nextBidder = (dealer+i)%4;
                 break;
             }
-            // console.log("DEBUG storedGameTable.playedCards",i,storedGameTable.playedCards[i])
         }
         // Check to make sure there's a next bidder and it's not this player
         if (nextBidder === -1) {
-            console.log("OOPS Literally me when I missed the end of bidding somehow. Everyone has played but we have incoming bid!")
+            console.log("OOPS Literally me when I missed the end of bidding somehow. Everyone has bid but we have incoming one!")
             return;
         }
         if (nextBidder === 0) {

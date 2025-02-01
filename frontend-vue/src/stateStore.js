@@ -2,11 +2,6 @@ import Vuex from 'vuex'
 
 export default new Vuex.Store({
     state: {
-        // mapArrIDsTo: new Map([
-        //     ["bottomCards", setSharedHandCards],
-        //     ["blindCards", "two"],
-        //     ["submitCards", "three"],
-        // ]),
         // The blind, trick counts, and Xthing are stored as part of the game table.
         gameTable: null,
         bidBox: null,
@@ -23,6 +18,8 @@ export default new Vuex.Store({
         score: -1,
         winningBid: -1,
         dealer: -1,
+        // s, c, d, h, n
+        trumpSuit: '',
     },
     mutations: {
         setSharedGameTable(state, obj) {
@@ -46,10 +43,13 @@ export default new Vuex.Store({
         advanceDealer(state) {
             state.dealer = (state.dealer+1)%4;
         },
+        setTrumpSuit(state, s) {
+            state.trumpSuit = s;
+        },
     },
     getters: {
-        // No getters for mapArrIDsTo because it doesn't mutate so can be accessed directly
         // No getters for gameTable nor bidBox because they are object ptrs and react correctly without
+        // ^^ JUST KIDDING
         getGameTable: (state) => () => {
             return state.gameTable;
         },
@@ -67,6 +67,9 @@ export default new Vuex.Store({
         },
         getDealer: (state) => () => {
             return state.dealer;
+        },
+        getTrumpSuit: (state) => () => {
+            return state.trumpSuit;
         },
     }
 });
