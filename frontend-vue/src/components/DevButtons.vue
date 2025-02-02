@@ -29,7 +29,7 @@ const store = useStore();
 
 function startDevButtons() {
     let storedGameTable = store.getters.getGameTable();
-    let storedBidBox = store.state.sharedBidBox;
+    let storedBidBox = store.getters.getdBidBox();
     let gameState = store.state.sharedGameState;
     let dealer = store.state.dealer;
 

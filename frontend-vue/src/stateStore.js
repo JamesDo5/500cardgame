@@ -53,6 +53,9 @@ export default new Vuex.Store({
         getGameTable: (state) => () => {
             return state.gameTable;
         },
+        getBidBox: (state) => () => {
+            return state.bidBox;
+        },
         getGameState: (state) => () => {
             return state.gameState;
         },

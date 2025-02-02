@@ -153,7 +153,6 @@ class GameTable {
                 // v Commit above not reflected here without this getter for some reason
                 handCards = store.getters.getSharedHandCards();
                 this.renderHand(handCards)
-                this.renderBlind(this.blindCards, true)
                 // console.log("in initializeTable store.state.sharedHandCards.len:",handCards.length)
             }
         } catch (error) {
@@ -198,13 +197,17 @@ class GameTable {
     }
 
     parseCardFromSrc(src) {
-        jpg_index = src.search(".jpeg");
-        if (jpg_index-18 > 3) {
+        let jpgIndex = src.search(".jpeg");
+        let startIndex = src.search("/src/assets/cards");
+        if (jpgIndex-startIndex > 3 + 18) {
             // TODO raise error
-            console.log("Umm Houston? That's not a card front:",src.slice(18,jpg_index))
+            console.log("Umm Houston? That's not a card front:",src.slice(18,jpgIndex))
+            // Umm Houston? That's not a card front: 173/src/assets/cards/Kd
+            // http://localhost:5173/src/assets/cards/4h.jpeg
         }
+
         // 18 chars gets past /src/assets/cards/
-        return src.slice(18,jpg_index)
+        return src.slice(startIndex+18,jpgIndex)
     }
 
     drawCard(card, fd) {
@@ -254,6 +257,7 @@ class GameTable {
 
         // Now rerender the blind with the new faceDown
         cardsElement.innerHTML = this.blindCards.map(card =>this.drawCard(card,faceDown)).join('');
+        console.log("Blind cards:",this.blindCards)
 
         // Note the use of faceDown to determine whether they are disabled
         this.sortableBlindCards.option("disabled", faceDown); // set
@@ -313,15 +317,15 @@ class GameTable {
             return 1
         }
 
-        lastTrickWinner = 0;
+        this.lastTrickWinner = 0;
         this.sortableSubmitCards.option("disabled", false);
         blindElement.innerHTML = "";
-        this.incomingBlindDiscard(lastTrickWinner);
+        this.incomingBlindDiscard(this.lastTrickWinner);
         return 0
     }
 
     incomingBlindDiscard(pos) {
-        if (!pos === lastTrickWinner)
+        if (!pos === this.lastTrickWinner)
 
         document.getElementById('blindDiscard').style.display = "inline";
 
@@ -366,9 +370,9 @@ class GameTable {
             // Push card from submit box into played card table section
             playedCardBottomElement.style.display = "inline";
             playedCardBottomElement.src = submitElement.childNodes[0].src;
-            submitElement.innerHTML = "";
             // Change state tracker
             this.playedCards[0] = this.parseCardFromSrc(submitElement.childNodes[0].src);
+            submitElement.innerHTML = "";
         }
 
         // Reenable sorting so next card can be played
@@ -430,20 +434,21 @@ class GameTable {
     isTrickOver() {
         if (this.lastTrickWinner === -1) {
             // TODO expose this error to user? Maybe add resiliency
-            console.log("This is not good. LastTrickWinner is not set but we're checking isTrickOver(). Trick state:",this.playedCards)
+            console.log("This is not good. LastTrickWinner is not set but we're checking isTrickOver(). Trick state:",this.playedCards);
         }
         const didFullArrPlay = !this.playedCards.includes("");
         const didLastPlayerPlay = !this.playedCards[(this.lastTrickWinner + 1)%4] === "";
         if (!didFullArrPlay === didLastPlayerPlay) {
             // TODO add resiliency ask server here
-            console.log("This is not good. Not everyone has played but the last player did somehow. Trick state:",this.playedCards)
+            console.log("This is not good. Not everyone has played but the last player did somehow. Trick state:",this.playedCards);
         }
 
         return didLastPlayerPlay
     }
 
     endTrick() {
-        lastTrickWinner = getTrickWinner();
+        this.lastTrickWinner = getTrickWinner();
+        console.log("My brother in christ",this.lastTrickWinner,"won the trick!");
 
         // TODO
         // sendTrickResultToServer();
@@ -468,80 +473,58 @@ class GameTable {
                 specialTrump = new Map();
                 break;
             case 's':
-                specialTrump = new Map([['Jc',15],['Js',16],['j',17]]);
+                specialTrump = new Map([['Jc',15],['Js',16]]);
                 break;
             case 'c':
-                specialTrump = new Map([['Js',15],['Jc',16],['j',17]]);
+                specialTrump = new Map([['Js',15],['Jc',16]]);
                 break;
             case 'd':
-                specialTrump = new Map([['Jh',15],['Jd',16],['j',17]]);
+                specialTrump = new Map([['Jh',15],['Jd',16]]);
                 break;
             case 'h':
-                specialTrump = new Map([['Jd',15],['Jh',16],['j',17]]);
+                specialTrump = new Map([['Jd',15],['Jh',16]]);
                 break;
             default:
                 console.log(`ERROR Sorry, we are out of ${trumpSuit}.`);
         }
 
-        let {_, ledSuit} = this.parseCardFromStr(this.playedCards[lastTrickWinner]);
-        if (specialTrump.has(this.playedCards[lastTrickWinner])) {
+        let {_, ledSuit} = this.parseCardFromStr(this.playedCards[this.lastTrickWinner]);
+        if (specialTrump.has(this.playedCards[this.lastTrickWinner])) {
             ledSuit = trumpSuit;
         }
 
-        // Having to check for notrump AGAIN!?!?
-        // if(trumpSuit === 'n') {
-        //     trumpSuit = ledSuit;
-        // }
-        // MIGHT NOT NEED! ^^^^^^
-
         let winningValue = 0, winningSuit = 'x';
-        // let {winningValue, winningSuit} = this.parseCardFromStr(this.playedCards[currentTrickWinner]);
-        // if (specialTrump.has(this.playedCards[currentTrickWinner])) {
-        //     winningSuit = trumpSuit;
-        // }
-        // if (faceCardValues.has(winningValue)) {
-        //     winningValue = specialTrump.get(winningValue);
-        // }
-
         let currentTrickWinner = 0;
-        let value, suit;
+        let iValue, iSuit;
         for (let i = 0; i < this.playedCards.length; i++) {
-            ( {value, suit} = this.parseCardFromStr(this.playedCards[i]) );
+            ( {iValue, iSuit} = this.parseCardFromStr(this.playedCards[i]) );
+
+            // Originally put j in specialTrump but it simplifies NoTrump tricks to just treat j as edge case
+            if (iSuit === 'j') {
+                return i;
+            }
             
             if (specialTrump.has(this.playedCards[i])) {
-                suit = trumpSuit;
-                value = specialTrump.get(this.playedCards[i]);
+                iSuit = trumpSuit;
+                iValue = specialTrump.get(this.playedCards[i]);
             }
-            if (faceCardValues.has(value)) {
-                value = specialTrump.get(value);
-            }
-
-            // TODO remove this init edge case need
-            if (winningSuit === 'x') {
-                currentTrickWinner = i;
-                winningValue = value;
-                winningSuit = suit;
-                continue;
+            if (faceCardValues.has(iValue)) {
+                iValue = specialTrump.get(iValue);
             }
 
-            if (suit === trumpSuit && winningSuit !== trumpSuit) {
-                currentTrickWinner = i;
-                winningValue = value;
-                winningSuit = suit;
+            if (iSuit === winningSuit && iValue < winningValue) {
                 continue;
             }
-            if (suit === ledSuit && winningSuit !== ledSuit && winningSuit !== trumpSuit) {
-                currentTrickWinner = i;
-                winningValue = value;
-                winningSuit = suit;
+            if (iSuit !== ledSuit && iSuit !== trumpSuit && winningSuit === ledSuit) {
                 continue;
             }
-            if (suit === winningSuit && value > winningValue) {
-                currentTrickWinner = i;
-                winningValue = value;
-                winningSuit = suit;
+            if (iSuit !== trumpSuit && winningSuit === trumpSuit) {
                 continue;
             }
+
+            currentTrickWinner = i;
+            winningValue = iValue;
+            winningSuit = iSuit;
         }
 
         return currentTrickWinner
