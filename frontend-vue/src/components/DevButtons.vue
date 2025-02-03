@@ -29,7 +29,7 @@ const store = useStore();
 
 function startDevButtons() {
     let storedGameTable = store.getters.getGameTable();
-    let storedBidBox = store.getters.getdBidBox();
+    let storedBidBox = store.getters.getBidBox();
     let gameState = store.state.sharedGameState;
     let dealer = store.state.dealer;
 
@@ -63,12 +63,9 @@ function startDevButtons() {
 
         // Dispatch a random bid
         let highestBid = storedBidBox.calculateHighestBid;
-        let a = [10, 20, 30, 40, 50];
-        let i = Math.floor(Math.random() * a.length);
-        let r = a[i];
 
         let potentialBids = Array.from({length: 520-highestBid}, (_, i) => (i*20) + highestBid)
-        let bid = potentialBids[Math.floor(Math.random() * a.length)];
+        let bid = potentialBids[Math.floor(Math.random() * potentialBids.length)];
         // 0 or 1 times bid to simulate 50% chance of passing
         bid = Math.floor(Math.random() * 2) * bid
         storedBidBox.incomingBid(nextBidder,bid)
@@ -76,6 +73,7 @@ function startDevButtons() {
 
     document.getElementById("openBidBoxBtn").addEventListener("click", function () {
         gameState = 0;
+        // console.log("INFO zIndex:",document.getElementById("bidbox").style.zIndex);
 
         document.getElementById("bidbox").style.display = document.getElementById("bidbox").style.display === "inline" ? "none" : "inline";
         document.getElementById("bottomBid").style.display = document.getElementById("bottomBid").style.display === "inline" ? "none" : "inline";
@@ -123,7 +121,7 @@ function startDevButtons() {
         // CURRENT WIP
 
         // Blind incoming
-        if (! storedGameTable.incomingBlind() === 0) {
+        if (! storedGameTable.incomingBlindDiscard() === 0) {
             // TODO whatever happens if it failed
         }
     });

@@ -236,7 +236,7 @@ class GameTable {
         if (!cardsElement) console.log("bottom cards not found");
         if (!cardsElement) return;
 
-        console.log('MeESA ReNDERING HaND:',cardsArr)
+        console.log('INFO Meesa rendering hand:',cardsArr)
 
         cardsElement.innerHTML = cardsArr.map(card =>
             `<img class="card card-front ${this.getSuitClass(card.suit)}" src="/src/assets/cards/${card.value}${card.suit}.jpeg">`
@@ -372,6 +372,7 @@ class GameTable {
             playedCardBottomElement.src = submitElement.childNodes[0].src;
             // Change state tracker
             this.playedCards[0] = this.parseCardFromSrc(submitElement.childNodes[0].src);
+            console.log("INFO Successfully submitted my card to server:",this.playedCards[0])
             submitElement.innerHTML = "";
         }
 
@@ -437,18 +438,20 @@ class GameTable {
             console.log("This is not good. LastTrickWinner is not set but we're checking isTrickOver(). Trick state:",this.playedCards);
         }
         const didFullArrPlay = !this.playedCards.includes("");
-        const didLastPlayerPlay = !this.playedCards[(this.lastTrickWinner + 1)%4] === "";
+        const didLastPlayerPlay = !(this.playedCards[(this.lastTrickWinner + 3)%4] === "");
         if (!didFullArrPlay === didLastPlayerPlay) {
             // TODO add resiliency ask server here
-            console.log("This is not good. Not everyone has played but the last player did somehow. Trick state:",this.playedCards);
+            console.log("DEBUG didFullArrPlay:",didFullArrPlay,"didLastPlayerPlay",didLastPlayerPlay,"first player:",this.lastTrickWinner,"last player:",(this.lastTrickWinner - 1)%4,);
+            console.log("This is not good. Last player vs all players have different play states. Trick state:",this.playedCards);
         }
 
         return didLastPlayerPlay
     }
 
     endTrick() {
-        this.lastTrickWinner = getTrickWinner();
-        console.log("My brother in christ",this.lastTrickWinner,"won the trick!");
+        console.log("INFO ending the trick!")
+        this.lastTrickWinner = this.getTrickWinner();
+        console.log("INFO My brother in christ",this.lastTrickWinner,"won the trick!");
 
         // TODO
         // sendTrickResultToServer();
@@ -457,15 +460,17 @@ class GameTable {
         this.playedCards = ['', '', '', ''];
 
         // Clear the cards rendered
-        playedCards = document.getElementsByClassName("card-played");
-        for (let i = 0; i < playedCards.length; i++) {
-            playedCards.item(i).src = "../assets/cards/cat_cardback.jpeg";
-        }
-
+        // playedCards = document.getElementsByClassName("card-played");
+        // for (let i = 0; i < playedCards.length; i++) {
+        //     playedCards.item(i).src = "../assets/cards/cat_cardback.jpeg";
+        // }
+        Array.prototype.forEach.call(document.getElementsByClassName("card-played"), (elem) => {
+            elem.style.display = "none";
+        });
     }
 
     getTrickWinner() {
-        let faceCardValues = new Map([['J',11],['Q',12],['K',13],['A',14]]);
+        const faceCardValues = new Map([['J',11],['Q',12],['K',13],['A',14]]);
         let trumpSuit = store.getters.getTrumpSuit();
         let specialTrump;
         switch (trumpSuit) {
@@ -485,7 +490,8 @@ class GameTable {
                 specialTrump = new Map([['Jd',15],['Jh',16]]);
                 break;
             default:
-                console.log(`ERROR Sorry, we are out of ${trumpSuit}.`);
+                console.log(`ERROR Sorry, we are out of suit: ${trumpSuit}.`);
+                return;
         }
 
         let {_, ledSuit} = this.parseCardFromStr(this.playedCards[this.lastTrickWinner]);
@@ -527,6 +533,7 @@ class GameTable {
             winningSuit = iSuit;
         }
 
+        console.log("INFO Got trick winner:",currentTrickWinner)
         return currentTrickWinner
     }
 }

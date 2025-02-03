@@ -2,13 +2,6 @@
     <div class="stateBanner" id="gameState">Current_Game_State</div>
     <div class="standing-bid-display" id="finalBidDisplay" style="color:white;">Standing Bid: 000</div>
     <div class="bidbox" id="bidbox">
-        <!-- <div class="bottom-bid my-bid bid-display" id="bottomBid" style="display:none;color:white;">My Bid: 000
-        </div>
-        <div class="left-bid other-bid bid-display" id="leftBid" style="display:none;color:white;">Bid:<br />000
-        </div>
-        <div class="top-bid other-bid bid-display" id="topBid" style="display:none;color:white;">Bid: 000</div>
-        <div class="right-bid other-bid bid-display" id="rightBid" style="display:none;color:white;">Bid:<br />000
-        </div> -->
         <div class="bottom-bid my-bid bid-display" id="bottomBid" style="color:white;">My Bid: 000</div>
         <div class="left-bid other-bid bid-display" id="leftBid" style="color:white;">Bid:<br />000
         </div>
@@ -101,9 +94,7 @@ class BidBox {
                 });
             });
             this.disableImpossibleBids();
-            document.getElementById("leftBid").innerHTML = "Bid:<br />".concat("Pass");
-            document.getElementById("topBid").innerHTML = "Bid: ".concat(80);
-            document.getElementById("rightBid").innerHTML = "Bid:<br />".concat(140);
+            this.updateBidDisplays();
         } catch (error) {
             console.error('Failed to initialize bidbox:', error);
         }
@@ -133,18 +124,18 @@ class BidBox {
 
     updateBidDisplays() {
         dealer = store.getters.getDealer();
-        let index2PosName = ["bottom","left","top","right"]
+        const index2PosName = ["bottom", "left", "top", "right"]
 
         for (let i = 0; i < 4; i++) {
-            let pos = (dealer+i) % 4
+            let pos = (dealer + i) % 4
 
             if (this.bids[pos] === -1) {
-                console.log("INFO updated bid displays from",dealer,"to",pos,". Any others haven't bid yet.")
+                console.log("INFO updated bid displays from", dealer, "to", pos, ". Any others haven't bid yet.")
                 break;
             }
             // Get rid of this function... edit: why? Seems to detect if anything went wrong in bidding
-            if (this.bids[pos] < this.bids[(pos-1)%4]  && pos !== dealer  && this.bids[pos] > 0) {
-                console.log("ERROR Illegal bid found at",pos,":",this.bids[pos],"is < prev bidder:",this.bids[(pos-1)%4],". Dealer was:",dealer)
+            if (this.bids[pos] < this.bids[(pos - 1) % 4] && pos !== dealer && this.bids[pos] > 0) {
+                console.log("ERROR Illegal bid found at", pos, ":", this.bids[pos], "is < prev bidder:", this.bids[(pos - 1) % 4], ". Dealer was:", dealer)
                 break;
             }
 
@@ -156,6 +147,7 @@ class BidBox {
                 prefix = "Bid: ";
             }
 
+            console.log("INFO getting element with id:", index2PosName[pos] + "Bid", "pos:", pos, "dealer:", dealer)
             document.getElementById(index2PosName[pos] + "Bid").innerHTML = prefix.concat(this.bids[pos]);
 
             // 0 is pass
@@ -164,7 +156,7 @@ class BidBox {
             }
         }
 
-        document.getElementById("finalBidDisplay").innerHTML = "Standing Bid: ".concat(getHighestBid);
+        document.getElementById("finalBidDisplay").innerHTML = "Standing Bid: ".concat(this.getHighestBid());
 
         return 0
     }
@@ -174,14 +166,14 @@ class BidBox {
     }
 
     submitBid() {
-        let myBid = 
-            Number.isNaN(Number(document.getElementById("bottomBid").innerText.slice(-3, undefined))) ? 
-            0 : 
-            Number(document.getElementById("bottomBid").innerText.slice(-3, undefined));
+        let myBid =
+            Number.isNaN(Number(document.getElementById("bottomBid").innerText.slice(-3, undefined))) ?
+                0 :
+                Number(document.getElementById("bottomBid").innerText.slice(-3, undefined));
 
         if (this.bids[0] !== -1) {
             // TODO raise this error to user, they should get a little indicator that they already bid somehow
-            console.log("WARN somehow we already have our bid:",this.bids[0],"but we will update it to:",myBid);
+            console.log("WARN somehow we already have our bid:", this.bids[0], "but we will update it to:", myBid);
             return 1;
         }
 
@@ -202,17 +194,17 @@ class BidBox {
     incomingBid(pos, bid) {
         // Expecting pos as integer, 0 is you, 1 is left, 2 top, 3 right.
 
-        if (bid <= getHighestBid() && bid !== 0) {
-            console.log("Incoming bid not allowed, highest current bid:",this.highestBid,"But incoming bid:",bid);
+        if (bid <= this.getHighestBid() && bid !== 0) {
+            console.log("Incoming bid not allowed, highest current bid:", this.highestBid, "But incoming bid:", bid);
             return 1;
         }
         if (pos < 0 || pos > 3) {
-            console.log("Fake position not allowed:",pos,"is >3 or <0");
+            console.log("Fake position not allowed:", pos, "is >3 or <0");
             return 1;
         }
         if (this.bids[pos] !== -1) {
             // TODO SEND error MESSAGE TO SERVER AND SET UP RESILIENCY HERE
-            console.log("ERROR There's already a bid for pos",pos,".");
+            console.log("ERROR There's already a bid for pos", pos, ".");
             return 1;
         }
 
@@ -232,23 +224,26 @@ class BidBox {
     }
 
     isBiddingOver() {
-
-        // if (this.lastTrickWinner === -1) {
-        //     // TODO expose this error to user? Maybe add resiliency
-        //     console.log("This is not good. LastTrickWinner is not set but we are in doTrickOverCheck. Trick state:",this.playedCards)
-        // }
-        // const didFullArrPlay = !this.playedCards.includes("");
-        // const didLastPlayerPlay = !this.playedCards[(this.lastTrickWinner + 1)%4] === "";
-        // if (!didFullArrPlay === didLastPlayerPlay) {
-        //     // TODO add resiliency ask server here
-        //     console.log("This is not good. Not everyone has played but the last player did somehow. Trick state:",this.playedCards)
-        // }
-
-        // return didLastPlayerPlay
+        if (this.bids.has(-1)) {
+            return false;
+        }
+        return true;
     }
 
     endBidding() {
-        // pass
+        const bid2Suit = new Map([['1', 'n'], ['2', 's'], ['3', 'c'], ['4', 'd'], ['5', 'h']]);
+        const winningSuit = bid2Suit.get((this.getHighestBid() / 20) % 5)
+        store.commit('setTrumpSuit', winningSuit);
+        store.commit('setWinningBid', this.getHighestBid());
+
+        const gt = store.getters.getGameTable();
+
+        // The person who won the bid plays first 
+        gt.lastTrickWinner = this.bids.indexOf(this.getHighestBid());
+
+        // Don't need to wipe bid table, that will be done at end of a hand
+
+        // TODO Update board for which player won bid
     }
 }
 
@@ -266,76 +261,72 @@ onMounted(() => {
 
 <style scoped>
 .bidbox {
-  display: none;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: white;
-  padding: 20px;
-  border-radius: 5px;
-  text-align: center;
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+    text-align: center;
+    z-index: 9;
 }
+
 .close-bidbox {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  font-size: 20px;
-  font-weight: bold;
-  cursor: pointer;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
 }
 
 .standing-bid-display {
-  position: absolute;
-  top: 25px;
-  right: 25px;
-  font-size: 2vw;
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    font-size: 2vw;
 }
 
 .final-bid-display {
-  position: absolute;
-  top: 50px;
-  right: 11px;
-  font-size: 2vw;
+    position: absolute;
+    top: 50px;
+    right: 11px;
+    font-size: 2vw;
 }
 
 .bid-display {
-  position: absolute;
-  bottom: 120px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 2vw;
+    position: absolute;
+    transform: translate(-50%, 50%);
+    font-size: 2vw;
+}
+.bottom-bid {
+    bottom: -60px;
+    left: 50%;
 }
 .left-bid {
-  position: absolute;
-  bottom: 40%;
-  left: 12%;
-  transform: translateY(-50%);
-  font-size: 2vw;
+    left: -100px;
+    bottom: 50%;
 }
 .top-bid {
-  position: absolute;
-  top: 120px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 2vw;
+    top: -90px;
+    left: 50%;
 }
 .right-bid {
-  position: absolute;
-  bottom: 40%;
-  left: 82%;
-  transform: translateY(-50%);
-  font-size: 2vw;
+    right: -160px;
+    bottom: 50%;
 }
 
 table {
-  border-collapse: collapse;
-  margin: 0 auto;
+    border-collapse: collapse;
+    margin: 0 auto;
 }
+
 button.bid-amount-button {
-  width: 70px;
-  height: 50px;
-  font-size: 2vw;
-  min-width: fit-content;
+    width: 70px;
+    height: 50px;
+    font-size: 2vw;
+    min-width: fit-content;
 }
 </style>

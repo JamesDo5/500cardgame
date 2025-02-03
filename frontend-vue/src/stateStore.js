@@ -17,7 +17,7 @@ export default new Vuex.Store({
         handCards: [],
         score: -1,
         winningBid: -1,
-        dealer: -1,
+        dealer: Math.floor(Math.random() * 4),
         // s, c, d, h, n
         trumpSuit: '',
     },
