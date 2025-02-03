@@ -90,7 +90,6 @@ class BidBox {
 
                     // can also use this.innerHTML
                     document.getElementById("bottomBid").innerHTML = "My Bid: ".concat(item.innerHTML);
-                    this.calcAndUpdateVisualStandingBid();
                 });
             });
             this.disableImpossibleBids();
@@ -101,36 +100,22 @@ class BidBox {
     }
 
     disableImpossibleBids() {
-        const incomingBid = this.calcAndUpdateVisualStandingBid();
-        console.log("incomingBid:", incomingBid)
         Array.prototype.forEach.call(document.getElementsByClassName("bid-amount-button"), (item) => {
-            if (item.innerHTML <= this.highestBid) {
+            if (item.innerHTML <= this.getHighestBid()) {
                 item.disabled = true;
             }
         });
-    }
-
-    calcAndUpdateVisualStandingBid() {
-        // element.textContent could also be useful here
-        const bidArr = Array.from(document.getElementsByClassName("bid-display")).map(
-            (elem) =>
-                Number.isNaN(Number(elem.innerText.slice(-3, undefined))) ? 0 : Number(elem.innerText.slice(-3, undefined))
-            // Number.isNaN(Number(elem.innerText.slice(start=-3))) ? 0 : Number(elem.innerText.slice(start=-3))
-        );
-        console.log(bidArr)
-        document.getElementById("finalBidDisplay").innerHTML = "Standing Bid: ".concat(Math.max(...bidArr));
-        return Math.max(...bidArr)
     }
 
     updateBidDisplays() {
         dealer = store.getters.getDealer();
         const index2PosName = ["bottom", "left", "top", "right"]
 
-        for (let i = 0; i < 4; i++) {
+        for (let i = 1; i < 5; i++) {
             let pos = (dealer + i) % 4
 
             if (this.bids[pos] === -1) {
-                console.log("INFO updated bid displays from", dealer, "to", pos, ". Any others haven't bid yet.")
+                console.log("INFO updateBidDisplays() updated from firstbid", dealer+1, "to", pos, ". Dealer was",dealer)
                 break;
             }
             // Get rid of this function... edit: why? Seems to detect if anything went wrong in bidding
@@ -147,7 +132,7 @@ class BidBox {
                 prefix = "Bid: ";
             }
 
-            console.log("INFO getting element with id:", index2PosName[pos] + "Bid", "pos:", pos, "dealer:", dealer)
+            // console.log("INFO updateBidDisplays() element with id:", index2PosName[pos] + "Bid", "pos:", pos, "dealer:", dealer)
             document.getElementById(index2PosName[pos] + "Bid").innerHTML = prefix.concat(this.bids[pos]);
 
             // 0 is pass
@@ -180,22 +165,20 @@ class BidBox {
         // Update bids source of truth
         this.bids[0] = myBid;
 
-        // TODO the code to send bid to server. If it worked do this block
-        if (true) {
-            // Push card from submit box into played card table section
-            playedCardBottomElement.style.display = "inline";
-            playedCardBottomElement.src = submitElement.childNodes[0].src;
-            submitElement.innerHTML = "";
-            // Change state tracker
-            this.playedCards[0] = this.parseCardFromSrc(submitElement.childNodes[0].src);
+        document.getElementById("bottomBid").style.color = "green";
+
+        if (this.isBiddingOver()) {
+            this.endBidding();
         }
+
+        return;
     }
 
     incomingBid(pos, bid) {
         // Expecting pos as integer, 0 is you, 1 is left, 2 top, 3 right.
 
         if (bid <= this.getHighestBid() && bid !== 0) {
-            console.log("Incoming bid not allowed, highest current bid:", this.highestBid, "But incoming bid:", bid);
+            console.log("Incoming bid not allowed, highest current bid:", this.getHighestBid(), "But incoming bid:", bid);
             return 1;
         }
         if (pos < 0 || pos > 3) {
@@ -216,6 +199,9 @@ class BidBox {
         // Visually render bids
         this.updateBidDisplays();
 
+        // console.log("INFO -- incomingBid(",pos,",",bid,")"," resulting in this.bids[pos]",this.bids[pos],"FULL ARR:",this.bids)
+
+        // console.log("DEBUG incomingBid() -- isBiddingOver():",this.isBiddingOver())
         if (this.isBiddingOver()) {
             this.endBidding();
         }
@@ -224,13 +210,14 @@ class BidBox {
     }
 
     isBiddingOver() {
-        if (this.bids.has(-1)) {
+        if (this.bids.includes(-1)) {
             return false;
         }
         return true;
     }
 
     endBidding() {
+        console.log("INFO endBidding()")
         const bid2Suit = new Map([['1', 'n'], ['2', 's'], ['3', 'c'], ['4', 'd'], ['5', 'h']]);
         const winningSuit = bid2Suit.get((this.getHighestBid() / 20) % 5)
         store.commit('setTrumpSuit', winningSuit);

@@ -1,10 +1,11 @@
 <template>
     <div class="dev-button-container">
-        <button class="incoming-bid-button dev-button" type="button" id="incomingBidBtn" style="z-index:100;">Advance
-            bidding!</button>
         <button class="bid-button dev-button" type="button" id="openBidBoxBtn" style="z-index:100;">Open bid
             table!</button>
-        <button class="blind-button dev-button" type="button" id="submitBidBtn" style="z-index:100;">Reveal
+        <button class="incoming-bid-button dev-button" type="button" id="incomingBidBtn" style="z-index:100;">Incoming
+            bid!</button>
+        <button class="bid-button dev-button" type="button" id="submitBidBtn" style="z-index:100;">Submit Bid!</button>
+        <button class="blind-button dev-button" type="button" id="incomingBlindBtn" style="z-index:100;">incoming
             blind!</button>
         <button class="play-button dev-button" type="button" id="startPlayBtn" style="z-index:100;">Submit
             blind!</button>
@@ -12,7 +13,7 @@
             finished blind!</button>
         <button class="trick-button dev-button" type="button" id="submitTrickBtn" style="z-index:100;">Submit
             card!</button>
-        <button class="incoming-trick-button dev-button" type="button" id="incomingTrickBtn" style="z-index:100;">Advance
+        <button class="incoming-trick-button dev-button" type="button" id="incomingTrickBtn" style="z-index:100;">Incoming
             trick!</button>
         <!-- Don't think I need this button v -->
         <button class="game-over-button dev-button" type="button" id="gameOverBtn" style="z-index:100;">Game
@@ -33,45 +34,9 @@ function startDevButtons() {
     let gameState = store.state.sharedGameState;
     let dealer = store.state.dealer;
 
-    document.getElementById("incomingBidBtn").addEventListener("click", function () {
-        if (store.getters.getDealer() === -1) {
-            let inputDealer = parseInt(prompt("Who dealt first?", "0 is you, 1 is left, 2 top, 3 right."));
-            for (let i = 0; i < inputDealer+1; i++) {
-                store.commit('advanceDealer');
-            }
-        }
-        dealer = store.getters.getDealer();
-
-        let nextBidder = -1;
-        // Start at 1 because player after deal bids first
-        for (let i = 1; i < 4; i++) {
-            if (storedBidBox.bids[(dealer+i)%4] === -1) {
-                console.log("DEBUG found next bidder:", (dealer+i)%4 );
-                nextBidder = (dealer+i)%4;
-                break;
-            }
-        }
-        // Check to make sure there's a next bidder and it's not this player
-        if (nextBidder === -1) {
-            console.log("OOPS Literally me when I missed the end of bidding somehow. Everyone has bid but we have incoming one!")
-            return;
-        }
-        if (nextBidder === 0) {
-            console.log("INFO I'm next bid so this button will do nothing.")
-            return;
-        }
-
-        // Dispatch a random bid
-        let highestBid = storedBidBox.calculateHighestBid;
-
-        let potentialBids = Array.from({length: 520-highestBid}, (_, i) => (i*20) + highestBid)
-        let bid = potentialBids[Math.floor(Math.random() * potentialBids.length)];
-        // 0 or 1 times bid to simulate 50% chance of passing
-        bid = Math.floor(Math.random() * 2) * bid
-        storedBidBox.incomingBid(nextBidder,bid)
-    });
 
     document.getElementById("openBidBoxBtn").addEventListener("click", function () {
+        storedBidBox = store.getters.getBidBox();
         gameState = 0;
         // console.log("INFO zIndex:",document.getElementById("bidbox").style.zIndex);
 
@@ -84,7 +49,60 @@ function startDevButtons() {
         // For aesthetics the box should go away here. Also, inline-block was necessary for cards to stack horizontally instead of vertically.
         document.getElementById("submitCards").style.display = document.getElementById("submitCards").style.display === "none" ? "flex" : "none";
 
-        storedBidBox.calcAndUpdateVisualStandingBid();
+        storedBidBox.updateBidDisplays();
+    });
+
+    document.getElementById("incomingBidBtn").addEventListener("click", function () {
+        // v Not necessary yet somehow
+        // storedBidBox = store.getters.getBidBox();
+        if (store.getters.getDealer() === -1) {
+            let inputDealer = parseInt(prompt("Who dealt first?", "0 is you, 1 is left, 2 top, 3 right."));
+            for (let i = 0; i < inputDealer+1; i++) {
+                store.commit('advanceDealer');
+            }
+        }
+        dealer = store.getters.getDealer();
+
+        let nextBidder = -1;
+        // Start at 1 because player after deal bids first
+        for (let i = 1; i < 5; i++) {
+            if (storedBidBox.bids[(dealer+i)%4] === -1) {
+                // console.log("DEBUG incomingBidBtn -- found next bidder:", (dealer+i)%4 );
+                nextBidder = (dealer+i)%4;
+                break;
+            }
+        }
+        // Check to make sure there's a next bidder and it's not this player
+        if (nextBidder === -1) {
+            console.log("ERROR incomingBidBtn -- Missed the end of bidding somehow. Everyone bidened but we have incoming bid?")
+            return;
+        }
+        if (nextBidder === 0) {
+            console.log("INFO incomingBidBtn -- I'm next bid so this button will do nothing.")
+            return;
+        }
+
+        // Dispatch a random bid
+        let highestBid = Math.max(storedBidBox.getHighestBid(),0);
+        if (highestBid === 520) {
+            storedBidBox.incomingBid(nextBidder,0);
+            return;
+        }
+        let potentialBids = Array.from({length: (520-highestBid)/20}, (_, i) => (i*20) + highestBid + 20)
+        let bid = potentialBids[Math.floor(Math.random() * potentialBids.length)];
+        // 0 or 1 times bid to simulate 50% chance of passing
+        bid = Math.floor(Math.random() * 2) * bid;
+        storedBidBox.incomingBid(nextBidder,bid);
+        return;
+    });
+
+    document.getElementById("submitBidBtn").addEventListener("click", function () {
+
+        storedBidBox = store.getters.getBidBox();
+
+        storedBidBox.submitBid();
+
+        return;
     });
 
     document.getElementById("closeBidBox").addEventListener("click", function () {
@@ -96,7 +114,7 @@ function startDevButtons() {
     });
 
 
-    document.getElementById("submitBidBtn").addEventListener("click", function () {
+    document.getElementById("incomingBlindBtn").addEventListener("click", function () {
         // v Why??
         store.getters.getSharedHandCards();
         if (storedGameTable.TESTFUNCswitchBlindFD() === 0) {
