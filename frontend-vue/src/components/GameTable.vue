@@ -1,80 +1,32 @@
 <template>
-    <div class="game-table-container">
-        <div class="game-table">
-            <!-- New stuff -->
+    <div id="gameTableContainer">
+        <div class="card-row" id="topCards">
+            <img class="card card-back" src="../assets/cards/cat_cardback.jpeg">
+            <img class="card card-back" src="../assets/cards/cat_cardback.jpeg">
+            <div class="card card-back">?</div>
+            <div class="card card-back">?</div>
+            <div class="card card-back">?</div>
+            <div class="card card-back">?</div>
+            <div class="card card-back">?</div>
+            <div class="card card-back">?</div>
+            <div class="card card-back">?</div>
+            <div class="card card-back">?</div>
+        </div>
+        <div id="gameTable">
             <img class="card card-played card-played-left" id="playedCardLeft" src="../assets/cards/mystery_card_cropped.jpg">
             <img class="card card-played card-played-top" id="playedCardTop" src="../assets/cards/mystery_card_cropped.jpg">
             <img class="card card-played card-played-right" id="playedCardRight"
                 src="../assets/cards/mystery_card_cropped.jpg">
             <img class="card card-played card-played-bottom" id="playedCardBottom"
                 src="../assets/cards/mystery_card_cropped.jpg">
-            <!-- New stuff end -->
-            <div class="card-row submit-cards" id="submitCards"></div>
-            <!-- New stuff start again -->
+            <div class="card-row" id="submitCards"></div>
             <div class="card-stack won-tricks-bottom" id="wonTricksBottom"></div>
             <div class="card-stack won-tricks-left" id="wonTricksLeft"></div>
             <div class="card-stack won-tricks-top" id="wonTricksTop"></div>
             <div class="card-stack won-tricks-right" id="wonTricksRight"></div>
             <div class="card-stack discard-blind" id="blindDiscard"></div>
-            <!-- New stuff end again -->
         </div>
-        <div class="card-row top-cards" id="topCards">
-            <img class="card card-back" src="../assets/cards/cat_cardback.jpeg">
-            <img class="card card-back" src="../assets/cards/cat_cardback.jpeg">
-            <div class="card card-back">?</div>
-            <div class="card card-back">?</div>
-            <div class="card card-back">?</div>
-            <div class="card card-back">?</div>
-            <div class="card card-back">?</div>
-            <div class="card card-back">?</div>
-            <div class="card card-back">?</div>
-            <div class="card card-back">?</div>
-        </div>
-        <div class="card-row bottom-cards" id="bottomCards">
-            <div class="card card-front spades">4♠</div>
-            <div class="card card-front spades">4♠</div>
-            <div class="card card-front spades">4♠</div>
-            <div class="card card-front spades">4♠</div>
-            <div class="card card-front spades">4♠</div>
-            <div class="card card-front spades">4♠</div>
-            <div class="card card-front spades">4♠</div>
-            <div class="card card-front spades">4♠</div>
-            <div class="card card-front spades">4♠</div>
-            <div class="card card-front spades">4♠</div>
-        </div>
-        <div class="card-halfrow left-cards" id="leftCards">
-            <div class="section">
-                <img class="card card-back section-member" src="../assets/cards/cat_cardback.jpeg">
-                <img class="card card-back section-member" src="../assets/cards/cat_cardback.jpeg">
-                <div class="card card-back section-member">?</div>
-                <div class="card card-back section-member">?</div>
-                <div class="card card-back section-member">?</div>
-            </div>
-            <div class="section">
-                <div class="card card-back section-member">?</div>
-                <div class="card card-back section-member">?</div>
-                <div class="card card-back section-member">?</div>
-                <div class="card card-back section-member">?</div>
-                <div class="card card-back section-member">?</div>
-            </div>
-        </div>
-        <div class="card-halfrow right-cards" id="rightCards">
-            <div class="section">
-                <img class="card card-back section-member" src="../assets/cards/cat_cardback.jpeg">
-                <img class="card card-back section-member" src="../assets/cards/cat_cardback.jpeg">
-                <div class="card card-back section-member">?</div>
-                <div class="card card-back section-member">?</div>
-                <div class="card card-back section-member">?</div>
-            </div>
-            <div class="section">
-                <div class="card card-back section-member">?</div>
-                <div class="card card-back section-member">?</div>
-                <div class="card card-back section-member">?</div>
-                <div class="card card-back section-member">?</div>
-                <div class="card card-back section-member">?</div>
-            </div>
-        </div>
-        <div class="card-row blind-cards" id="blindCards">
+        <div class="card-row" id="blindCards">
             <img class="card card-back" src="../assets/cards/cat_cardback.jpeg">
             <img class="card card-back" src="../assets/cards/cat_cardback.jpeg">
             <div class="card card-back">?</div>
@@ -106,11 +58,8 @@ class GameTable {
         this.playedCards = ['', '', '', ''];
         // 0 is you, 1 is left, 2 top, 3 right
         this.lastTrickWinner = -1;
-        // These are counts just tracking how high a stack is. Max 10.
-        this.wonTricksBottom = 0;
-        this.wonTricksLeft = 0;
-        this.wonTricksTop = 0;
-        this.wonTricksRight = 0;
+        // These are counts just tracking how high a stack is for each player. Max 10 total and 10 for 1 player.
+        this.wonTricks = [0, 0, 0, 0];
         this.blindDiscard = false;
 
         this.sortableHandCards = null;
@@ -122,12 +71,20 @@ class GameTable {
     }
 
     async initializeSortables() {
-        this.sortableHandCards = new Sortable(document.getElementById('bottomCards'), {
+        bottomCardsElem = document.getElementById('bottomCards');
+        if (!bottomCardsElem) console.log("ERROR initializeSortables() -- Did not find bottom cards");
+        blindCardsElem = document.getElementById('blindCards');
+        if (!blindCardsElem) console.log("ERROR initializeSortables() -- Did not find blind cards");
+        submitCardsElem = document.getElementById('submitCards');
+        if (!submitCardsElem) console.log("ERROR initializeSortables() -- Did not find submittal cards");
+        if ((!bottomCardsElem) || (!blindCardsElem) || (!submitCardsElem)) return 1;
+
+        this.sortableHandCards = new Sortable(bottomCardsElem, {
             // animation: 1000,
             disabled: false,
             group: 'shared', 
         });
-        this.sortableBlindCards = new Sortable(document.getElementById('blindCards'), {
+        this.sortableBlindCards = new Sortable(blindCardsElem, {
             // animation: 1000,
             disabled: true,
             group: 'shared', 
@@ -136,7 +93,7 @@ class GameTable {
         // ... if there's already one in the submit box -- {filter: '.filtered'}
         // However this may confuse user if trying to change submitted card out by adding one then removing one
         this.sortableSubmitCards = new Sortable(
-            document.getElementById('submitCards'),
+            submitCardsElem,
             // { disabled: true, group: 'shared', animation: 1000 }
             { disabled: true, group: 'shared' }
         );
@@ -152,7 +109,9 @@ class GameTable {
                 store.commit('setSharedHandCards', shuffle.slice(35, 45))
                 // v Commit above not reflected here without this getter for some reason
                 handCards = store.getters.getSharedHandCards();
-                this.renderHand(handCards)
+
+                // this.renderHand(handCards);
+                setTimeout(() => this.renderHand(handCards), 500);
                 // console.log("in initializeTable store.state.sharedHandCards.len:",handCards.length)
             }
         } catch (error) {
@@ -168,7 +127,7 @@ class GameTable {
         // let possibilities = vals.reduce((acc, v) => {return acc.concat(suits.map(s => ({value:v,suit:s})));}, []).concat({value:'',suit:'j'});
         let possibilities = vals.flatMap(v => suits.map(s => ({ value: v, suit: s }))).concat({ value: '', suit: 'j' });
 
-        // Fisher-Yates from James Bubb on dev.to
+        // Fisher-Yates from James Bubb on dev.to, 2020 "How to shuffle an array in JavaScript"
         for (let i = possibilities.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             const temp = possibilities[i];
@@ -201,9 +160,7 @@ class GameTable {
         let startIndex = src.search("/src/assets/cards");
         if (jpgIndex-startIndex > 3 + 18) {
             // TODO raise error
-            console.log("Umm Houston? That's not a card front:",src.slice(18,jpgIndex))
-            // Umm Houston? That's not a card front: 173/src/assets/cards/Kd
-            // http://localhost:5173/src/assets/cards/4h.jpeg
+            console.log("ERROR parseCardFromSrc() -- That's not a card front:",src.slice(18,jpgIndex))
         }
 
         // 18 chars gets past /src/assets/cards/
@@ -230,17 +187,23 @@ class GameTable {
             default: return '';
         }
     }
+    
+    getFinishedTricks() {
+        // Reduce code from florian-margaine on StackOverflow 03/25/2013
+        return this.wonTricks.reduce((partialSum, n) => partialSum + n, 0);
+    }
 
     renderHand(cardsArr) {
         const cardsElement = document.getElementById('bottomCards');
-        if (!cardsElement) console.log("bottom cards not found");
+        if (!cardsElement) console.log("ERROR Bottom cards not found");
         if (!cardsElement) return;
-
         console.log('INFO Meesa rendering hand:',cardsArr)
 
-        cardsElement.innerHTML = cardsArr.map(card =>
-            `<img class="card card-front ${this.getSuitClass(card.suit)}" src="/src/assets/cards/${card.value}${card.suit}.jpeg">`
-        ).join('');
+        cardsElement.innerHTML = cardsArr.map(card =>this.drawCard(card,false)).join('');
+
+        Array.from(cardsElement.children).forEach((c) => {c.classList.add("hand-card");});
+
+        makeHandBouncy();
     }
 
     TESTFUNCswitchBlindFD() {
@@ -248,6 +211,7 @@ class GameTable {
 
         const cardsElement = document.getElementById('blindCards');
         // TODO raise error
+        if (!cardsElement) console.log("ERROR Did not find blind cards");
         if (!cardsElement) return 1;
 
         if (cardsElement.childNodes[0].classList.contains('card-back')) {
@@ -270,6 +234,7 @@ class GameTable {
         this.blindCards = cardsArr.map(card => card.value + card.suit);
 
         const cardsElement = document.getElementById('blindCards');
+        if (!cardsElement) console.log("ERROR Did not find blind cards");
         if (!cardsElement) return;
 
         cardsElement.innerHTML = cardsArr.map(card =>
@@ -282,6 +247,7 @@ class GameTable {
 
     submitBlind() {
         const blindElement = document.getElementById('blindCards');
+        if (!blindElement) console.log("ERROR Did not find blind cards");
         if (!blindElement) return 1;
 
         // Disable sort during this function to prevent edge case inconsistencies
@@ -325,7 +291,10 @@ class GameTable {
     }
 
     incomingBlindDiscard(pos) {
-        if (!pos === this.lastTrickWinner)
+        if (!pos === this.lastTrickWinner) {
+            console.log("WARN It seems the server thinks:",pos,"won the blind but client thinks:",this.lastTrickWinner,"won it. Believing server.");
+            this.lastTrickWinner = pos;
+        }
 
         document.getElementById('blindDiscard').style.display = "inline";
 
@@ -449,9 +418,11 @@ class GameTable {
     }
 
     endTrick() {
-        console.log("INFO ending the trick!")
+        console.log("INFO endTrick() -- ending the trick!")
         this.lastTrickWinner = this.getTrickWinner();
-        console.log("INFO My brother in christ",this.lastTrickWinner,"won the trick!");
+        console.log("INFO endTrick() -- Announcing",this.lastTrickWinner,"won the trick!");
+
+        this.wonTricks[this.lastTrickWinner] += 1;
 
         // TODO
         // sendTrickResultToServer();
@@ -460,13 +431,61 @@ class GameTable {
         this.playedCards = ['', '', '', ''];
 
         // Clear the cards rendered
-        // playedCards = document.getElementsByClassName("card-played");
-        // for (let i = 0; i < playedCards.length; i++) {
-        //     playedCards.item(i).src = "../assets/cards/cat_cardback.jpeg";
-        // }
         Array.prototype.forEach.call(document.getElementsByClassName("card-played"), (elem) => {
+            elem.src = "/src/assets/cards/cat_cardback.jpeg";
             elem.style.display = "none";
         });
+
+        if (this.isHandOver()) {
+            this.endHand();
+        }
+    }
+
+    isHandOver() {
+        gameState = store.getters.getGameState();
+        if (gameState === 5 && this.getFinishedTricks() === 10) {
+            return true;
+        }
+        return false;
+    }
+
+    endHand() {
+        const teamTricksWon = [
+            this.wonTricks[0] + this.wonTricks[2],
+            this.wonTricks[1] + this.wonTricks[2]
+        ];
+
+        const bb = store.getters.getBidBox();
+        if(bb.getHighestBid() !== bb.bids[bb.winningBidder] || bb.getHighestBid() !== store.getters.getWinningBid()) {
+            console.log("ERROR winning bidder's bid wasn't the highest somehow? Continuing...");
+        }
+
+        // Update score for non-bidwinning team
+        const gc = store.getters.getGameCtlr();
+        gc.scores[(bb.winningBidteam+1) %2] += teamTricksWon[ (bb.winningBidteam +1) % 2]
+
+        // Update score for bidwinning team
+        const neededTricks = Math.floor((bb.getHighestBid() + 560) / 100);
+        if (teamTricksWon[bb.winningBidteam] >= neededTricks) {
+            gc.scores[bb.winningBidteam] += 2 *bb.getHighestBid();
+        }
+        gc.scores[bb.winningBidteam] -= bb.getHighestBid();
+
+        if(gc.isGameOver()) {
+            gc.endGame();
+            return;
+        }
+
+        // TODO Come on, can we consolidate some of this?
+        bb.bids = [-1, -1, -1, -1];
+        bb.winningBidder = -1;
+        bb.winningBidteam = -1;
+        store.commit('setWinningBid', -1);
+        store.commit('advanceDealer');
+        store.commit('setGameState', 0);
+        this.wonTricks = [0, 0, 0, 0];
+
+        return;
     }
 
     getTrickWinner() {
@@ -536,6 +555,21 @@ class GameTable {
         console.log("INFO Got trick winner:",currentTrickWinner)
         return currentTrickWinner
     }
+}
+
+function makeHandBouncy() {
+    let handCardsArr = Array.from(document.getElementsByClassName("hand-card"));
+
+    for (let i = 0; i < handCardsArr.length; i++) {
+
+        // handCardsArr[i].classList.add("bouncy")
+        // setTimeout(() => handCardsArr[i].classList.add("bouncy"), 20*i);
+        setTimeout(() => handCardsArr[i].className += " bouncy", 20*i);
+    }
+
+    // Array.prototype.forEach.call(document.getElementsByClassName("card-played"), (elem) => {
+    //     elem.classList.add("bouncy");
+    // });
 }
 
 onMounted(() => {
@@ -632,7 +666,7 @@ onMounted(() => {
     z-index: 4;
 }
 
-.submit-cards {
+#submitCards {
     bottom: -40px;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -641,4 +675,38 @@ onMounted(() => {
     min-width: 70px;
     min-height: 100px;
 }
+#topCards {
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#gameTableContainer {
+  position: relative;
+  width: 1000px;
+  height: 800px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#gameTable {
+  width: 800px;
+  height: 600px;
+  background-color: #34495e;
+  border-radius: 20px;
+  position: absolute;
+}
+
+.card-row {
+  position: absolute;
+  display: flex;
+  gap: 10px;
+}
+
+#blindCards {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
 </style>

@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-// Foundation of this from Arthur C. Codex, Reintech, "Working with Vue.js and WebSockets"
+// Foundation of this from Arthur C. Codex, Reintech 2023, "Working with Vue.js and WebSockets"
 import { ref, onMounted } from 'vue'
 
 const message = ref('')

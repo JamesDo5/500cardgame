@@ -8,48 +8,6 @@ body {
   user-select: none;
 }
 
-.stateBanner {
-  position: absolute;
-  padding: 10px 0px;
-  top: 10px;
-  left: 11px;
-  color: white
-}
-
-.game-table-container {
-  position: relative;
-  width: 1000px;
-  height: 800px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.game-table {
-  width: 800px;
-  height: 600px;
-  background-color: #34495e;
-  border-radius: 20px;
-  position: absolute;
-}
-
-.card-row {
-  position: absolute;
-  display: flex;
-  gap: 10px;
-}
-.card-halfrow {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-.section {
-  display: flex;
-  gap: 10px;
-}
-.section-member {
-}
-
 .card {
   width: 70px;
   height: 100px;
@@ -86,28 +44,4 @@ body {
 .card-front.clubs,
 .card-front.spades {
   color: black;
-}
-
-.top-cards {
-  top: -20px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-.bottom-cards {
-  bottom: -20px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-.left-cards {
-  left: -35%;
-  top: 37.5%;
-}
-.right-cards {
-  right: -35%;
-  top: 37.5%;
-}
-.blind-cards {
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
 }

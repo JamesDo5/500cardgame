@@ -38,7 +38,6 @@ function startDevButtons() {
     document.getElementById("openBidBoxBtn").addEventListener("click", function () {
         storedBidBox = store.getters.getBidBox();
         gameState = 0;
-        // console.log("INFO zIndex:",document.getElementById("bidbox").style.zIndex);
 
         document.getElementById("bidbox").style.display = document.getElementById("bidbox").style.display === "inline" ? "none" : "inline";
         document.getElementById("bottomBid").style.display = document.getElementById("bottomBid").style.display === "inline" ? "none" : "inline";

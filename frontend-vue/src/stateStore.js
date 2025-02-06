@@ -5,12 +5,9 @@ export default new Vuex.Store({
         // The blind, trick counts, and Xthing are stored as part of the game table.
         gameTable: null,
         bidBox: null,
-        // -1:uninitialized, 0:dealing/shuffling, 1:hands dealt, 2:bids submitted, 3:blind dealt, 4:blind submitted, 5:trick play, 6:game over
-        // There is a state between 1 and 2 where the global state hasnt changed but locally we have submitted bid
-        // 2 and 3 are the same
-        // There is a state between 3 and 4 where the global state hasnt changed but locally we have submitted blind
-        // 4 and 5 are the same
-        // state V2: -1:uninitialized, 0:dealing/shuffling, 1:hands dealt, 2:I bid, 3:all bids in, blind dealt, 4:I submitted blind, 5:trick play, 6:game over
+        // Game controller's scope is everything outside the hand level. Interhand things like score and game-over screen.
+        gameCtlr: null,
+        // states -1:uninitialized, 0:dealing/shuffling, 1:hands dealt, 2:I bid, 3:all bids in, blind dealt, 4:I submitted blind, 5:trick play, 6:game over
         // With this setup, the server never uses states 2 or 4
         gameState: -1,
         // Hand structure: ['5s','6c','7h','8d','9d','10d','Jd','Qd','Kd','j']
@@ -27,6 +24,9 @@ export default new Vuex.Store({
         },
         setSharedBidBox(state, obj) {
             state.bidBox = obj;
+        },
+        setGameCtlr(state, obj) {
+            state.gameCtlr = obj;
         },
         setGameState(state, n) {
             state.gameState = n;
@@ -55,6 +55,9 @@ export default new Vuex.Store({
         },
         getBidBox: (state) => () => {
             return state.bidBox;
+        },
+        getGameCtlr: (state) => () => {
+            return state.gameCtlr;
         },
         getGameState: (state) => () => {
             return state.gameState;
