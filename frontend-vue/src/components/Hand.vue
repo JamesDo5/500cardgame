@@ -15,10 +15,76 @@
 
 <script setup>
 import { onMounted } from 'vue';
-const emit = defineEmits(['hand-ready'])
+import { useStore } from 'vuex'
+import Sortable from 'sortablejs';
+const emit = defineEmits(['hand-rendered'])
+const store = useStore()
+
+
+let bottomCardsElem;
+let sortableHandCards;
+let handCards = store.state.sharedHandCards;
+
+function initSortable() {
+    bottomCardsElem = document.getElementById('bottomCards');
+    if (!bottomCardsElem) console.log("ERROR initializeSortables() -- Did not find bottom cards");
+    sortableHandCards = new Sortable(bottomCardsElem, {
+        // animation: 1000,
+        disabled: false,
+        group: 'shared', 
+    });
+
+    if (!bottomCardsElem) return 1;
+}
+
+function incomingHandCards(shuf) {
+    // shuf is expected to be an array of size 10 with 10 valid cards
+
+    store.commit('setSharedHandCards', shuf);
+    // v Commit above not reflected here without this getter for some reason
+    handCards = store.getters.getSharedHandCards();
+
+    renderHand(shuf);
+
+    emit('hand-rendered');
+}
+
+function produceCard(card, fd) {
+    return `<img class="card ${fd ? 'card-back' : `card-front ${this.getSuitClass(card.suit)} `}" src="/src/assets/cards/${fd ? 'cat_cardback' : `${card.value}${card.suit}`}.jpeg">`
+}
+
+function makeHandBouncy() {
+    let handCardsArr = Array.from(document.getElementsByClassName("hand-card"));
+
+    for (let i = 0; i < handCardsArr.length; i++) {
+
+        // handCardsArr[i].classList.add("bouncy")
+        // setTimeout(() => handCardsArr[i].classList.add("bouncy"), 20*i);
+        setTimeout(() => handCardsArr[i].className += " bouncy", 20*i);
+    }
+
+    // Array.prototype.forEach.call(document.getElementsByClassName("card-played"), (elem) => {
+    //     elem.classList.add("bouncy");
+    // });
+}
+
+function renderHand(cardsArr) {
+    const cardsElement = document.getElementById('bottomCards');
+    if (!cardsElement) console.log("ERROR Bottom cards not found");
+    if (!cardsElement) return;
+    console.log('INFO Meesa rendering hand:',cardsArr)
+
+    cardsElement.innerHTML = cardsArr.map(card => produceCard(card,false)).join('');
+
+    Array.from(cardsElement.children).forEach((c) => {c.classList.add("hand-card");});
+
+    // makeHandBouncy();
+}
+
+defineExpose({renderHand, incomingHandCards})
 
 onMounted(() => {
-    emit('hand-ready');
+    initSortable()
 });
 </script>
 

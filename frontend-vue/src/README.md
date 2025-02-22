@@ -4,14 +4,14 @@
 
 ### Priority 0: Critical for MVP client
 - [x] Implement dealer and dealing.
-- [ ] Implement dealer and dealing visually.
+- [ ] Implement dealing player and dealing visually.
 - [ ] Maybe there should be 15 seconds where someone can press deal during their deal and after that it auto-deals.
 - [ ] Player names displayed
-- [ ] Make player cards a lot bigger, game table smaller
+- [ ] Make player's cards a lot bigger, game table smaller
 - [ ] ^At same time, cards need a slight border? Or not maybe!
 - [ ] Score tracking 
-- [ ] Correctly update card arr states when cards move with sortable
-- [x] Fix bidding to actually operate from ws func
+- [ ] Correctly update card arr states when cards move with sortable (this is so the states can be source of truth for blind and card submits)
+- [x] Fix bidding to actually operate from callee func
 - [x] Move L,T,R bid displays to visually key off of bidbox and not be part of game table
 
 ### Priority 1: Critical for first website release
@@ -28,7 +28,8 @@
 ### Priority 2a: First order aesthetic concerns
 - [ ] Shuffle/deal animation
 - [ ] Cards should flip 180 when clicked
-- [ ] Cards should bounce around slightly and "breathe"
+- [ ] Cards should "breathe"
+- [ ] ^ Cards should bounce around slightly in addition to breathing
 - [ ] Timer should have a cute clock animation, pref a cat clock style
 - [ ] Little game winner animation or page
 - [ ] Little trick animation for trick stack addition

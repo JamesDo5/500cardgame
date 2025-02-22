@@ -1,6 +1,13 @@
+<script setup>
+let playerLR = "";
+const props = defineProps(['playerLR']);
+
+</script>
+
 <template>
-    <div class="card-halfrow" id={{playerLR}}>
-        <div class="section">
+    <!-- <div class="card-halfrow" id={{playerLR}}> -->
+    <div class="card-halfrow" id={{ playerLR }}>
+            <div class="section">
             <img class="card card-back section-member" src="../assets/cards/cat_cardback.jpeg">
             <img class="card card-back section-member" src="../assets/cards/cat_cardback.jpeg">
             <img class="card card-back section-member" src="../assets/cards/cat_cardback.jpeg">
@@ -16,11 +23,6 @@
         </div>
     </div>
 </template>
-
-<script setup>
-const props = defineProps(['playerLR'])
-
-</script>
 
 <style scoped>
 /* .card {

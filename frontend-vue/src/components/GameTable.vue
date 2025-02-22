@@ -46,8 +46,10 @@ let gameState = store.state.sharedGameState; // 0 is bidding, 1 is blind exchang
 let handCards = store.state.sharedHandCards;
 const DEV_STANDALONE = true;
 const emit = defineEmits(['gametable-ready'])
+const props = defineProps(['thefunction']);
 const allowedSuits = inject('cardSuits')
 const allowedVals = inject('cardValues')
+
 
 class GameTable {
     constructor() {
@@ -62,7 +64,6 @@ class GameTable {
         this.wonTricks = [0, 0, 0, 0];
         this.blindDiscard = false;
 
-        this.sortableHandCards = null;
         this.sortableBlindCards = null;
         this.sortableSubmitCards = null;
 
@@ -71,19 +72,14 @@ class GameTable {
     }
 
     async initializeSortables() {
-        bottomCardsElem = document.getElementById('bottomCards');
-        if (!bottomCardsElem) console.log("ERROR initializeSortables() -- Did not find bottom cards");
-        blindCardsElem = document.getElementById('blindCards');
+        // See Hand.vue for other Sortable
+        const blindCardsElem = document.getElementById('blindCards');
         if (!blindCardsElem) console.log("ERROR initializeSortables() -- Did not find blind cards");
-        submitCardsElem = document.getElementById('submitCards');
+        const submitCardsElem = document.getElementById('submitCards');
         if (!submitCardsElem) console.log("ERROR initializeSortables() -- Did not find submittal cards");
-        if ((!bottomCardsElem) || (!blindCardsElem) || (!submitCardsElem)) return 1;
 
-        this.sortableHandCards = new Sortable(bottomCardsElem, {
-            // animation: 1000,
-            disabled: false,
-            group: 'shared', 
-        });
+        if ((!blindCardsElem) || (!submitCardsElem)) return 1;
+
         this.sortableBlindCards = new Sortable(blindCardsElem, {
             // animation: 1000,
             disabled: true,
@@ -106,12 +102,11 @@ class GameTable {
             if (DEV_STANDALONE) {
                 const shuffle = this.generateMockShuffle();
                 this.blindCards = shuffle.slice(10, 15);
-                store.commit('setSharedHandCards', shuffle.slice(35, 45))
-                // v Commit above not reflected here without this getter for some reason
-                handCards = store.getters.getSharedHandCards();
 
-                // this.renderHand(handCards);
-                setTimeout(() => this.renderHand(handCards), 500);
+                // store.commit('setSharedHandCards', shuffle.slice(35, 45))
+                props.thefunction(shuffle.slice(35, 45))
+                // TODO I want to actually call my sister's function from here but for now I am emitting and le
+
                 // console.log("in initializeTable store.state.sharedHandCards.len:",handCards.length)
             }
         } catch (error) {
@@ -138,13 +133,6 @@ class GameTable {
         console.log(possibilities)
 
         return possibilities;
-        // return Array.from({ length: 44 }, () => ({
-        //   value: vals[Math.floor(Math.random() * vals.length)],
-        //   suit: suits[Math.floor(Math.random() * suits.length)]
-        // })).concat({
-        //   value: "",
-        //   suit: "Joker"
-        // });
     }
 
     parseCardFromStr(cardStr) {
@@ -167,7 +155,7 @@ class GameTable {
         return src.slice(startIndex+18,jpgIndex)
     }
 
-    drawCard(card, fd) {
+    produceCard(card, fd) {
         return `<img class="card ${fd ? 'card-back' : `card-front ${this.getSuitClass(card.suit)} `}" src="/src/assets/cards/${fd ? 'cat_cardback' : `${card.value}${card.suit}`}.jpeg">`
     }
 
@@ -193,19 +181,6 @@ class GameTable {
         return this.wonTricks.reduce((partialSum, n) => partialSum + n, 0);
     }
 
-    renderHand(cardsArr) {
-        const cardsElement = document.getElementById('bottomCards');
-        if (!cardsElement) console.log("ERROR Bottom cards not found");
-        if (!cardsElement) return;
-        console.log('INFO Meesa rendering hand:',cardsArr)
-
-        cardsElement.innerHTML = cardsArr.map(card =>this.drawCard(card,false)).join('');
-
-        Array.from(cardsElement.children).forEach((c) => {c.classList.add("hand-card");});
-
-        makeHandBouncy();
-    }
-
     TESTFUNCswitchBlindFD() {
         let faceDown = true;
 
@@ -220,7 +195,7 @@ class GameTable {
         }
 
         // Now rerender the blind with the new faceDown
-        cardsElement.innerHTML = this.blindCards.map(card =>this.drawCard(card,faceDown)).join('');
+        cardsElement.innerHTML = this.blindCards.map(card =>this.produceCard(card,faceDown)).join('');
         console.log("Blind cards:",this.blindCards)
 
         // Note the use of faceDown to determine whether they are disabled
@@ -557,21 +532,6 @@ class GameTable {
     }
 }
 
-function makeHandBouncy() {
-    let handCardsArr = Array.from(document.getElementsByClassName("hand-card"));
-
-    for (let i = 0; i < handCardsArr.length; i++) {
-
-        // handCardsArr[i].classList.add("bouncy")
-        // setTimeout(() => handCardsArr[i].classList.add("bouncy"), 20*i);
-        setTimeout(() => handCardsArr[i].className += " bouncy", 20*i);
-    }
-
-    // Array.prototype.forEach.call(document.getElementsByClassName("card-played"), (elem) => {
-    //     elem.classList.add("bouncy");
-    // });
-}
-
 onMounted(() => {
     const gt = new GameTable();
 
@@ -579,7 +539,7 @@ onMounted(() => {
     store.commit('setSharedGameTable', gt);
 
     // Event bus to the parent who will activate other things relying on game table to load
-    emit('gametable-ready');
+        emit('gametable-ready');
 })
 </script>
 
