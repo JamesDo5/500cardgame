@@ -45,8 +45,8 @@ const store = useStore()
 let gameState = store.state.sharedGameState; // 0 is bidding, 1 is blind exchange, 2 is doing tricks, 3 is scoring and re-deal
 let handCards = store.state.sharedHandCards;
 const DEV_STANDALONE = true;
-const emit = defineEmits(['gametable-ready'])
-const props = defineProps(['thefunction']);
+const emit = defineEmits(['gametable-ready','DEV-handincoming'])
+const props = defineProps(['handfuncIncomingcards']);
 const allowedSuits = inject('cardSuits')
 const allowedVals = inject('cardValues')
 
@@ -103,10 +103,12 @@ class GameTable {
                 const shuffle = this.generateMockShuffle();
                 this.blindCards = shuffle.slice(10, 15);
 
-                // store.commit('setSharedHandCards', shuffle.slice(35, 45))
-                props.thefunction(shuffle.slice(35, 45))
-                // TODO I want to actually call my sister's function from here but for now I am emitting and le
+                // props.handfuncIncomingcards(shuffle.slice(35, 45))
+                // Without the prop working for now we will make this commit and emit
+                store.commit('setSharedHandCards', shuffle.slice(35, 45));
+                emit('DEV-handincoming');
 
+                // handCards = store.getters.getSharedHandCards();
                 // console.log("in initializeTable store.state.sharedHandCards.len:",handCards.length)
             }
         } catch (error) {
@@ -539,7 +541,7 @@ onMounted(() => {
     store.commit('setSharedGameTable', gt);
 
     // Event bus to the parent who will activate other things relying on game table to load
-        emit('gametable-ready');
+    emit('gametable-ready');
 })
 </script>
 

@@ -38,19 +38,32 @@ function initSortable() {
 }
 
 function incomingHandCards(shuf) {
-    // shuf is expected to be an array of size 10 with 10 valid cards
+    // TODO assertion shuf expected to be array of size 10 with 10 valid cards
 
     store.commit('setSharedHandCards', shuf);
-    // v Commit above not reflected here without this getter for some reason
+    // v Commit above not reflected here without this getter for some reason. This stores the var to be used elsewhere
     handCards = store.getters.getSharedHandCards();
 
     renderHand(shuf);
 
+    // console.log("In Hand.vue incomingHandCards -- Rendered hand!!!")
     emit('hand-rendered');
 }
 
+// Copied from GameTable.vue, needed in both right now. Once I get better at function sharing I will call it across components
+function getSuitClass(suit) {
+    switch (suit) {
+        case 'h': return 'hearts';
+        case 'd': return 'diamonds';
+        case 'c': return 'clubs';
+        case 's': return 'spades';
+        case 'j': return 'joker';
+        default: return '';
+    }
+}
+
 function produceCard(card, fd) {
-    return `<img class="card ${fd ? 'card-back' : `card-front ${this.getSuitClass(card.suit)} `}" src="/src/assets/cards/${fd ? 'cat_cardback' : `${card.value}${card.suit}`}.jpeg">`
+    return `<img class="card ${fd ? 'card-back' : `card-front ${getSuitClass(card.suit)} `}" src="/src/assets/cards/${fd ? 'cat_cardback' : `${card.value}${card.suit}`}.jpeg">`
 }
 
 function makeHandBouncy() {
@@ -72,7 +85,7 @@ function renderHand(cardsArr) {
     const cardsElement = document.getElementById('bottomCards');
     if (!cardsElement) console.log("ERROR Bottom cards not found");
     if (!cardsElement) return;
-    console.log('INFO Meesa rendering hand:',cardsArr)
+    // console.log('INFO Meesa rendering hand:',cardsArr)
 
     cardsElement.innerHTML = cardsArr.map(card => produceCard(card,false)).join('');
 
