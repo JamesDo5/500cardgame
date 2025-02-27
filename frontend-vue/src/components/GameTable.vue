@@ -646,14 +646,15 @@ onMounted(() => {
 #gameTableContainer {
   position: relative;
   width: 1000px;
-  height: 800px;
+  height: 500px;
+  transform: translate(0%, -10%);
   display: flex;
   justify-content: center;
   align-items: center;
 }
 #gameTable {
-  width: 800px;
-  height: 600px;
+  width: 700px;
+  height: 500px;
   background-color: #34495e;
   border-radius: 20px;
   position: absolute;

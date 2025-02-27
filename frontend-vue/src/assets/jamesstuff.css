@@ -45,3 +45,42 @@ body {
 .card-front.spades {
   color: black;
 }
+
+/* Added due to generated elems not taking on scoped CSS */
+.hand-card {
+  width: 140px;
+  height: 200px;
+  background-color: white;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+  will-change: transform;
+  justify-content: center;
+  align-items: center;
+}
+
+.flipped {
+  transform: rotateY(90deg);
+  perspective: 1000px;
+}
+
+.bouncy {
+animation: MoveUpDown 2s linear infinite;
+}
+/* .hand-card {
+} */
+@keyframes MoveUpDown {
+0%, 100% {
+  /* transform: translate(-50%, 0); */
+  transform: translateY(2px);
+}
+60% {
+  /* transform: translate(-50%, -4px); */
+  transform: translateY(-1px);
+}
+}
+

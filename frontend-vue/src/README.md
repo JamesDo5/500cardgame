@@ -6,10 +6,12 @@
 - [x] Implement dealer and dealing.
 - [ ] Implement dealing player and dealing visually.
 - [ ] Maybe there should be 15 seconds where someone can press deal during their deal and after that it auto-deals.
-- [ ] Player names displayed
-- [ ] Make player's cards a lot bigger, game table smaller
-- [ ] ^At same time, cards need a slight border? Or not maybe!
-- [ ] Score tracking 
+- [ ] Fix the props I broke for OtherPlayer component
+- [ ] Player names implemented and receivable from server.
+- [x] Make player's cards a lot bigger, game table smaller
+- [ ] Cards get smaller when they go to the table. Or maybe everything on the table should be comically large too?
+- [ ] Score tracking under the hood.
+- [ ] Score tracking visually.
 - [ ] Correctly update card arr states when cards move with sortable (this is so the states can be source of truth for blind and card submits)
 - [x] Fix bidding to actually operate from callee func
 - [x] Move L,T,R bid displays to visually key off of bidbox and not be part of game table
@@ -26,19 +28,23 @@
 - [ ] Auto-play should play from the client's submit card box first, maybe 10 seconds locally it tries to submit and then at 15 the server auto-plays
 
 ### Priority 2a: First order aesthetic concerns
-- [ ] Shuffle/deal animation
+- [ ] Shuffle animation between games
 - [ ] Cards should flip 180 when clicked
-- [ ] Cards should "breathe"
-- [ ] ^ Cards should bounce around slightly in addition to breathing
+- [x] Cards should "breathe"
+- [ ] ^ Cards should bounce around slightly in addition to breathing (maybe not tho?)
 - [ ] Timer should have a cute clock animation, pref a cat clock style
 - [ ] Little game winner animation or page
 - [ ] Little trick animation for trick stack addition
 - [ ] Make text show for user when they play a card
 
 ### Priority 3: Do later
-- [ ] Investigate breaking up gametable component into multiple components
-- [ ] Figure out how to make subcomponents actually work. Had file location errors when first tried
-- [ ] Move hand to subcomponent
+- [x] Investigate breaking up gametable component into multiple components
+- [x] Break gametable component into multiple components
+- [x] Figure out how to make subcomponents actually work. Had file location errors when first tried
+- [x] Move hand to subcomponent
+- [ ] Move top player code into OtherPlayer.vue
+- [ ] Look into making a settings/prefs menu
+- [ ] Look into style scoping elements that come under a parent purview during code execution in vue. Right now they do not get the scoped component styles.
 - [ ] Partner jokes when your partner saves you
 - [ ] Little noise or animation when user tries to do something that's not allowed locally
 - [ ] Mark cheaters when user submits card they don't have

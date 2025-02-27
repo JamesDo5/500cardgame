@@ -7,10 +7,10 @@ export default new Vuex.Store({
         bidBox: null,
         // Game controller's scope is everything outside the hand level. Interhand things like score and game-over screen.
         gameCtlr: null,
-        // states -1:uninitialized, 0:dealing/shuffling, 1:hands dealt, 2:I bid, 3:all bids in, blind dealt, 4:I submitted blind, 5:trick play, 6:game over
-        // With this setup, the server never uses states 2 or 4
+        // states -1:uninitialized, 0:dealing/shuffling, 1:hand dealt, 2:I bid, 3:all bids in, blind dealt, 4:I submitted blind, 5:trick play, 6:game over
+        // With this setup, the server never uses states 2 or 4, but client can
         gameState: -1,
-        // Hand structure: ['5s','6c','7h','8d','9d','10d','Jd','Qd','Kd','j']
+        // Hand structure eg: ['5s','6c','7h','8d','9d','10d','Jd','Qd','Kd','j']
         handCards: [],
         score: -1,
         winningBid: -1,
