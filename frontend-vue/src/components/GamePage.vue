@@ -3,8 +3,8 @@
     <div class="standing-bid-display" id="finalBidDisplay" style="color:white;">Standing Bid: 000</div>
     <Hand @hand-rendered="handIsReady" ref="handRef" />
     <BidBox />
-    <!-- <OtherPlayer playerLR="leftCards" /> -->
-    <!-- <OtherPlayer playerLR="rightCards" /> -->
+    <OtherPlayer playerLR="leftCards" />
+    <OtherPlayer playerLR="rightCards" />
     <!-- <GameTable @gametable-ready="gameTableIsReady" thefunction="handRef.value.incomingHandCards" /> -->
     <GameTable @gametable-ready="gameTableIsReady" @DEV-handincoming="callHndIncoCrds" thefunction="myfuncy" />
     <!-- <GameTable @gametable-ready="gameTableIsReady" /> -->

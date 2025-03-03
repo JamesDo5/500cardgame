@@ -114,14 +114,12 @@ function startDevButtons() {
 
 
     document.getElementById("incomingBlindBtn").addEventListener("click", function () {
-        // v Why??
-        store.getters.getSharedHandCards();
         if (storedGameTable.TESTFUNCswitchBlindFD() === 0) {
             // TODO game state manipulation stuff on success
         }
         if (gameState === 0) {
             gameState = 0;
-            // gameTable.renderBlind();
+            // gameTable.incomingBlind();
         }
     });
 

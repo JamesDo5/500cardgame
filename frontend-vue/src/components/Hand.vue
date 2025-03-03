@@ -31,7 +31,32 @@ async function initSortable() {
     sortableHandCards = new Sortable(bottomCardsElem, {
         // animation: 1000,
         disabled: false,
-        group: 'shared', 
+        group: 'shared',
+        onAdd: function (evt) {
+            let hcs = store.getters.getSharedHandCards();
+            hcs.push(cardStr2CardObj(src2CardStr(evt.item.src)));
+            // TODO assert new item is not already present in hand
+            store.commit('setSharedHandCards', hcs);
+            handifyCard(evt.item)
+        },
+        onRemove: function (evt) {
+            let hcs = store.getters.getSharedHandCards();
+            // let ind = hcs.map(c => cardObj2Str(c)).indexOf(src2CardStr(evt.item.src));
+            let ind = hcs.map(c => c.v + c.s).indexOf(src2CardStr(evt.item.src));
+            if (ind === -1) {
+                console.log("ERROR in onRemove in sortableHandCards -- Removing a sortable elem from hand that isn't in store:", src2CardStr(evt.item.src), hcs)
+                return;
+            }
+            // TODO assert item is already present in hand
+            hcs.splice(ind, 1);
+            unHandifyCard(evt.item)
+            store.commit('setSharedHandCards', hcs);
+        },
+        // onChange: (evt) => {
+        //     if (evt.to.id !== "bottomCards") {
+        //         // TODO remove hand styles
+        //     }
+        // },
     });
     console.log("In Hand.vue initSortable -- Finished it!!!")
 
@@ -52,6 +77,38 @@ function incomingHandCards(shuf) {
 }
 
 // Copied from GameTable.vue, needed in both right now. Once I get better at function sharing I will call it across components
+function src2CardStr(src) {
+    // Input is a src string, output is a card string such as '2h'
+
+    let jpgIndex = src.search(".jpeg");
+    let startIndex = src.search("/src/assets/cards");
+    if (jpgIndex-startIndex > 3 + 18) {
+        // TODO raise error
+        console.log("ERROR src2CardStr() -- That's not a card front:",src.slice(18,jpgIndex))
+    }
+
+    // 18 chars gets past /src/assets/cards/
+    return src.slice(startIndex+18,jpgIndex)
+}
+
+// Copied from GameTable.vue, needed in both right now. Once I get better at function sharing I will call it across components
+// function cardObj2Str() {
+//     // Input is a card object {v:J,s:d}. Output is a card string e.g. 'Jd'
+//     return cardObj.v + cardObj.s
+// }
+
+// Copied from GameTable.vue, needed in both right now. Once I get better at function sharing I will call it across components
+function cardStr2CardObj(cardStr) {
+    // Input is a card string. Output is a card object {v:J,s:d}
+
+    if (cardStr.slice(-1) === "j") {
+        return {v:"", s:"j"}
+    }
+
+    return {v:cardStr.slice(0,-1), s:cardStr.slice(-1)}
+}
+
+// Copied from GameTable.vue, needed in both right now. Once I get better at function sharing I will call it across components
 function getSuitClass(suit) {
     switch (suit) {
         case 'h': return 'hearts';
@@ -63,18 +120,21 @@ function getSuitClass(suit) {
     }
 }
 
+// Different from the one in GameTable.vue
 function produceCard(card, fd) {
-    return `<img class="hand-card ${fd ? 'card-back' : `card-front ${getSuitClass(card.suit)} `}" src="/src/assets/cards/${fd ? 'cat_cardback' : `${card.value}${card.suit}`}.jpeg">`
+    return `<img class="hand-card ${fd ? 'card-back' : `card-front ${getSuitClass(card.s)} `}" src="/src/assets/cards/${fd ? 'cat_cardback' : `${card.v}${card.s}`}.jpeg">`
 }
 
-function makeCardElemHandy(ele) {
-    ele.classList.add("bouncy");
+function unHandifyCard(ele) {
+    ele.classList.add("card");
+    ele.classList.remove("bouncy");
+    ele.classList.remove("hand-card");
 
-    ele.addEventListener("click", function () {
-        if (ele.classList.contains('flipped')) {
-            ele.classList.remove("flipped");
+    ele.removeEventListener("click", function () {
+        if (ele.classList.contains('spun')) {
+            ele.classList.remove("spun");
         } else {
-            ele.classList.add("flipped");            
+            ele.classList.add("spun");            
         }
         return;
     });
@@ -82,11 +142,47 @@ function makeCardElemHandy(ele) {
     return 0
 }
 
-function makeHandCardsHandy() {
+function handifyCard(ele) {
+    ele.classList.add("bouncy");
+    ele.classList.add("hand-card");
+    ele.classList.remove("card");
+
+    ele.addEventListener("click", function () {
+        // ele.style.transform = ele.style.transform + " rotate(0.5turn)"
+
+        let rota = ele.style.transform
+        if (rota.length<2 || !rota.includes("rota")) {
+            ele.style.transform += " rotate(0.5turn)";
+            return;
+        }
+        let ind = rota.indexOf("rota") + 6;
+        while (ind < rota.length) {
+            if (rota[ind] === ")") {
+                break;
+            }
+            ind += 1;
+        }
+        // 7 to get past 'rotate(', 4 to go back from 'turn)'
+        rota = `rota${parseFloat(rota.slice(rota.indexOf("rota")+7,ind-4)) + 0.5}turn)`;
+        ele.style.transform.splice(rota.indexOf("rota"),ind-rota.indexOf("rota"))
+        ele.style.transform += rota;
+
+        // if (ele.classList.contains('spun')) {
+        //     ele.classList.remove("spun");
+        // } else {
+        //     ele.classList.add("spun");
+        // }
+        return;
+    });
+
+    return 0
+}
+
+function handifyAllHandCards() {
     let handCardsArr = Array.from(document.getElementsByClassName("hand-card"));
 
     for (let i = 0; i < handCardsArr.length; i++) {
-        setTimeout(() => makeCardElemHandy(handCardsArr[i]), 75*i);
+        setTimeout(() => handifyCard(handCardsArr[i]), 75*i);
     }
 
     // Array.prototype.forEach.call(document.getElementsByClassName("hand-card"), (elem) => {
@@ -95,6 +191,9 @@ function makeHandCardsHandy() {
 }
 
 function renderHand(cardsArr) {
+    // Input: Arr of cards as strs e.g. ['2h', '8d', ...]
+    // Output: Render cards into bottomCards and return success
+
     const cardsElement = document.getElementById('bottomCards');
     if (!cardsElement) console.log("ERROR Bottom cards not found");
     if (!cardsElement) return 1;
@@ -104,7 +203,7 @@ function renderHand(cardsArr) {
 
     // Array.from(cardsElement.children).forEach((c) => {c.classList.add("hand-card");});
 
-    makeHandCardsHandy();
+    handifyAllHandCards();
 
     return 0;
 }
@@ -128,8 +227,46 @@ but then the scoped styles won't apply when a card gets moved from a different p
   bottom: -20px;
   left: 50%;
   transform: translateX(-50%);
-  /* BELOW ARE FROM CHATGPT */
-  /* transition: transform 0.3s ease; */
-  /* transform-style: preserve-3d; */
+
+  /* Claude */
+  perspective: 1000px;
+  transform-style: preserve-3d;
 }
+
+#bottomCards :deep(.hand-card) {
+  width: 140px;
+  height: 200px;
+  background-color: white;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+  will-change: transform;
+  justify-content: center;
+  align-items: center;
+}
+
+#bottomCards :deep(.spun) {
+  /* transform: rotateX(180deg); */
+  /* transform: rotateX(180deg); */
+  transform: rotate(0.5turn);
+}
+
+#bottomCards :deep(.bouncy) {
+    /* animation: MoveUpDown 2s linear infinite; */
+}
+@keyframes MoveUpDown {
+0%, 100% {
+  /* transform: translate(-50%, 0); */
+  transform: translateY(0px);
+}
+60% {
+  /* transform: translate(-50%, -4px); */
+  transform: translateY(-3px);
+}
+}
+
 </style>

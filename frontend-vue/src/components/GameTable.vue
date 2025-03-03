@@ -53,7 +53,7 @@ const allowedVals = inject('cardValues')
 
 class GameTable {
     constructor() {
-        // Array of strings which are card signatures
+        // Array of card objs e.g. [{v:J,s:d},{v:9,s:d}]. Downside of this over strs is that indexOf does not work natively :(
         this.blindCards = []; // Only if this player got blind, store after sending to server in case we need to re-send
         this.submitCards = [];
         // Array of strings which are card signatures. 0 is you, 1 is left, 2 top, 3 right.
@@ -84,21 +84,50 @@ class GameTable {
             // animation: 1000,
             disabled: true,
             group: 'shared', 
+            onAdd: (evt) => {
+                // TODO assert this item is not already present in blindCards
+                this.blindCards.push(this.src2CardObj(evt.item.src))
+            },
+            onRemove: (evt) => {
+                let bc = this.blindCards
+                let ind = bc.map(c => this.cardObj2Str(c)).indexOf(this.src2CardStr(evt.item.src));
+                if (ind === -1) {
+                    console.log("ERROR in onRemove in sortableBlindCards -- Removing a sortable elem from blind that isn't in this.blindCards:", this.src2CardStr(evt.item.src), this.blindCards)
+                    return;
+                }
+                this.blindCards.splice(ind, 1);
+            },
+            // onChange: (evt) => {
+            //     if (evt.to.id === "bottomCards") {
+            //         // TODO apply hand styles
+            //     }
+            // },
         });
         // TODO try to limit submitCards to only 1 item after gameplay starts, perhaps with filter class on the cards in hand
         // ... if there's already one in the submit box -- {filter: '.filtered'}
         // However this may confuse user if trying to change submitted card out by adding one then removing one
-        this.sortableSubmitCards = new Sortable(
-            submitCardsElem,
-            // { disabled: true, group: 'shared', animation: 1000 }
-            { disabled: true, group: 'shared' }
-        );
+        this.sortableSubmitCards = new Sortable(submitCardsElem, {
+            disabled: true,
+            group: 'shared',
+            onAdd: function (evt) {
+                this.submitCards.push(this.src2CardObj(evt.item.src))
+            },
+            onRemove: function (evt) {
+                sc = this.submitCards
+                let ind = sc.map(c => this.cardObj2Str(c)).indexOf(this.src2CardStr(evt.item.src));
+                if (ind === -1) {
+                    console.log("ERROR in onRemove in sortableSubmitCards -- Removing a sortable elem from submit box that isn't in this.submitCards:", this.src2CardStr(evt.item.src), this.submitCards);
+                    return;
+                }
+                this.submitCards.splice(ind, 1);
+            },
+        });
     }
 
     async initializeTable() {
         try {
             // No need to render blind during normal play until websocket sends this player blind
-            // this.renderBlind(this.blindCards, true)
+            // this.incomingBlind(this.blindCards, true)
             if (DEV_STANDALONE) {
                 const shuffle = this.generateMockShuffle();
                 this.blindCards = shuffle.slice(10, 15);
@@ -122,7 +151,7 @@ class GameTable {
         const vals = ['4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
         const suits = ['h', 'd', 'c', 's'];
         // let possibilities = vals.reduce((acc, v) => {return acc.concat(suits.map(s => ({value:v,suit:s})));}, []).concat({value:'',suit:'j'});
-        let possibilities = vals.flatMap(v => suits.map(s => ({ value: v, suit: s }))).concat({ value: '', suit: 'j' });
+        let possibilities = vals.flatMap(value => suits.map(suit => ({ v: value, s: suit }))).concat({ v: '', s: 'j' });
 
         // Fisher-Yates from James Bubb on dev.to, 2020 "How to shuffle an array in JavaScript"
         for (let i = possibilities.length - 1; i > 0; i--) {
@@ -137,20 +166,36 @@ class GameTable {
         return possibilities;
     }
 
-    parseCardFromStr(cardStr) {
-        if (cardStr.slice(-1) === "j") {
-            return {val:"", sui:"j"}
-        }
+    cardObj2Str(cardObj) {
+        // Input is a card object {v:J,s:d}. Output is a card string e.g. 'Jd'
 
-        return {val:cardStr.slice(-1), sui:cardStr.slice(0,-1)}
+        return cardObj.v + cardObj.s
     }
 
-    parseCardFromSrc(src) {
+    cardStr2CardObj(cardStr) {
+        // Input is a card string. Output is a card object {v:J,s:d}
+
+        if (cardStr.slice(-1) === "j") {
+            return {v:"", s:"j"}
+        }
+
+        return {v:cardStr.slice(0,-1), s:cardStr.slice(-1)}
+    }
+
+    src2CardObj(src) {
+        // Input is a src string. Output is a card string such as '2h'
+
+        return this.cardStr2CardObj(this.src2CardStr(src))
+    }
+
+    src2CardStr(src) {
+        // Input is a src string. Output is a card string such as '2h'
+
         let jpgIndex = src.search(".jpeg");
         let startIndex = src.search("/src/assets/cards");
         if (jpgIndex-startIndex > 3 + 18) {
             // TODO raise error
-            console.log("ERROR parseCardFromSrc() -- That's not a card front:",src.slice(18,jpgIndex))
+            console.log("ERROR src2CardStr() -- That's not a card front:",src.slice(18,jpgIndex))
         }
 
         // 18 chars gets past /src/assets/cards/
@@ -158,7 +203,7 @@ class GameTable {
     }
 
     produceCard(card, fd) {
-        return `<img class="card ${fd ? 'card-back' : `card-front ${this.getSuitClass(card.suit)} `}" src="/src/assets/cards/${fd ? 'cat_cardback' : `${card.value}${card.suit}`}.jpeg">`
+        return `<img class="card ${fd ? 'card-back' : `card-front ${this.getSuitClass(card.s)} `}" src="/src/assets/cards/${fd ? 'cat_cardback' : `${card.v}${card.s}`}.jpeg">`
     }
 
     getPosFromInt(pos) {
@@ -197,8 +242,8 @@ class GameTable {
         }
 
         // Now rerender the blind with the new faceDown
-        cardsElement.innerHTML = this.blindCards.map(card =>this.produceCard(card,faceDown)).join('');
-        console.log("Blind cards:",this.blindCards)
+        let bc = this.blindCards
+        cardsElement.innerHTML = bc.map(card => this.produceCard(card,faceDown)).join('');
 
         // Note the use of faceDown to determine whether they are disabled
         this.sortableBlindCards.option("disabled", faceDown); // set
@@ -206,16 +251,17 @@ class GameTable {
         return 0
     }
 
-    renderBlind(cardsArr, faceDown) {
+    incomingBlind(cardsArr, faceDown) {
         // Store the blind in the source of truth
-        this.blindCards = cardsArr.map(card => card.value + card.suit);
+        this.blindCards = cardsArr.map(card => cardObj2Str(card));
+        console.log("DEBUG in incomingBlind:",this.blindCards)
 
         const cardsElement = document.getElementById('blindCards');
         if (!cardsElement) console.log("ERROR Did not find blind cards");
         if (!cardsElement) return;
 
         cardsElement.innerHTML = cardsArr.map(card =>
-            `<img class="card ${faceDown ? 'card-back' : `card-front ${this.getSuitClass(card.suit)} `}" src="/src/assets/cards/${faceDown ? 'cat_cardback' : `${card.value}${card.suit}`}.jpeg">`
+            `<img class="card ${faceDown ? 'card-back' : `card-front ${this.getSuitClass(card.s)} `}" src="/src/assets/cards/${faceDown ? 'cat_cardback' : `${card.v}${card.s}`}.jpeg">`
         ).join('');
 
         // <img class="card card-back section-member" src="/src/assets/cards/cat_cardback.jpeg">
@@ -317,7 +363,7 @@ class GameTable {
             playedCardBottomElement.style.display = "inline";
             playedCardBottomElement.src = submitElement.childNodes[0].src;
             // Change state tracker
-            this.playedCards[0] = this.parseCardFromSrc(submitElement.childNodes[0].src);
+            this.playedCards[0] = this.src2CardStr(submitElement.childNodes[0].src);
             console.log("INFO Successfully submitted my card to server:",this.playedCards[0])
             submitElement.innerHTML = "";
         }
@@ -490,7 +536,7 @@ class GameTable {
                 return;
         }
 
-        let {_, ledSuit} = this.parseCardFromStr(this.playedCards[this.lastTrickWinner]);
+        let {_, ledSuit} = this.cardStr2CardObj(this.playedCards[this.lastTrickWinner]);
         if (specialTrump.has(this.playedCards[this.lastTrickWinner])) {
             ledSuit = trumpSuit;
         }
@@ -499,7 +545,8 @@ class GameTable {
         let currentTrickWinner = 0;
         let iValue, iSuit;
         for (let i = 0; i < this.playedCards.length; i++) {
-            ( {iValue, iSuit} = this.parseCardFromStr(this.playedCards[i]) );
+            // TODO I REALLY DON'T THINK THIS DESTRUCTURE IS GONNA WORK
+            ( {iValue, iSuit} = this.cardStr2CardObj(this.playedCards[i]) );
 
             // Originally put j in specialTrump but it simplifies NoTrump tricks to just treat j as edge case
             if (iSuit === 'j') {
@@ -670,6 +717,19 @@ onMounted(() => {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+}
+#blindCards :deep(.bouncy) {
+    animation: MoveUpDown 2s linear infinite;
+}
+@keyframes MoveUpDown {
+0%, 100% {
+  /* transform: translate(-50%, 0); */
+  transform: translateY(0px);
+}
+60% {
+  /* transform: translate(-50%, -4px); */
+  transform: translateY(-3px);
+}
 }
 
 </style>
