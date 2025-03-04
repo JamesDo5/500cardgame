@@ -37,7 +37,6 @@ async function initSortable() {
             hcs.push(cardStr2CardObj(src2CardStr(evt.item.src)));
             // TODO assert new item is not already present in hand
             store.commit('setSharedHandCards', hcs);
-            handifyCard(evt.item)
         },
         onRemove: function (evt) {
             let hcs = store.getters.getSharedHandCards();
@@ -49,16 +48,21 @@ async function initSortable() {
             }
             // TODO assert item is already present in hand
             hcs.splice(ind, 1);
-            unHandifyCard(evt.item)
             store.commit('setSharedHandCards', hcs);
         },
-        // onChange: (evt) => {
-        //     if (evt.to.id !== "bottomCards") {
-        //         // TODO remove hand styles
-        //     }
-        // },
+        onChange: (evt) => {
+            if (evt.to.id === evt.from.id) {
+                return;
+            }
+            if (evt.to.id === "bottomCards") {
+                handifyCard(evt.item);
+            } else {
+                unHandifyCard(evt.item);
+            }
+            return;
+        },
     });
-    console.log("In Hand.vue initSortable -- Finished it!!!")
+    console.log("In Hand.vue initSortable -- Finished init!!!")
 
     if (!bottomCardsElem) return 1;
 }
@@ -150,28 +154,28 @@ function handifyCard(ele) {
     ele.addEventListener("click", function () {
         // ele.style.transform = ele.style.transform + " rotate(0.5turn)"
 
-        let rota = ele.style.transform
-        if (rota.length<2 || !rota.includes("rota")) {
-            ele.style.transform += " rotate(0.5turn)";
-            return;
-        }
-        let ind = rota.indexOf("rota") + 6;
-        while (ind < rota.length) {
-            if (rota[ind] === ")") {
-                break;
-            }
-            ind += 1;
-        }
-        // 7 to get past 'rotate(', 4 to go back from 'turn)'
-        rota = `rota${parseFloat(rota.slice(rota.indexOf("rota")+7,ind-4)) + 0.5}turn)`;
-        ele.style.transform.splice(rota.indexOf("rota"),ind-rota.indexOf("rota"))
-        ele.style.transform += rota;
-
-        // if (ele.classList.contains('spun')) {
-        //     ele.classList.remove("spun");
-        // } else {
-        //     ele.classList.add("spun");
+        // let rota = ele.style.transform
+        // if (rota.length<2 || !rota.includes("rota")) {
+        //     ele.style.transform += " rotate(0.5turn)";
+        //     return;
         // }
+        // let ind = rota.indexOf("rota") + 6;
+        // while (ind < rota.length) {
+        //     if (rota[ind] === ")") {
+        //         break;
+        //     }
+        //     ind += 1;
+        // }
+        // // 7 to get past 'rotate(', 4 to go back from 'turn)'
+        // rota = `rota${parseFloat(rota.slice(rota.indexOf("rota")+7,ind-4)) + 0.5}turn)`;
+        // ele.style.transform.splice(rota.indexOf("rota"),ind-rota.indexOf("rota"))
+        // ele.style.transform += rota;
+
+        if (ele.classList.contains('spun')) {
+            ele.classList.remove("spun");
+        } else {
+            ele.classList.add("spun");
+        }
         return;
     });
 
@@ -208,7 +212,7 @@ function renderHand(cardsArr) {
     return 0;
 }
 
-defineExpose({renderHand, incomingHandCards})
+defineExpose({renderHand, incomingHandCards, unHandifyCard, handifyCard})
 
 onMounted(() => {
     initSortable()

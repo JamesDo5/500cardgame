@@ -45,7 +45,7 @@ const store = useStore()
 let gameState = store.state.sharedGameState; // 0 is bidding, 1 is blind exchange, 2 is doing tricks, 3 is scoring and re-deal
 let handCards = store.state.sharedHandCards;
 const DEV_STANDALONE = true;
-const emit = defineEmits(['gametable-ready','DEV-handincoming'])
+const emit = defineEmits(['gametable-ready','DEV-handincoming','handify-card','unhandify-card'])
 const props = defineProps(['handfuncIncomingcards']);
 const allowedSuits = inject('cardSuits')
 const allowedVals = inject('cardValues')
@@ -97,11 +97,19 @@ class GameTable {
                 }
                 this.blindCards.splice(ind, 1);
             },
-            // onChange: (evt) => {
-            //     if (evt.to.id === "bottomCards") {
-            //         // TODO apply hand styles
-            //     }
-            // },
+            onChange: (evt) => {
+                if (evt.to.id === evt.from.id) {
+                    return;
+                }
+                if (evt.to.id === "bottomCards") {
+                    emit('handify-card', evt.item);
+                    // handifyCard(evt.item);
+                } else {
+                    emit('unhandify-card', evt.item);
+                    // unHandifyCard(evt.item);
+                }
+                return;
+            },
         });
         // TODO try to limit submitCards to only 1 item after gameplay starts, perhaps with filter class on the cards in hand
         // ... if there's already one in the submit box -- {filter: '.filtered'}

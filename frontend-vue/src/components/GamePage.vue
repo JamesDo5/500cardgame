@@ -6,7 +6,7 @@
     <OtherPlayer playerLR="leftCards" />
     <OtherPlayer playerLR="rightCards" />
     <!-- <GameTable @gametable-ready="gameTableIsReady" thefunction="handRef.value.incomingHandCards" /> -->
-    <GameTable @gametable-ready="gameTableIsReady" @DEV-handincoming="callHndIncoCrds" thefunction="myfuncy" />
+    <GameTable @gametable-ready="gameTableIsReady" @DEV-handincoming="callHndIncoCrds" @handify-card="callHndHandify" @unhandify-card="callHndUnhandify" thefunction="myfuncy" />
     <!-- <GameTable @gametable-ready="gameTableIsReady" /> -->
 </template>
 
@@ -25,7 +25,7 @@ let gameState = store.state.sharedGameState; //-1:uninitialized, 0:dealing/shuff
 const handRef = ref(null);
 
 // Bus the game table ready event to parent (so it can get to devbuttons)
-const emit = defineEmits(['gametable-ready'])
+const emit = defineEmits(['gametable-ready']);
 function gameTableIsReady() {
   emit('gametable-ready');
 }
@@ -42,8 +42,16 @@ function renderNewGameState() {
 
 function callHndIncoCrds() {
     // console.log("in GamePage.vue callHndIncoCrds -- cards",store.getters.getSharedHandCards())
-    handRef.value.incomingHandCards(store.getters.getSharedHandCards())
-    return
+    handRef.value.incomingHandCards(store.getters.getSharedHandCards());
+    return;
+}
+function callHndHandify(card) {
+    handRef.value.handifyCard(card);
+    return;
+}
+function callHndUnhandify(card) {
+    handRef.value.unHandifyCard(card);
+    return;
 }
 
 // function myfuncy() {}
