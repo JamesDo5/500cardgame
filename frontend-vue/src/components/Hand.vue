@@ -51,9 +51,6 @@ async function initSortable() {
             store.commit('setSharedHandCards', hcs);
         },
         onChange: (evt) => {
-            if (evt.to.id === evt.from.id) {
-                return;
-            }
             if (evt.to.id === "bottomCards") {
                 handifyCard(evt.item);
             } else {
@@ -138,7 +135,7 @@ function unHandifyCard(ele) {
         if (ele.classList.contains('spun')) {
             ele.classList.remove("spun");
         } else {
-            ele.classList.add("spun");            
+            ele.classList.add("spun");
         }
         return;
     });
@@ -152,13 +149,16 @@ function handifyCard(ele) {
     ele.classList.remove("card");
 
     ele.addEventListener("click", function () {
-        // ele.style.transform = ele.style.transform + " rotate(0.5turn)"
+        // For some reason this doesn't work
+        // ele.style.transform += " rotate(0.5turn)"
 
-        // let rota = ele.style.transform
-        // if (rota.length<2 || !rota.includes("rota")) {
+        // let rota = getComputedStyle(ele).getPropertyValue("transform");
+        // console.log("handifyCard style.transform length:",rota.length,rota)
+        // if (rota.length<5) {
         //     ele.style.transform += " rotate(0.5turn)";
         //     return;
         // }
+        // console.log("handifyCard past first check")
         // let ind = rota.indexOf("rota") + 6;
         // while (ind < rota.length) {
         //     if (rota[ind] === ")") {
@@ -167,9 +167,11 @@ function handifyCard(ele) {
         //     ind += 1;
         // }
         // // 7 to get past 'rotate(', 4 to go back from 'turn)'
-        // rota = `rota${parseFloat(rota.slice(rota.indexOf("rota")+7,ind-4)) + 0.5}turn)`;
+        // let newGuy = `rotate(${parseFloat(rota.slice(rota.indexOf("rota")+7,ind-4)) + 0.5}turn)`;
         // ele.style.transform.splice(rota.indexOf("rota"),ind-rota.indexOf("rota"))
-        // ele.style.transform += rota;
+        // ele.style.transform += newGuy;
+
+        // matrix(-1, 0, 0, -1, 0, 0)
 
         if (ele.classList.contains('spun')) {
             ele.classList.remove("spun");

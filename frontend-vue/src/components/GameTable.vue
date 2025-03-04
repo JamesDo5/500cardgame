@@ -98,9 +98,6 @@ class GameTable {
                 this.blindCards.splice(ind, 1);
             },
             onChange: (evt) => {
-                if (evt.to.id === evt.from.id) {
-                    return;
-                }
                 if (evt.to.id === "bottomCards") {
                     emit('handify-card', evt.item);
                     // handifyCard(evt.item);
