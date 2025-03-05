@@ -1,24 +1,10 @@
 <template>
     <div id="gameTableContainer">
-        <div class="card-row" id="topCards">
-            <img class="card card-back" src="../assets/cards/cat_cardback.jpeg">
-            <img class="card card-back" src="../assets/cards/cat_cardback.jpeg">
-            <div class="card card-back">?</div>
-            <div class="card card-back">?</div>
-            <div class="card card-back">?</div>
-            <div class="card card-back">?</div>
-            <div class="card card-back">?</div>
-            <div class="card card-back">?</div>
-            <div class="card card-back">?</div>
-            <div class="card card-back">?</div>
-        </div>
         <div id="gameTable">
             <img class="card card-played card-played-left" id="playedCardLeft" src="../assets/cards/mystery_card_cropped.jpg">
             <img class="card card-played card-played-top" id="playedCardTop" src="../assets/cards/mystery_card_cropped.jpg">
-            <img class="card card-played card-played-right" id="playedCardRight"
-                src="../assets/cards/mystery_card_cropped.jpg">
-            <img class="card card-played card-played-bottom" id="playedCardBottom"
-                src="../assets/cards/mystery_card_cropped.jpg">
+            <img class="card card-played card-played-right" id="playedCardRight" src="../assets/cards/mystery_card_cropped.jpg">
+            <img class="card card-played card-played-bottom" id="playedCardBottom" src="../assets/cards/mystery_card_cropped.jpg">
             <div class="card-row" id="submitCards"></div>
             <div class="card-stack won-tricks-bottom" id="wonTricksBottom"></div>
             <div class="card-stack won-tricks-left" id="wonTricksLeft"></div>
@@ -45,7 +31,7 @@ const store = useStore()
 let gameState = store.state.sharedGameState; // 0 is bidding, 1 is blind exchange, 2 is doing tricks, 3 is scoring and re-deal
 let handCards = store.state.sharedHandCards;
 const DEV_STANDALONE = true;
-const emit = defineEmits(['gametable-ready','DEV-handincoming','handify-card','unhandify-card'])
+const emit = defineEmits(['gametable-ready', 'DEV-handincoming', 'handify-card', 'unhandify-card'])
 const props = defineProps(['handfuncIncomingcards']);
 const allowedSuits = inject('cardSuits')
 const allowedVals = inject('cardValues')
@@ -83,7 +69,7 @@ class GameTable {
         this.sortableBlindCards = new Sortable(blindCardsElem, {
             // animation: 1000,
             disabled: true,
-            group: 'shared', 
+            group: 'shared',
             onAdd: (evt) => {
                 // TODO assert this item is not already present in blindCards
                 this.blindCards.push(this.src2CardObj(evt.item.src))
@@ -181,10 +167,10 @@ class GameTable {
         // Input is a card string. Output is a card object {v:J,s:d}
 
         if (cardStr.slice(-1) === "j") {
-            return {v:"", s:"j"}
+            return { v: "", s: "j" }
         }
 
-        return {v:cardStr.slice(0,-1), s:cardStr.slice(-1)}
+        return { v: cardStr.slice(0, -1), s: cardStr.slice(-1) }
     }
 
     src2CardObj(src) {
@@ -198,13 +184,13 @@ class GameTable {
 
         let jpgIndex = src.search(".jpeg");
         let startIndex = src.search("/src/assets/cards");
-        if (jpgIndex-startIndex > 3 + 18) {
+        if (jpgIndex - startIndex > 3 + 18) {
             // TODO raise error
-            console.log("ERROR src2CardStr() -- That's not a card front:",src.slice(18,jpgIndex))
+            console.log("ERROR src2CardStr() -- That's not a card front:", src.slice(18, jpgIndex))
         }
 
         // 18 chars gets past /src/assets/cards/
-        return src.slice(startIndex+18,jpgIndex)
+        return src.slice(startIndex + 18, jpgIndex)
     }
 
     produceCard(card, fd) {
@@ -216,7 +202,7 @@ class GameTable {
         const posArr = ["Bottom", "Left", "Top", "Right"];
         return posArr[pos]
     }
-    
+
     getSuitClass(suit) {
         switch (suit) {
             case 'h': return 'hearts';
@@ -227,7 +213,7 @@ class GameTable {
             default: return '';
         }
     }
-    
+
     getFinishedTricks() {
         // Reduce code from florian-margaine on StackOverflow 03/25/2013
         return this.wonTricks.reduce((partialSum, n) => partialSum + n, 0);
@@ -248,7 +234,8 @@ class GameTable {
 
         // Now rerender the blind with the new faceDown
         let bc = this.blindCards
-        cardsElement.innerHTML = bc.map(card => this.produceCard(card,faceDown)).join('');
+        // TODO2 this is apparently not industry standard and it's better to use createElement
+        cardsElement.innerHTML = bc.map(card => this.produceCard(card, faceDown)).join('');
 
         // Note the use of faceDown to determine whether they are disabled
         this.sortableBlindCards.option("disabled", faceDown); // set
@@ -259,7 +246,7 @@ class GameTable {
     incomingBlind(cardsArr, faceDown) {
         // Store the blind in the source of truth
         this.blindCards = cardsArr.map(card => cardObj2Str(card));
-        console.log("DEBUG in incomingBlind:",this.blindCards)
+        console.log("DEBUG in incomingBlind:", this.blindCards)
 
         const cardsElement = document.getElementById('blindCards');
         if (!cardsElement) console.log("ERROR Did not find blind cards");
@@ -320,7 +307,7 @@ class GameTable {
 
     incomingBlindDiscard(pos) {
         if (!pos === this.lastTrickWinner) {
-            console.log("WARN It seems the server thinks:",pos,"won the blind but client thinks:",this.lastTrickWinner,"won it. Believing server.");
+            console.log("WARN It seems the server thinks:", pos, "won the blind but client thinks:", this.lastTrickWinner, "won it. Believing server.");
             this.lastTrickWinner = pos;
         }
 
@@ -343,7 +330,7 @@ class GameTable {
 
         if (!(submitElement.childNodes.length === 1)) {
             // TODO raise error to user
-            console.log("houston we have a problem! can't submit more or fewer than 1 card for trick:",submitElement.childNodes.length)
+            console.log("houston we have a problem! can't submit more or fewer than 1 card for trick:", submitElement.childNodes.length)
             // Reenable sorting so user can fix the issue
             this.sortableSubmitCards.option("disabled", false);
             return 1
@@ -358,7 +345,7 @@ class GameTable {
 
         if (!this.playedCards[0] === '') {
             // TODO raise this error to user, they should get a little indicator that it's not allowed yet
-            console.log("houston we have a problem! can't submit next trick before this one's over. current card:",this.playedCards[0])
+            console.log("houston we have a problem! can't submit next trick before this one's over. current card:", this.playedCards[0])
             return 1
         }
 
@@ -369,7 +356,7 @@ class GameTable {
             playedCardBottomElement.src = submitElement.childNodes[0].src;
             // Change state tracker
             this.playedCards[0] = this.src2CardStr(submitElement.childNodes[0].src);
-            console.log("INFO Successfully submitted my card to server:",this.playedCards[0])
+            console.log("INFO Successfully submitted my card to server:", this.playedCards[0])
             submitElement.innerHTML = "";
         }
 
@@ -388,15 +375,15 @@ class GameTable {
 
         // IF THIS DOESNT WORK MOVE ALLOWES SUITS etc INTO TABLE OBJECT (regrettably)
         if (!allowedSuits.has(sui)) {
-            console.log("Hol* freakin moly we got a fake suit. Not allowed! :",sui);
+            console.log("Hol* freakin moly we got a fake suit. Not allowed! :", sui);
             return 1;
         }
         if (!allowedVals.has(val)) {
-            console.log("Hol* freakin moly we got a fake value. Not allowed! :",val);
+            console.log("Hol* freakin moly we got a fake value. Not allowed! :", val);
             return 1;
         }
         if (pos < 0 || pos > 3) {
-            console.log("Hol* mol* we got a fake position. Not allowed! :",pos,"pos yields",this.getPosFromInt(pos));
+            console.log("Hol* mol* we got a fake position. Not allowed! :", pos, "pos yields", this.getPosFromInt(pos));
             return 1;
         }
 
@@ -404,7 +391,7 @@ class GameTable {
 
         if (!this.playedCards[pos] === '') {
             // TODO SEND error MESSAGE TO SERVER AND SET UP RESILIENCY HERE
-            console.log("ERROR there's already a card in",this.getPosFromInt(pos),".",this.getPosFromInt(pos),"needs to wait until next turn!");
+            console.log("ERROR there's already a card in", this.getPosFromInt(pos), ".", this.getPosFromInt(pos), "needs to wait until next turn!");
             return 1;
         }
 
@@ -432,14 +419,14 @@ class GameTable {
     isTrickOver() {
         if (this.lastTrickWinner === -1) {
             // TODO expose this error to user? Maybe add resiliency
-            console.log("This is not good. LastTrickWinner is not set but we're checking isTrickOver(). Trick state:",this.playedCards);
+            console.log("This is not good. LastTrickWinner is not set but we're checking isTrickOver(). Trick state:", this.playedCards);
         }
         const didFullArrPlay = !this.playedCards.includes("");
-        const didLastPlayerPlay = !(this.playedCards[(this.lastTrickWinner + 3)%4] === "");
+        const didLastPlayerPlay = !(this.playedCards[(this.lastTrickWinner + 3) % 4] === "");
         if (!didFullArrPlay === didLastPlayerPlay) {
             // TODO add resiliency ask server here
-            console.log("DEBUG didFullArrPlay:",didFullArrPlay,"didLastPlayerPlay",didLastPlayerPlay,"first player:",this.lastTrickWinner,"last player:",(this.lastTrickWinner - 1)%4,);
-            console.log("This is not good. Last player vs all players have different play states. Trick state:",this.playedCards);
+            console.log("DEBUG didFullArrPlay:", didFullArrPlay, "didLastPlayerPlay", didLastPlayerPlay, "first player:", this.lastTrickWinner, "last player:", (this.lastTrickWinner - 1) % 4,);
+            console.log("This is not good. Last player vs all players have different play states. Trick state:", this.playedCards);
         }
 
         return didLastPlayerPlay
@@ -448,7 +435,7 @@ class GameTable {
     endTrick() {
         console.log("INFO endTrick() -- ending the trick!")
         this.lastTrickWinner = this.getTrickWinner();
-        console.log("INFO endTrick() -- Announcing",this.lastTrickWinner,"won the trick!");
+        console.log("INFO endTrick() -- Announcing", this.lastTrickWinner, "won the trick!");
 
         this.wonTricks[this.lastTrickWinner] += 1;
 
@@ -484,22 +471,22 @@ class GameTable {
         ];
 
         const bb = store.getters.getBidBox();
-        if(bb.getHighestBid() !== bb.bids[bb.winningBidder] || bb.getHighestBid() !== store.getters.getWinningBid()) {
+        if (bb.getHighestBid() !== bb.bids[bb.winningBidder] || bb.getHighestBid() !== store.getters.getWinningBid()) {
             console.log("ERROR winning bidder's bid wasn't the highest somehow? Continuing...");
         }
 
         // Update score for non-bidwinning team
         const gc = store.getters.getGameCtlr();
-        gc.scores[(bb.winningBidteam+1) %2] += teamTricksWon[ (bb.winningBidteam +1) % 2]
+        gc.scores[(bb.winningBidteam + 1) % 2] += teamTricksWon[(bb.winningBidteam + 1) % 2]
 
         // Update score for bidwinning team
         const neededTricks = Math.floor((bb.getHighestBid() + 560) / 100);
         if (teamTricksWon[bb.winningBidteam] >= neededTricks) {
-            gc.scores[bb.winningBidteam] += 2 *bb.getHighestBid();
+            gc.scores[bb.winningBidteam] += 2 * bb.getHighestBid();
         }
         gc.scores[bb.winningBidteam] -= bb.getHighestBid();
 
-        if(gc.isGameOver()) {
+        if (gc.isGameOver()) {
             gc.endGame();
             return;
         }
@@ -517,7 +504,7 @@ class GameTable {
     }
 
     getTrickWinner() {
-        const faceCardValues = new Map([['J',11],['Q',12],['K',13],['A',14]]);
+        const faceCardValues = new Map([['J', 11], ['Q', 12], ['K', 13], ['A', 14]]);
         let trumpSuit = store.getters.getTrumpSuit();
         let specialTrump;
         switch (trumpSuit) {
@@ -525,23 +512,23 @@ class GameTable {
                 specialTrump = new Map();
                 break;
             case 's':
-                specialTrump = new Map([['Jc',15],['Js',16]]);
+                specialTrump = new Map([['Jc', 15], ['Js', 16]]);
                 break;
             case 'c':
-                specialTrump = new Map([['Js',15],['Jc',16]]);
+                specialTrump = new Map([['Js', 15], ['Jc', 16]]);
                 break;
             case 'd':
-                specialTrump = new Map([['Jh',15],['Jd',16]]);
+                specialTrump = new Map([['Jh', 15], ['Jd', 16]]);
                 break;
             case 'h':
-                specialTrump = new Map([['Jd',15],['Jh',16]]);
+                specialTrump = new Map([['Jd', 15], ['Jh', 16]]);
                 break;
             default:
                 console.log(`ERROR Sorry, we are out of suit: ${trumpSuit}.`);
                 return;
         }
 
-        let {_, ledSuit} = this.cardStr2CardObj(this.playedCards[this.lastTrickWinner]);
+        let { _, ledSuit } = this.cardStr2CardObj(this.playedCards[this.lastTrickWinner]);
         if (specialTrump.has(this.playedCards[this.lastTrickWinner])) {
             ledSuit = trumpSuit;
         }
@@ -551,13 +538,13 @@ class GameTable {
         let iValue, iSuit;
         for (let i = 0; i < this.playedCards.length; i++) {
             // TODO I REALLY DON'T THINK THIS DESTRUCTURE IS GONNA WORK
-            ( {iValue, iSuit} = this.cardStr2CardObj(this.playedCards[i]) );
+            ({ iValue, iSuit } = this.cardStr2CardObj(this.playedCards[i]));
 
             // Originally put j in specialTrump but it simplifies NoTrump tricks to just treat j as edge case
             if (iSuit === 'j') {
                 return i;
             }
-            
+
             if (specialTrump.has(this.playedCards[i])) {
                 iSuit = trumpSuit;
                 iValue = specialTrump.get(this.playedCards[i]);
@@ -581,7 +568,7 @@ class GameTable {
             winningSuit = iSuit;
         }
 
-        console.log("INFO Got trick winner:",currentTrickWinner)
+        console.log("INFO Got trick winner:", currentTrickWinner)
         return currentTrickWinner
     }
 }
@@ -689,52 +676,49 @@ onMounted(() => {
     min-width: 70px;
     min-height: 100px;
 }
-#topCards {
-  top: -20px;
-  left: 50%;
-  transform: translateX(-50%);
-}
 
 #gameTableContainer {
-  position: relative;
-  width: 1000px;
-  height: 500px;
-  transform: translate(0%, -10%);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+    position: relative;
+    width: 1000px;
+    height: 500px;
+    transform: translate(0%, -10%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 #gameTable {
-  width: 700px;
-  height: 500px;
-  background-color: #34495e;
-  border-radius: 20px;
-  position: absolute;
+    width: 700px;
+    height: 500px;
+    background-color: #34495e;
+    border-radius: 20px;
+    position: absolute;
 }
 
 .card-row {
-  position: absolute;
-  display: flex;
-  gap: 10px;
+    position: absolute;
+    display: flex;
+    gap: 10px;
 }
 
 #blindCards {
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 #blindCards :deep(.bouncy) {
     animation: MoveUpDown 2s linear infinite;
 }
 @keyframes MoveUpDown {
-0%, 100% {
-  /* transform: translate(-50%, 0); */
-  transform: translateY(0px);
-}
-60% {
-  /* transform: translate(-50%, -4px); */
-  transform: translateY(-3px);
-}
-}
 
+    0%,
+    100% {
+        /* transform: translate(-50%, 0); */
+        transform: translateY(0px);
+    }
+
+    60% {
+        /* transform: translate(-50%, -4px); */
+        transform: translateY(-3px);
+    }
+}
 </style>

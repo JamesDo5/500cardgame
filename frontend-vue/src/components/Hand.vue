@@ -1,15 +1,15 @@
 <template>
     <div class="card-row" id="bottomCards">
-        <img class="card-back hand-card" src="../assets/cards/cat_cardback.jpeg">
-        <img class="card-back hand-card" src="../assets/cards/cat_cardback.jpeg">
-        <img class="card card-back hand-card" src="../assets/cards/cat_cardback.jpeg">
-        <img class="card card-back hand-card" src="../assets/cards/cat_cardback.jpeg">
-        <img class="card card-back hand-card" src="../assets/cards/cat_cardback.jpeg">
-        <img class="card card-back hand-card" src="../assets/cards/cat_cardback.jpeg">
-        <img class="card card-back hand-card" src="../assets/cards/cat_cardback.jpeg">
-        <img class="card card-back hand-card" src="../assets/cards/cat_cardback.jpeg">
-        <img class="card card-back hand-card" src="../assets/cards/cat_cardback.jpeg">
-        <img class="card card-back hand-card" src="../assets/cards/cat_cardback.jpeg">
+        <div class="card-back hand-card"><img src="../assets/cards/cat_cardback.jpeg"></div>
+        <div class="card-back hand-card"><img src="../assets/cards/cat_cardback.jpeg"></div>
+        <div class="card-back hand-card"><img src="../assets/cards/cat_cardback.jpeg"></div>
+        <div class="card-back hand-card"><img src="../assets/cards/cat_cardback.jpeg"></div>
+        <div class="card-back hand-card"><img src="../assets/cards/cat_cardback.jpeg"></div>
+        <div class="card-back hand-card"><img src="../assets/cards/cat_cardback.jpeg"></div>
+        <div class="card-back hand-card"><img src="../assets/cards/cat_cardback.jpeg"></div>
+        <div class="card-back hand-card"><img src="../assets/cards/cat_cardback.jpeg"></div>
+        <div class="card-back hand-card"><img src="../assets/cards/cat_cardback.jpeg"></div>
+        <div class="card-back hand-card"><img src="../assets/cards/cat_cardback.jpeg"></div>
     </div>
 </template>
 
@@ -32,6 +32,8 @@ async function initSortable() {
         // animation: 1000,
         disabled: false,
         group: 'shared',
+        animation: 100,
+        easing: 'easeOutCirc',
         onAdd: function (evt) {
             let hcs = store.getters.getSharedHandCards();
             hcs.push(cardStr2CardObj(src2CardStr(evt.item.src)));
@@ -83,13 +85,13 @@ function src2CardStr(src) {
 
     let jpgIndex = src.search(".jpeg");
     let startIndex = src.search("/src/assets/cards");
-    if (jpgIndex-startIndex > 3 + 18) {
+    if (jpgIndex - startIndex > 3 + 18) {
         // TODO raise error
-        console.log("ERROR src2CardStr() -- That's not a card front:",src.slice(18,jpgIndex))
+        console.log("ERROR src2CardStr() -- That's not a card front:", src.slice(18, jpgIndex))
     }
 
     // 18 chars gets past /src/assets/cards/
-    return src.slice(startIndex+18,jpgIndex)
+    return src.slice(startIndex + 18, jpgIndex)
 }
 
 // Copied from GameTable.vue, needed in both right now. Once I get better at function sharing I will call it across components
@@ -103,10 +105,10 @@ function cardStr2CardObj(cardStr) {
     // Input is a card string. Output is a card object {v:J,s:d}
 
     if (cardStr.slice(-1) === "j") {
-        return {v:"", s:"j"}
+        return { v: "", s: "j" }
     }
 
-    return {v:cardStr.slice(0,-1), s:cardStr.slice(-1)}
+    return { v: cardStr.slice(0, -1), s: cardStr.slice(-1) }
 }
 
 // Copied from GameTable.vue, needed in both right now. Once I get better at function sharing I will call it across components
@@ -123,7 +125,7 @@ function getSuitClass(suit) {
 
 // Different from the one in GameTable.vue
 function produceCard(card, fd) {
-    return `<img class="hand-card ${fd ? 'card-back' : `card-front ${getSuitClass(card.s)} `}" src="/src/assets/cards/${fd ? 'cat_cardback' : `${card.v}${card.s}`}.jpeg">`
+    return `<div class="hand-card ${fd ? 'card-back' : `card-front ${getSuitClass(card.s)} `}"><img src="/src/assets/cards/${fd ? 'cat_cardback' : `${card.v}${card.s}`}.jpeg"></div>`
 }
 
 function unHandifyCard(ele) {
@@ -144,35 +146,11 @@ function unHandifyCard(ele) {
 }
 
 function handifyCard(ele) {
+    ele.classList.remove("card");
     ele.classList.add("bouncy");
     ele.classList.add("hand-card");
-    ele.classList.remove("card");
 
     ele.addEventListener("click", function () {
-        // For some reason this doesn't work
-        // ele.style.transform += " rotate(0.5turn)"
-
-        // let rota = getComputedStyle(ele).getPropertyValue("transform");
-        // console.log("handifyCard style.transform length:",rota.length,rota)
-        // if (rota.length<5) {
-        //     ele.style.transform += " rotate(0.5turn)";
-        //     return;
-        // }
-        // console.log("handifyCard past first check")
-        // let ind = rota.indexOf("rota") + 6;
-        // while (ind < rota.length) {
-        //     if (rota[ind] === ")") {
-        //         break;
-        //     }
-        //     ind += 1;
-        // }
-        // // 7 to get past 'rotate(', 4 to go back from 'turn)'
-        // let newGuy = `rotate(${parseFloat(rota.slice(rota.indexOf("rota")+7,ind-4)) + 0.5}turn)`;
-        // ele.style.transform.splice(rota.indexOf("rota"),ind-rota.indexOf("rota"))
-        // ele.style.transform += newGuy;
-
-        // matrix(-1, 0, 0, -1, 0, 0)
-
         if (ele.classList.contains('spun')) {
             ele.classList.remove("spun");
         } else {
@@ -188,7 +166,7 @@ function handifyAllHandCards() {
     let handCardsArr = Array.from(document.getElementsByClassName("hand-card"));
 
     for (let i = 0; i < handCardsArr.length; i++) {
-        setTimeout(() => handifyCard(handCardsArr[i]), 75*i);
+        setTimeout(() => handifyCard(handCardsArr[i]), 75 * i);
     }
 
     // Array.prototype.forEach.call(document.getElementsByClassName("hand-card"), (elem) => {
@@ -205,7 +183,7 @@ function renderHand(cardsArr) {
     if (!cardsElement) return 1;
     // console.log('INFO Meesa rendering hand:',cardsArr)
 
-    cardsElement.innerHTML = cardsArr.map(card => produceCard(card,false)).join('');
+    cardsElement.innerHTML = cardsArr.map(card => produceCard(card, false)).join('');
 
     // Array.from(cardsElement.children).forEach((c) => {c.classList.add("hand-card");});
 
@@ -214,7 +192,7 @@ function renderHand(cardsArr) {
     return 0;
 }
 
-defineExpose({renderHand, incomingHandCards, unHandifyCard, handifyCard})
+defineExpose({ renderHand, incomingHandCards, unHandifyCard, handifyCard })
 
 onMounted(() => {
     initSortable()
@@ -225,54 +203,58 @@ onMounted(() => {
 /* Somehow these scoped styles are not getting applied to things generated by functions. Maybe I should modify the elems rather than genning,
 but then the scoped styles won't apply when a card gets moved from a different place into this one */
 .card-row {
-  position: absolute;
-  display: flex;
-  gap: 10px;
+    position: absolute;
+    display: flex;
+    gap: 10px;
 }
-#bottomCards {
-  bottom: -20px;
-  left: 50%;
-  transform: translateX(-50%);
 
-  /* Claude */
-  perspective: 1000px;
-  transform-style: preserve-3d;
+#bottomCards {
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    /* Claude */
+    perspective: 1000px;
+    transform-style: preserve-3d;
 }
 
 #bottomCards :deep(.hand-card) {
-  width: 140px;
-  height: 200px;
-  background-color: white;
-  border-radius: 8px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 16px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s;
-  will-change: transform;
-  justify-content: center;
-  align-items: center;
+    /* This is where stuff that needs to apply to the outer div goes */
+    transition: transform 0.3s;
+}
+
+#bottomCards :deep(.hand-card > *) {
+    /* This is where stuff that needs to apply to the images inside goes */
+    width: 140px;
+    height: 200px;
+    background-color: white;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    will-change: transform;
+    justify-content: center;
+    align-items: center;
 }
 
 #bottomCards :deep(.spun) {
-  /* transform: rotateX(180deg); */
-  /* transform: rotateX(180deg); */
-  transform: rotate(0.5turn);
+    transform: rotate(0.5turn);
 }
 
 #bottomCards :deep(.bouncy) {
     /* animation: MoveUpDown 2s linear infinite; */
 }
 @keyframes MoveUpDown {
-0%, 100% {
-  /* transform: translate(-50%, 0); */
-  transform: translateY(0px);
+    0%,
+    100% {
+        /* transform: translate(-50%, 0); */
+        transform: translateY(0px);
+    }
+    60% {
+        /* transform: translate(-50%, -4px); */
+        transform: translateY(-3px);
+    }
 }
-60% {
-  /* transform: translate(-50%, -4px); */
-  transform: translateY(-3px);
-}
-}
-
 </style>
