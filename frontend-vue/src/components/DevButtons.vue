@@ -202,7 +202,7 @@ defineExpose({startDevButtons})
 <style scoped>
 .dev-button-container {
     position: absolute;
-    top: 0%;
+    top: 0px;
     left: 0%
 }
 
@@ -210,7 +210,7 @@ defineExpose({startDevButtons})
     position: relative;
     width: 70px;
     height: 50px;
-    top: 30px;
+    top: 0px;
     right: -2%;
     padding: 10px 0px;
 }

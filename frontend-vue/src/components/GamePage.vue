@@ -80,7 +80,7 @@ onMounted(() => {
 #gameState {
   position: absolute;
   padding: 10px 0px;
-  top: 10px;
+  top: 100px;
   left: 11px;
   color: white
 }

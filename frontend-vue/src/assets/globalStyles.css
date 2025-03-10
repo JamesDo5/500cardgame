@@ -8,7 +8,8 @@ body {
   user-select: none;
 }
 
-.card {
+/* Cards that are never moved manually by player. Also considered naming 'passive' */
+.fake-card {
   width: 70px;
   height: 100px;
   background-color: white;

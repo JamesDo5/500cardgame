@@ -68,11 +68,14 @@ store.commit('setGameCtlr', gameCtl)
 </script>
 
 <template>
-  <Websockets />
+  <Websockets id="wsComponent"/>
   <GamePage v-if="ifGame" @gametable-ready="gameTableIsReady"/>
   <DevButtons v-if="ifGame" ref="devButtonsRef"/>
 
 </template>
 
 <style scoped>
+#wsComponent {
+  top: 100px;
+}
 </style>

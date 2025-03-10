@@ -36,16 +36,16 @@ async function initSortable() {
         easing: 'easeOutCirc',
         onAdd: function (evt) {
             let hcs = store.getters.getSharedHandCards();
-            hcs.push(cardStr2CardObj(src2CardStr(evt.item.src)));
+            hcs.push(cardStr2CardObj(src2CardStr(evt.item.firstElementChild.src)));
             // TODO assert new item is not already present in hand
             store.commit('setSharedHandCards', hcs);
         },
         onRemove: function (evt) {
             let hcs = store.getters.getSharedHandCards();
             // let ind = hcs.map(c => cardObj2Str(c)).indexOf(src2CardStr(evt.item.src));
-            let ind = hcs.map(c => c.v + c.s).indexOf(src2CardStr(evt.item.src));
+            let ind = hcs.map(c => c.v + c.s).indexOf(src2CardStr(evt.item.firstElementChild.src));
             if (ind === -1) {
-                console.log("ERROR in onRemove in sortableHandCards -- Removing a sortable elem from hand that isn't in store:", src2CardStr(evt.item.src), hcs)
+                console.log("ERROR in onRemove in sortableHandCards -- Removing a sortable elem from hand that isn't in store:", src2CardStr(evt.item.firstElementChild.src), hcs)
                 return;
             }
             // TODO assert item is already present in hand
@@ -129,7 +129,7 @@ function produceCard(card, fd) {
 }
 
 function unHandifyCard(ele) {
-    ele.classList.add("card");
+    ele.classList.add("real-card");
     ele.classList.remove("bouncy");
     ele.classList.remove("hand-card");
 
@@ -146,7 +146,7 @@ function unHandifyCard(ele) {
 }
 
 function handifyCard(ele) {
-    ele.classList.remove("card");
+    ele.classList.remove("real-card");
     ele.classList.add("bouncy");
     ele.classList.add("hand-card");
 
@@ -209,7 +209,7 @@ but then the scoped styles won't apply when a card gets moved from a different p
 }
 
 #bottomCards {
-    bottom: -20px;
+    bottom: 5px;
     left: 50%;
     transform: translateX(-50%);
 
