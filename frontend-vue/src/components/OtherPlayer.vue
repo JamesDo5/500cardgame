@@ -9,9 +9,9 @@ onMounted(() => {
     if (props.playerpos === "topCards") {
         let el = document.getElementById(props.playerpos);
         el.innerHTML = '';
-        // el.classList.remove(card-halfrow);
         el.classList = '';
         el.classList.add("card-row");
+        el.classList.remove("card-halfrow");
         let newimg;
         for (let i = 0; i < 10; i++) {
             newimg = document.createElement("img");
@@ -42,7 +42,7 @@ onMounted(() => {
         </div>
     </div>
 
-    <NameBox class="namebox" :namepos="nameplate_pos" />
+    <NameBox :namepos="nameplate_pos" :playername="props.playerpos" />
 </template>
 
 <style scoped>
@@ -65,17 +65,18 @@ onMounted(() => {
 .section-member {}
 
 #leftCards {
-    left: 10px;
-    top: 50%;
-    transform: translate(-50%, -50%);
+    left: 5px;
+    top: 44%;
+    transform: translate(0%, -50%);
 }
 #rightCards {
-    right: 10px;
-    top: 50%;
+    right: 5px;
+    top: 44%;
+    transform: translate(0%, -50%);
 }
 #topCards {
     top: 5px;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translate(-50%, 0%);
 }
 </style>

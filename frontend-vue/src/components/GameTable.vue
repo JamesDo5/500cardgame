@@ -741,8 +741,7 @@ onMounted(() => {
     position: relative;
     width: 1000px;
     height: 500px;
-    bottom: 95px;
-    /* transform: translate(50%, 50%); */
+    bottom: 40px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -773,12 +772,10 @@ onMounted(() => {
 
     0%,
     100% {
-        /* transform: translate(-50%, 0); */
         transform: translateY(0px);
     }
 
     60% {
-        /* transform: translate(-50%, -4px); */
         transform: translateY(-3px);
     }
 }

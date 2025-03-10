@@ -2,13 +2,13 @@
     <div class="stateBanner" id="gameState">Current_Game_State</div>
     <div class="standing-bid-display" id="finalBidDisplay" style="color:white;">Standing Bid: 000</div>
     <Hand @hand-rendered="handIsReady" ref="handRef" />
+    <!-- <GameTable @gametable-ready="gameTableIsReady" thefunction="handRef.value.incomingHandCards" /> -->
+    <GameTable @gametable-ready="gameTableIsReady" @DEV-handincoming="callHndIncoCrds" @handify-card="callHndHandify" @unhandify-card="callHndUnhandify" thefunction="myfuncy" />
+    <!-- <GameTable @gametable-ready="gameTableIsReady" /> -->
     <BidBox />
     <OtherPlayer playerpos="leftCards" />
     <OtherPlayer playerpos="topCards" />
     <OtherPlayer playerpos="rightCards" />
-    <!-- <GameTable @gametable-ready="gameTableIsReady" thefunction="handRef.value.incomingHandCards" /> -->
-    <GameTable @gametable-ready="gameTableIsReady" @DEV-handincoming="callHndIncoCrds" @handify-card="callHndHandify" @unhandify-card="callHndUnhandify" thefunction="myfuncy" />
-    <!-- <GameTable @gametable-ready="gameTableIsReady" /> -->
 </template>
 
 <script setup>
@@ -80,7 +80,7 @@ onMounted(() => {
 #gameState {
   position: absolute;
   padding: 10px 0px;
-  top: 100px;
+  top: 70px;
   left: 11px;
   color: white
 }
