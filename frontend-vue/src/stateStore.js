@@ -17,6 +17,8 @@ export default new Vuex.Store({
         dealer: Math.floor(Math.random() * 4),
         // s, c, d, h, n
         trumpSuit: '',
+        // 4 strings, index 0 is my name
+        playerNames: ['', '', '', ''],
     },
     mutations: {
         setSharedGameTable(state, obj) {
@@ -45,6 +47,9 @@ export default new Vuex.Store({
         },
         setTrumpSuit(state, s) {
             state.trumpSuit = s;
+        },
+        setPlayerName(state, payload) {
+            state.playerNames[payload.pos] = payload.name;
         },
     },
     getters: {
@@ -76,6 +81,9 @@ export default new Vuex.Store({
         },
         getTrumpSuit: (state) => () => {
             return state.trumpSuit;
+        },
+        getPlayerNames(state) {
+            return state.playerNames;
         },
     }
 });

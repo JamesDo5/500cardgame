@@ -46,7 +46,7 @@ function startDevButtons() {
         document.getElementById("rightBid").style.display = document.getElementById("rightBid").style.display === "inline" ? "none" : "inline";
 
         // For aesthetics the box should go away here. Also, inline-block was necessary for cards to stack horizontally instead of vertically.
-        document.getElementById("submitCards").style.display = document.getElementById("submitCards").style.display === "none" ? "flex" : "none";
+        document.getElementById("submitCards").style.display = document.getElementById("bidbox").style.display === "none" ? "flex" : "none";
 
         storedBidBox.updateBidDisplays();
     });

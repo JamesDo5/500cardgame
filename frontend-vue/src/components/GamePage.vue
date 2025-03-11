@@ -2,13 +2,12 @@
     <div class="stateBanner" id="gameState">Current_Game_State</div>
     <div class="standing-bid-display" id="finalBidDisplay" style="color:white;">Standing Bid: 000</div>
     <Hand @hand-rendered="handIsReady" ref="handRef" />
-    <!-- <GameTable @gametable-ready="gameTableIsReady" thefunction="handRef.value.incomingHandCards" /> -->
     <GameTable @gametable-ready="gameTableIsReady" @DEV-handincoming="callHndIncoCrds" @handify-card="callHndHandify" @unhandify-card="callHndUnhandify" thefunction="myfuncy" />
-    <!-- <GameTable @gametable-ready="gameTableIsReady" /> -->
     <BidBox />
     <OtherPlayer playerpos="leftCards" />
     <OtherPlayer playerpos="topCards" />
     <OtherPlayer playerpos="rightCards" />
+    <NameBox namepos="nameboxMe" playername="Player" />
 </template>
 
 <script setup>
@@ -16,6 +15,11 @@ import BidBox from './BidBox.vue'
 import Hand from './Hand.vue'
 import OtherPlayer from './OtherPlayer.vue'
 import GameTable from './GameTable.vue'
+
+import NameBox from './NameBox.vue'
+import ActivityFeed from './ActivityFeed.vue'
+import NotifBox from './NotifBox.vue'
+
 
 import { onMounted, ref } from 'vue';
 import { useStore } from 'vuex'

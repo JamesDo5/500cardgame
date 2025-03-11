@@ -7,8 +7,8 @@
 - [ ] Implement dealing player and dealing visually.
 - [ ] Maybe there should be 15 seconds where someone can press deal during their deal and after that it auto-deals.
 - [x] Fix the props I broke for OtherPlayer component
-- [`] Player names visually displayed and tracked locally.
-- [ ] Player names receivable from server.
+- [x] Player names visually displayed and tracked locally.
+- [x] Player names receivable from server.
 - [x] Make player's cards a lot bigger, game table smaller
 - [x] Cards get smaller when they go to the table. Or maybe everything on the table should be comically large too?
 - [ ] Score tracking under the hood.
@@ -16,12 +16,13 @@
 - [x] Correctly update card arr states when cards move with sortable (this is so the states can be source of truth for blind and card submits)
 - [x] Fix bidding to actually operate from callee func
 - [x] Move L,T,R bid displays to visually key off of bidbox and not be part of game table
+- [ ] Re-deal when everyone passes
 
 ### Priority 1: Critical for first website release
 - [ ] Implement flag for dev buttons so the ones that shouldn't show up don't, and they look nice when not in dev mode
 
 ### Priority 2p: Important before releasing to public
-- [\] Card when dragged is the actual card and not weird globe image-not-found placeholder -- I think this will be done with a div containing each img
+- [x] Card when dragged is the actual card and not weird globe image-not-found placeholder -- I think this will be done with a div containing each img
 - [ ] Need to make a recovery mechanism where if page reloads it asks server to set us back up + our state
 - [ ] Blind auto-play functionality after timer
 - [ ] ^Incoming blind should also enforce and detect auto-blind submit
@@ -45,9 +46,9 @@
 - [x] Figure out how to make subcomponents actually work. Had file location errors when first tried
 - [x] Move hand to subcomponent
 - [ ] Cards should flip 180 and then continue forwards when reclicked
-- [ ] Move top player code into OtherPlayer.vue
+- [x] Move top player code into OtherPlayer.vue
 - [ ] Look into making a settings/prefs menu
-- [ ] Look into style scoping elements that come under a parent purview during code execution in vue. Right now they do not get the scoped component styles.
+- [x] Look into style scoping elements that come under a parent purview during code execution in vue. Right now they do not get the scoped component styles.
 - [ ] Partner jokes when your partner saves you
 - [ ] Little noise or animation when user tries to do something that's not allowed locally
 - [ ] Mark cheaters when user submits card they don't have

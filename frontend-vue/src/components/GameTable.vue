@@ -319,9 +319,6 @@ class GameTable {
             return 1;
         }
 
-        this.lastTrickWinner = 0;
-        this.sortableSubmitCards.option("disabled", false);
-        blindElement.innerHTML = "";
         this.incomingBlindDiscard(this.lastTrickWinner);
         return 0;
     }
@@ -336,6 +333,7 @@ class GameTable {
             this.lastTrickWinner = pos;
         }
 
+        document.getElementById('blindCards').style.display = "none";
         document.getElementById('blindDiscard').style.display = "inline";
 
         // TODO move the blind discard to correct player's position.
@@ -343,6 +341,10 @@ class GameTable {
         if (store.getters.getGameState() === 3) {
             store.commit('setGameState', 5);
         }
+
+        this.lastTrickWinner = 0;
+        this.sortableSubmitCards.option("disabled", false);
+        blindElement.innerHTML = "";
 
         return 0;
     }
@@ -433,7 +435,8 @@ class GameTable {
         this.playedCards[pos] = val + sui;
 
         // Visually render new card
-        document.getElementById('playedCard' + this.getPosFromInt(pos)).firstElementChild.src = "/src/assets/cards/" + val + sui + ".jpeg";
+        // These are dead cards so no need to use producecard(). TODO Might be nice to make that a function for future though
+        document.getElementById('playedCard' + this.getPosFromInt(pos)).src = "/src/assets/cards/" + val + sui + ".jpeg";
         document.getElementById('playedCard' + this.getPosFromInt(pos)).className += " " + this.getSuitClass(sui);
         document.getElementById('playedCard' + this.getPosFromInt(pos)).style.display = "inline";
 
@@ -549,6 +552,8 @@ class GameTable {
         ]);
         // TODO assert trumpSuit in specialTrump, otherwise console.log(`ERROR Sorry, we are out of suit: ${trumpSuit}.`);
         specialTrump = specialTrump.get(trumpSuit);
+        console.log("DEBUG getTrickWinner -- trumpSuit:",trumpSuit)
+        console.log("DEBUG getTrickWinner -- specialTrump after index:",specialTrump)
 
         // firstElementChild
 

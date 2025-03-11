@@ -199,7 +199,7 @@ class BidBox {
         // Visually render bids
         this.updateBidDisplays();
 
-        // console.log("INFO -- incomingBid(",pos,",",bid,")"," resulting in this.bids[pos]",this.bids[pos],"FULL ARR:",this.bids)
+        console.log("INFO -- incomingBid(",pos,",",bid,")"," resulting in this.bids[pos]",this.bids[pos],"FULL ARR:",this.bids)
 
         // console.log("DEBUG incomingBid() -- isBiddingOver():",this.isBiddingOver())
         if (this.isBiddingOver()) {
@@ -217,9 +217,10 @@ class BidBox {
     }
 
     endBidding() {
-        console.log("INFO endBidding()")
-        const bid2Suit = new Map([['1', 'n'], ['2', 's'], ['3', 'c'], ['4', 'd'], ['5', 'h']]);
+        const bid2Suit = new Map([[1, 'n'], [2, 's'], [3, 'c'], [4, 'd'], [5, 'h']]);
+        // HUGE TODO -- what to do when everyone passes
         const winningSuit = bid2Suit.get((this.getHighestBid() / 20) % 5)
+        console.log("INFO endBidding() -- committing winningSuit:",winningSuit,", winning bid amount:",this.getHighestBid(),"DEBUG:",(this.getHighestBid() / 20) % 5)
         store.commit('setTrumpSuit', winningSuit);
         store.commit('setWinningBid', this.getHighestBid());
 

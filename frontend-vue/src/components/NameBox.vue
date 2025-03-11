@@ -1,21 +1,36 @@
 <script setup>
 import { onMounted } from 'vue';
+import { useStore } from 'vuex'
 
+// playername IS COMPLETELY REDUNDANT, FEEL FREE TO REMOVE IT
 const props = defineProps(['namepos', 'playername']);
+const store = useStore();
 
-onMounted(() => {
-    // if (props.namepos !== "nameboxTopCards") {
-    //     let el = document.getElementById(props.namepos);
-    //     el.
-    // }
-});
+let namepos2playerindex = new Map([
+    ['nameboxLeftCards', 1],
+    ['nameboxTopCards', 2],
+    ['nameboxRightCards', 3],
+    ['nameboxMe', 0],
+]);
+
+function incomingPlayerName(name) {
+    document.getElementById(props.playername).innerHTML = name;
+    store.commit('setPlayerName', {'pos':namepos2playerindex.get(props.namepos), 'name':name});
+    console.log("INFO incomingPlayerName() -- player at pos",namepos2playerindex.get(props.namepos),"set to name",name,"in state:",store.getters.getPlayerNames);
+    return 0;
+}
+
+// THE FOLLOWING IS FOR TESTING:
+// onMounted(() => {
+//     incomingPlayerName("james1");
+// });
 </script>
 
 <template>
     <div class="namecard-wrapper" :id="namepos">
         <div class="namecard-bg"></div>
         <div class="namecard"></div>
-        <div class="player-name">{{ playername }}</div>
+        <div class="player-name" :id="playername">{{ playername }}</div>
     </div>
 </template>
 
@@ -40,6 +55,14 @@ onMounted(() => {
 #nameboxRightCards {
     top: -320px;
     right: -57%;
+}
+#nameboxMe {
+    position: absolute;
+    top: 10px;
+    right: 100px;
+}
+#nameboxMe .player-name::before {
+    content: '👤';
 }
 
 .namecard-bg {

@@ -42,7 +42,7 @@ onMounted(() => {
         </div>
     </div>
 
-    <NameBox :namepos="nameplate_pos" :playername="props.playerpos" />
+    <NameBox :namepos="nameplate_pos" :playername="props.playerpos.slice(null,-5) + 'Player'" />
 </template>
 
 <style scoped>
