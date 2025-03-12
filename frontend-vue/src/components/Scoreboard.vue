@@ -11,10 +11,10 @@ function addTrickScore(ourScore, theirScore) {
     store.commit('addThemScore', theirScore);
 
     let newTR = document.createElement("tr");
-    let newTD1 = document.createElement("td")
-    newTD1.appendChild(document.createTextNode(ourScore))
-    let newTD2 = document.createElement("td")
-    newTD2.appendChild(document.createTextNode(theirScore))
+    let newTD1 = document.createElement("td");
+    newTD1.appendChild(document.createTextNode(ourScore));
+    let newTD2 = document.createElement("td");
+    newTD2.appendChild(document.createTextNode(theirScore));
     newTR.appendChild(newTD1);
     newTR.appendChild(newTD2);
 
@@ -34,12 +34,12 @@ defineExpose({addTrickScore})
     <table class="scoreboard">
         <tbody id="scoreBoardTbody">
             <tr>
-                <th class="teamname" id="team0name">Us</th>
-                <th class="teamname" id="team1name">Them</th>
+                <th id="team0name">Us</th>
+                <th id="team1name">Them</th>
             </tr>
             <!-- <tr>
-                <td class="tricktotal">0</td>
-                <td class="tricktotal">0</td>
+                <td >0</td>
+                <td >0</td>
             </tr> -->
             <tr id="scoreTotal">
                 <td class="total" id="team0total">0</td>
@@ -51,7 +51,7 @@ defineExpose({addTrickScore})
 
 <style scoped>
 /* From Erasmus stackoverflow Apr 2024 */
-table td + td,  table th + th {
+table td + td,  table th + th, #scoreBoardTbody :deep(td + td) {
     border-left: 2px solid tomato;
 }
 
