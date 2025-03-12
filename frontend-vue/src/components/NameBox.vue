@@ -24,6 +24,8 @@ function incomingPlayerName(name) {
 // onMounted(() => {
 //     incomingPlayerName("james1");
 // });
+
+defineExpose({incomingPlayerName})
 </script>
 
 <template>

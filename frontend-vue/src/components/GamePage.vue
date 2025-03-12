@@ -8,6 +8,9 @@
     <OtherPlayer playerpos="topCards" />
     <OtherPlayer playerpos="rightCards" />
     <NameBox namepos="nameboxMe" playername="Player" />
+    <ActivityFeed />
+    <NotifBox />
+    <Scoreboard ref="scoreboardRef"/>
 </template>
 
 <script setup>
@@ -19,6 +22,7 @@ import GameTable from './GameTable.vue'
 import NameBox from './NameBox.vue'
 import ActivityFeed from './ActivityFeed.vue'
 import NotifBox from './NotifBox.vue'
+import Scoreboard from './Scoreboard.vue'
 
 
 import { onMounted, ref } from 'vue';
@@ -28,6 +32,7 @@ import { useStore } from 'vuex'
 const store = useStore()
 let gameState = store.state.sharedGameState; //-1:uninitialized, 0:dealing/shuffling, 1:hands dealt, 2:I bid, 3:all bids in, blind dealt, 4:I submitted blind, 5:trick play, 6:game over
 const handRef = ref(null);
+const scoreboardRef = ref(null);
 
 // Bus the game table ready event to parent (so it can get to devbuttons)
 const emit = defineEmits(['gametable-ready']);
@@ -59,6 +64,11 @@ function callHndUnhandify(card) {
     return;
 }
 
+function TESTaddTrickScore(s1, s2) {
+    scoreboardRef.value.addTrickScore(s1, s2);
+    return;
+}
+
 // function myfuncy() {}
 // TODO can a variable be a function in js? Can a const? They shouldnt have different ability to be func
 // let myfuncy = () => {}
@@ -70,6 +80,8 @@ onMounted(() => {
     myfuncy = handRef.value.incomingHandCards
     console.log("hi2",typeof(myfuncy))
 });
+
+defineExpose({TESTaddTrickScore})
 </script>
 
 <style scoped>

@@ -12,13 +12,14 @@ export default new Vuex.Store({
         gameState: -1,
         // Hand has card objects: [{v:5,s:s},{v:6,s:c},{v:7,s:h},{v:8,s:d},{v:9,s:d},{v:10,s:d},{v:J,s:d},{v:Q,s:d},{v:K,s:d},{v:'',s:d}]
         handCards: [],
-        score: -1,
         winningBid: -1,
         dealer: Math.floor(Math.random() * 4),
         // s, c, d, h, n
         trumpSuit: '',
         // 4 strings, index 0 is my name
         playerNames: ['', '', '', ''],
+        usScore: -1,
+        themScore: -1,
     },
     mutations: {
         setSharedGameTable(state, obj) {
@@ -36,9 +37,6 @@ export default new Vuex.Store({
         setSharedHandCards(state, arr) {
             state.handCards = arr;
         },
-        setScore(state, n) {
-            state.score = n;
-        },
         setWinningBid(state, n) {
             state.winningBid = n;
         },
@@ -50,6 +48,12 @@ export default new Vuex.Store({
         },
         setPlayerName(state, payload) {
             state.playerNames[payload.pos] = payload.name;
+        },
+        addUsScore(state, n) {
+            state.usScore += n;
+        },
+        addThemScore(state, n) {
+            state.themScore += n;
         },
     },
     getters: {
@@ -85,5 +89,12 @@ export default new Vuex.Store({
         getPlayerNames(state) {
             return state.playerNames;
         },
+        getUsScore(state) {
+            return state.usScore;
+        },
+        getThemScore(state) {
+            return state.themScore;
+        },
+
     }
 });

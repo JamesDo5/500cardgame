@@ -15,7 +15,7 @@
             card!</button>
         <button class="incoming-trick-button dev-button" type="button" id="incomingTrickBtn" style="z-index:100;">Incoming
             trick!</button>
-        <!-- Don't think I need this button v -->
+        <button class="incoming-trick-score dev-button" type="button" id="incomingtrickscore" style="z-index:100;">TESTtrickscore!</button>
         <button class="game-over-button dev-button" type="button" id="gameOverBtn" style="z-index:100;">Game
             over!</button>
     </div>
@@ -26,6 +26,7 @@
 import { useStore } from 'vuex'
 
 const store = useStore();
+const emit = defineEmits(['newtrickscore'])
 
 
 function startDevButtons() {
@@ -181,6 +182,10 @@ function startDevButtons() {
         if (!storedGameTable.incomingTrickCard(nextPlayer, '4', 'h') === 0) {
             // TODO whatever happens if it failed
         }
+    });
+
+    document.getElementById("incomingtrickscore").addEventListener("click", function () {
+        emit('newtrickscore', 100, -50);
     });
 
     document.getElementById("gameOverBtn").addEventListener("click", function () {

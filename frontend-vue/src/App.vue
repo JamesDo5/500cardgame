@@ -18,8 +18,14 @@ const store = useStore()
 const devButtonsRef = ref(null);
 function gameTableIsReady() {
   devButtonsRef.value.startDevButtons();
+  return;
 }
 
+const gamePageRef = ref(null);
+function gamePageRcvTrickScore(s1, s2) {
+  gamePageRef.value.TESTaddTrickScore(s1, s2);
+  return;
+}
 
 class GameController {
     constructor() {
@@ -69,8 +75,8 @@ store.commit('setGameCtlr', gameCtl)
 
 <template>
   <Websockets id="wsComponent"/>
-  <GamePage v-if="ifGame" @gametable-ready="gameTableIsReady"/>
-  <DevButtons v-if="ifGame" ref="devButtonsRef"/>
+  <GamePage v-if="ifGame" ref="gamePageRef" @gametable-ready="gameTableIsReady"/>
+  <DevButtons v-if="ifGame" ref="devButtonsRef" @newtrickscore="gamePageRcvTrickScore"/>
 
 </template>
 
