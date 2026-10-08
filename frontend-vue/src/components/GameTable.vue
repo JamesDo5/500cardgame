@@ -1,653 +1,429 @@
 <template>
     <div id="gameTableContainer">
         <div id="gameTable">
-            <img class="fake-card card-played card-played-left" id="playedCardLeft" src="../assets/cards/mystery_card_cropped.jpg">
-            <img class="fake-card card-played card-played-top" id="playedCardTop" src="../assets/cards/mystery_card_cropped.jpg">
-            <img class="fake-card card-played card-played-right" id="playedCardRight" src="../assets/cards/mystery_card_cropped.jpg">
-            <img class="fake-card card-played card-played-bottom" id="playedCardBottom" src="../assets/cards/mystery_card_cropped.jpg">
-            <div class="card-row" id="submitCards">
-                <div class="real-card card-back"><img src="../assets/cards/cat_cardback.jpeg"></div>
-            </div>
+            <img class="fake-card card-played card-played-left" id="playedCardLeft" :src="CARD_BACK_URL">
+            <img class="fake-card card-played card-played-top" id="playedCardTop" :src="CARD_BACK_URL">
+            <img class="fake-card card-played card-played-right" id="playedCardRight" :src="CARD_BACK_URL">
+            <img class="fake-card card-played card-played-bottom" id="playedCardBottom" :src="CARD_BACK_URL">
+            <div class="card-row" id="submitCards"></div>
             <div class="card-stack won-tricks-bottom" id="wonTricksBottom"></div>
             <div class="card-stack won-tricks-left" id="wonTricksLeft"></div>
             <div class="card-stack won-tricks-top" id="wonTricksTop"></div>
             <div class="card-stack won-tricks-right" id="wonTricksRight"></div>
             <div class="card-stack discard-blind" id="blindDiscard"></div>
         </div>
-        <div class="card-row" id="blindCards">
-            <div class="real-card card-back"><img src="../assets/cards/cat_cardback.jpeg"></div>
-            <div class="real-card card-back"><img src="../assets/cards/cat_cardback.jpeg"></div>
-            <div class="real-card card-back"><img src="../assets/cards/cat_cardback.jpeg"></div>
-            <div class="real-card card-back"><img src="../assets/cards/cat_cardback.jpeg"></div>
-            <div class="real-card card-back"><img src="../assets/cards/cat_cardback.jpeg"></div>
-        </div>
+        <div class="card-row" id="blindCards"></div>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted, inject } from 'vue';
+import { onMounted } from 'vue';
 import { useStore } from 'vuex'
 import Sortable from 'sortablejs';
+import { STANDALONE } from '../config.js';
+import { socket } from '../net/socket.js';
+import { C2S } from '../net/messages.js';
+import { CARD_BACK_URL, cardImageUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, dealMock, teamOf } from '../game/cards.js';
+import { trickWinner, legalPlays, nextToPlay, scoreHand, gameOutcome } from '../game/rules.js';
 
 const store = useStore()
-let gameState = store.state.sharedGameState; // 0 is bidding, 1 is blind exchange, 2 is doing tricks, 3 is scoring and re-deal
-let handCards = store.state.sharedHandCards;
-const DEV_STANDALONE = true;
-const emit = defineEmits(['gametable-ready', 'DEV-handincoming', 'handify-card', 'unhandify-card'])
-const props = defineProps(['handfuncIncomingcards']);
-const allowedSuits = inject('cardSuits')
-const allowedVals = inject('cardValues')
 
+const names = () => store.state.playerNames;
 
 class GameTable {
     constructor() {
-        // Array of card objs e.g. [{v:J,s:d},{v:9,s:d}]. Downside of this over strs is that indexOf does not work natively :(
-        this.blindCards = []; // Only if this player got blind, store after sending to server in case we need to re-send
+        this.blindCards = [];
         this.submitCards = [];
-        // Array of strings which are card signatures. 0 is you, 1 is left, 2 top, 3 right.
         this.playedCards = ['', '', '', ''];
-        // 0 is you, 1 is left, 2 top, 3 right
         this.lastTrickWinner = -1;
-        // These are counts just tracking how high a stack is for each player. Max 10 total and 10 for 1 player.
+        this.predictedTrickWinner = -1;
         this.wonTricks = [0, 0, 0, 0];
-        this.blindDiscard = false;
-
+        this.mockHands = null;
+        this.mockBlind = null;
         this.sortableBlindCards = null;
         this.sortableSubmitCards = null;
-
         this.initializeSortables();
-        this.initializeTable();
     }
 
-    async initializeSortables() {
-        // See Hand.vue for other Sortable
+    initializeSortables() {
         const blindCardsElem = document.getElementById('blindCards');
-        if (!blindCardsElem) console.log("ERROR initializeSortables() -- Did not find blind cards");
         const submitCardsElem = document.getElementById('submitCards');
-        if (!submitCardsElem) console.log("ERROR initializeSortables() -- Did not find submittal cards");
-
-        if ((!blindCardsElem) || (!submitCardsElem)) return 1;
-
+        if (!blindCardsElem || !submitCardsElem) {
+            console.error("initializeSortables() -- missing blind or submit element");
+            return 1;
+        }
+        const handOrNot = (evt) => {
+            if (evt.to.id === "bottomCards") store.getters.getHand().handifyCard?.(evt.item);
+        };
         this.sortableBlindCards = new Sortable(blindCardsElem, {
-            // animation: 1000,
             disabled: true,
             group: 'shared',
-            onAdd: (evt) => {
-                // TODO assert this item is not already present in blindCards
-                this.blindCards.push(this.src2CardObj(evt.item.firstElementChild.src));
-            },
-            onRemove: (evt) => {
-                let bc = this.blindCards;
-                let ind = bc.map(c => this.cardObj2Str(c)).indexOf(this.src2CardStr(evt.item.firstElementChild.src));
-                if (ind === -1) {
-                    console.log("ERROR in onRemove in sortableBlindCards -- Removing a sortable elem from blind that isn't in this.blindCards:", this.src2CardStr(evt.item.firstElementChild.src), this.blindCards)
-                    return;
-                }
-                this.blindCards.splice(ind, 1);
-            },
-            onChange: (evt) => {
-                if (evt.to.id === "bottomCards") {
-                    emit('handify-card', evt.item);
-                    // handifyCard(evt.item);
-                } else {
-                    emit('unhandify-card', evt.item);
-                    // unHandifyCard(evt.item);
-                }
-                return;
-            },
+            animation: 100,
+            onAdd: (evt) => this.trackAdd(this.blindCards, evt.item, 'blind'),
+            onRemove: (evt) => this.trackRemove(this.blindCards, evt.item, 'blind'),
+            onChange: handOrNot,
         });
-        // TODO try to limit submitCards to only 1 item after gameplay starts, perhaps with filter class on the cards in hand
-        // ... if there's already one in the submit box -- {filter: '.filtered'}
-        // However this may confuse user if trying to change submitted card out by adding one then removing one
         this.sortableSubmitCards = new Sortable(submitCardsElem, {
             disabled: true,
             group: 'shared',
-            onAdd: (evt) => {
-                this.submitCards.push(this.src2CardObj(evt.item.firstElementChild.src));
-            },
-            onRemove: (evt) => {
-                let sc = this.submitCards;
-                let ind = sc.map(c => this.cardObj2Str(c)).indexOf(this.src2CardStr(evt.item.firstElementChild.src));
-                if (ind === -1) {
-                    console.log("ERROR in onRemove in sortableSubmitCards -- Removing a sortable elem from submit box that isn't in this.submitCards:", this.src2CardStr(evt.item.firstElementChild.src), this.submitCards);
-                    return;
-                }
-                this.submitCards.splice(ind, 1);
-            },
-            onChange: (evt) => {
-                if (evt.to.id === "bottomCards") {
-                    emit('handify-card', evt.item);
-                    // handifyCard(evt.item);
-                } else {
-                    emit('unhandify-card', evt.item);
-                    // unHandifyCard(evt.item);
-                }
-                return;
-            },
+            animation: 100,
+            onAdd: (evt) => this.trackAdd(this.submitCards, evt.item, 'submit'),
+            onRemove: (evt) => this.trackRemove(this.submitCards, evt.item, 'submit'),
+            onChange: handOrNot,
         });
+        return 0;
     }
 
-    async initializeTable() {
-        try {
-            // Remove the submit card that starts displayed
-            document.getElementById('submitCards').innerHTML = "";
-
-            // No need to render blind during normal play until websocket sends this player blind
-            // this.incomingBlind(this.blindCards, true)
-            if (DEV_STANDALONE) {
-                const shuffle = this.generateMockShuffle();
-                this.blindCards = shuffle.slice(10, 15);
-
-                // props.handfuncIncomingcards(shuffle.slice(35, 45))
-                // Without the prop working for now we will make this commit and emit
-                store.commit('setSharedHandCards', shuffle.slice(35, 45));
-                emit('DEV-handincoming');
-
-                // handCards = store.getters.getSharedHandCards();
-                // console.log("in initializeTable store.state.sharedHandCards.len:",handCards.length)
-            }
-        } catch (error) {
-            console.error('Failed to initialize game table:', error);
+    trackAdd(arr, item, label) {
+        const card = elem2CardStr(item);
+        if (arr.includes(card)) {
+            console.error(`onAdd ${label} -- card already present:`, card, arr);
+            return;
         }
-
-        // this.renderInitialCards();
+        arr.push(card);
+        this.unHandify(item);
     }
 
-    generateMockShuffle() {
-        const vals = ['4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-        const suits = ['h', 'd', 'c', 's'];
-        // let possibilities = vals.reduce((acc, v) => {return acc.concat(suits.map(s => ({value:v,suit:s})));}, []).concat({value:'',suit:'j'});
-        let possibilities = vals.flatMap(value => suits.map(suit => ({ v: value, s: suit }))).concat({ v: '', s: 'j' });
-
-        // Fisher-Yates from James Bubb on dev.to, 2020 "How to shuffle an array in JavaScript"
-        for (let i = possibilities.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            const temp = possibilities[i];
-            possibilities[i] = possibilities[j];
-            possibilities[j] = temp;
+    trackRemove(arr, item, label) {
+        const ind = arr.indexOf(elem2CardStr(item));
+        if (ind === -1) {
+            console.error(`onRemove ${label} -- card not tracked:`, elem2CardStr(item), arr);
+            return;
         }
-
-        console.log(possibilities)
-
-        return possibilities;
+        arr.splice(ind, 1);
     }
 
-    cardObj2Str(cardObj) {
-        // Input is a card object {v:J,s:d}. Output is a card string e.g. 'Jd'
-
-        return cardObj.v + cardObj.s
+    unHandify(item) {
+        item.classList.add("real-card");
+        item.classList.remove("bouncy", "hand-card", "spun", "illegal");
     }
 
-    cardStr2CardObj(cardStr) {
-        // Input is a card string. Output is a card object {v:J,s:d}
+    newHand() {
+        this.blindCards = [];
+        this.submitCards = [];
+        this.playedCards = ['', '', '', ''];
+        this.lastTrickWinner = -1;
+        this.predictedTrickWinner = -1;
+        this.wonTricks = [0, 0, 0, 0];
+        this.mockHands = null;
+        this.mockBlind = null;
+        document.getElementById('submitCards').innerHTML = "";
+        document.getElementById('blindCards').innerHTML = "";
+        document.getElementById('blindCards').style.display = "flex";
+        document.getElementById('blindDiscard').style.display = "none";
+        this.sortableBlindCards.option("disabled", true);
+        this.sortableSubmitCards.option("disabled", true);
+        this.clearPlayedCards();
+        this.renderStacks();
+        store.commit('setTrumpSuit', '');
+        store.commit('setWinningBid', -1);
+        store.getters.getHand()?.markLegal(null);
+    }
 
-        if (cardStr.slice(-1) === "j") {
-            return { v: "", s: "j" }
+    dealStandalone() {
+        const { hands, blind } = dealMock();
+        this.newHand();
+        this.mockHands = hands;
+        this.mockBlind = blind;
+        store.getters.getBidBox().reset();
+        store.getters.getHand().incomingHandCards(hands[0]);
+        store.commit('setGameState', 1);
+        store.commit('feedPush', `${names()[store.state.dealer]} dealt.`);
+        store.getters.getBidBox().show();
+    }
+
+    incomingBlind(cards, faceDown) {
+        if (!Array.isArray(cards) || cards.length !== 5 || !cards.every(isValidCardStr)) {
+            console.error("incomingBlind() -- expected 5 valid cards:", cards);
+            return 1;
         }
-
-        return { v: cardStr.slice(0, -1), s: cardStr.slice(-1) }
+        this.blindCards = cards.slice();
+        this.renderBlind(faceDown);
+        return 0;
     }
 
-    src2CardObj(src) {
-        // Input is a src string. Output is a card string such as '2h'
-
-        return this.cardStr2CardObj(this.src2CardStr(src))
-    }
-
-    src2CardStr(src) {
-        // Input is a src string. Output is a card string such as '2h'
-
-        let jpgIndex = src.search(".jpeg");
-        let startIndex = src.search("/src/assets/cards");
-        if (jpgIndex - startIndex > 3 + 18) {
-            // TODO raise error
-            console.log("ERROR src2CardStr() -- That's not a card front:", src.slice(18, jpgIndex))
-        }
-
-        // 18 chars gets past /src/assets/cards/
-        return src.slice(startIndex + 18, jpgIndex)
-    }
-
-    produceCard(card, fd) {
-        return `<div class="real-card ${fd ? 'card-back' : `card-front ${this.getSuitClass(card.s)} `}"><img src="/src/assets/cards/${fd ? 'cat_cardback' : `${card.v}${card.s}`}.jpeg"></div>`
-    }
-
-    getPosFromInt(pos) {
-        // TODO maybe implement out of bounds checking
-        const posArr = ["Bottom", "Left", "Top", "Right"];
-        return posArr[pos]
-    }
-
-    getSuitClass(suit) {
-        switch (suit) {
-            case 'h': return 'hearts';
-            case 'd': return 'diamonds';
-            case 'c': return 'clubs';
-            case 's': return 'spades';
-            case 'j': return 'joker';
-            default: return '';
-        }
-    }
-
-    getFinishedTricks() {
-        // Reduce code from florian-margaine on StackOverflow 03/25/2013
-        return this.wonTricks.reduce((partialSum, n) => partialSum + n, 0);
-    }
-
-    TESTFUNCswitchBlindFD() {
-        let faceDown = true;
-
+    renderBlind(faceDown) {
         const cardsElement = document.getElementById('blindCards');
-        // TODO raise error
-        if (!cardsElement) console.log("ERROR Did not find blind cards");
-        if (!cardsElement) return 1;
-
-        if (cardsElement.childNodes[0].classList.contains('card-back')) {
-            // The goal of this function is to flip the blind so this bool is opposite of what is currently rendered
-            faceDown = false;
-        }
-
-        // Now rerender the blind with the new faceDown
-        let bc = this.blindCards
-        // TODO2 this is apparently not industry standard and it's better to use createElement
-        cardsElement.innerHTML = bc.map(card => this.produceCard(card, faceDown)).join('');
-
-        // Note the use of faceDown to determine whether they are disabled
-        this.sortableBlindCards.option("disabled", faceDown); // set
-
-        return 0
+        cardsElement.style.display = "flex";
+        cardsElement.innerHTML = this.blindCards.map(card => produceCardHtml(card, faceDown, 'real-card')).join('');
+        this.sortableBlindCards.option("disabled", faceDown);
     }
 
-    incomingBlind(cardsArr, faceDown) {
-        // Input cardsArr is an array of Card objects. FaceDown is a bool
-        // Output is rendering the blind
-
-        // Store the blind in the source of truth
-        this.blindCards = cardsArr.map(card => cardObj2Str(card));
-        console.log("DEBUG in incomingBlind:", this.blindCards)
-
-        const cardsElement = document.getElementById('blindCards');
-        if (!cardsElement) console.log("ERROR Did not find blind cards");
-        if (!cardsElement) return;
-
-        cardsElement.innerHTML = cardsArr.map(card => this.produceCard(card, faceDown)).join('');
-
-        return;
-        // <img class="real-card card-back" src="/src/assets/cards/cat_cardback.jpeg">
+    flipBlind() {
+        const first = document.getElementById('blindCards').firstElementChild;
+        if (!first) return 1;
+        this.renderBlind(!first.classList.contains('card-back'));
+        return 0;
     }
 
     submitBlind() {
-        // Result: Check that blind cards rendered to the player matches this.blindCards, send CardStr array to server.
-        // Output: 0 if successful, 1 if not.
-
         const blindElement = document.getElementById('blindCards');
-        if (!blindElement) console.log("ERROR Did not find blind cards");
-        if (!blindElement) return 1;
-
-        // Disable sort during this function to prevent edge case inconsistencies
         this.sortableBlindCards.option("disabled", true);
-
-        let blindSubmitArr = []
-
-        console.log("blindElement.childNodes.length:", blindElement.childNodes.length)
-        if (!(blindElement.childNodes.length === 5)) {
-            // TODO raise error to user
-            console.log("houston we have a problem! can't submit more or fewer than 5 card blind")
-            // Reenable sorting so user can fix the issue
+        const items = Array.from(blindElement.children);
+        if (items.length !== 5) {
+            store.commit('notify', "Discard exactly 5 cards to the blind.");
             this.sortableBlindCards.option("disabled", false);
-            return 1
-        }
-
-        for (let i = 0; i < blindElement.childNodes.length; i++) {
-            if (blindElement.childNodes[i].classList.contains('card-back')) {
-                // TODO raise error to user
-                console.log("houston we have a problem! can't submit cards which are facedown")
-                blindSubmitArr = []
-                this.sortableBlindCards.option("disabled", false);
-                return 1
-            }
-            blindSubmitArr.push(this.src2CardStr(blindElement.childNodes[i].firstElementChild.src))
-        }
-
-        // TODO now we have this.blindCards so we can check the rendered cards against the arr and just send the arr
-
-        // TODO the code to send blind to server. If NOT worked do this block. TO BE CLEAR as this is set up now blindSubmitArr is an array of CardStrs
-        if (!true) {
-            if (store.getters.getGameState() === 3) {
-                store.commit('setGameState', 4);
-            }
             return 1;
         }
-
-        this.incomingBlindDiscard(this.lastTrickWinner);
+        if (items.some(ele => ele.classList.contains('card-back'))) {
+            store.commit('notify', "Flip the blind over before submitting.");
+            this.sortableBlindCards.option("disabled", false);
+            return 1;
+        }
+        const discards = items.map(elem2CardStr);
+        if (store.getters.getSharedHandCards().length !== 10) {
+            store.commit('notify', "You must hold exactly 10 cards.");
+            this.sortableBlindCards.option("disabled", false);
+            return 1;
+        }
+        this.blindCards = discards;
+        store.commit('setGameState', 4);
+        if (STANDALONE) {
+            this.incomingBlindDiscard(0);
+        } else {
+            socket.send(C2S.SUBMIT_BLIND, { discards });
+        }
         return 0;
     }
 
     incomingBlindDiscard(pos) {
-        // Input: Position 0-3 of player who finished blind.
-        // Result: Render the blindDiscard next to player who won bid.
-        // Output: 0 if successful.
-
-        if (!pos === this.lastTrickWinner) {
-            console.log("WARN in incomingBlindDiscard -- It seems the server thinks:", pos, "won the blind but client thinks:", this.lastTrickWinner, "won it. Believing server.");
-            this.lastTrickWinner = pos;
+        const bb = store.getters.getBidBox();
+        if (pos !== bb.winningBidder) {
+            console.warn("incomingBlindDiscard -- server says", pos, "finished blind but client thought bid winner was", bb.winningBidder, ". Believing server.");
+            bb.winningBidder = pos;
+            bb.winningBidTeam = teamOf(pos);
         }
-
         document.getElementById('blindCards').style.display = "none";
+        document.getElementById('blindCards').innerHTML = "";
         document.getElementById('blindDiscard').style.display = "inline";
-
-        // TODO move the blind discard to correct player's position.
-
-        if (store.getters.getGameState() === 3) {
-            store.commit('setGameState', 5);
-        }
-
-        this.lastTrickWinner = 0;
+        this.lastTrickWinner = pos;
         this.sortableSubmitCards.option("disabled", false);
-        blindElement.innerHTML = "";
-
+        store.commit('setGameState', 5);
+        store.commit('feedPush', `${names()[pos]} took the blind and leads.`);
+        this.updateLegalHighlights();
         return 0;
+    }
+
+    botBlind(pos) {
+        if (!STANDALONE || !this.mockHands) return 1;
+        const all = this.mockHands[pos].concat(this.mockBlind);
+        for (let i = 0; i < 5; i++) all.splice(Math.floor(Math.random() * all.length), 1);
+        this.mockHands[pos] = all;
+        return this.incomingBlindDiscard(pos);
     }
 
     submitTrick() {
-        // Result: Send this player's trick card submission to the server.
-        // Output: 0 if successful, 1 if not.
-
-        // TODO assert everyone from this.lastTrickWinner to my player has played
-
-        // TODO now that we have this.submitCards, this can be simplified a lot
-        let playedCardBottomElement = document.getElementById('playedCardBottom');
         const submitBoxElement = document.getElementById('submitCards');
-        if (!submitBoxElement) return 1;
-
-        // Disable sort during this function to prevent edge case inconsistencies
         this.sortableSubmitCards.option("disabled", true);
+        const reenable = () => this.sortableSubmitCards.option("disabled", false);
 
-        if (submitBoxElement.childNodes.length !== 1) {
-            // TODO raise error to user
-            console.log("houston we have a problem! can't submit more or fewer than 1 card for trick:", submitBoxElement.childNodes.length)
-            // Reenable sorting so user can fix the issue
-            this.sortableSubmitCards.option("disabled", false);
-            return 1
+        if (store.state.gameState !== 5) {
+            store.commit('notify', "Trick play hasn't started.");
+            reenable();
+            return 1;
+        }
+        if (submitBoxElement.children.length !== 1) {
+            store.commit('notify', "Put exactly one card in the play box.");
+            reenable();
+            return 1;
+        }
+        if (nextToPlay(this.playedCards, this.lastTrickWinner) !== 0) {
+            store.commit('notify', "It's not your turn.");
+            reenable();
+            return 1;
+        }
+        const card = elem2CardStr(submitBoxElement.firstElementChild);
+        const legal = legalPlays(store.getters.getSharedHandCards().concat(card), this.playedCards, this.lastTrickWinner, store.state.trumpSuit);
+        if (!legal.includes(card)) {
+            store.commit('notify', "You must follow suit.");
+            reenable();
+            return 1;
         }
 
-        if (submitBoxElement.childNodes[0].classList.contains('card-back')) {
-            console.log("houston we have a problem! can't submit cards which are facedown")
-            blindSubmitArr = []
-            this.sortableSubmitCards.option("disabled", false);
-            return 1
-        }
-
-        if (this.playedCards[0] !== '') {
-            // TODO raise this error to user, they should get a little animation that it's not allowed yet
-            console.log("houston we have a problem! can't submit next trick before this one's over. current card:", this.playedCards[0])
-            return 1
-        }
-
-        // TODO the code to send trick card to server. If it worked do this block
-        if (true) {
-            // TODO urgently replace this shiz with this.incomingTrickCard()
-            // Push card from submit box into played card table section
-            playedCardBottomElement.style.display = "inline";
-            playedCardBottomElement.src = submitBoxElement.childNodes[0].firstElementChild.src;
-            // Change state tracker
-            this.playedCards[0] = this.src2CardStr(submitBoxElement.childNodes[0].firstElementChild.src);
-            console.log("INFO Successfully submitted my card to server:", this.playedCards[0])
-            submitBoxElement.innerHTML = "";
-        }
-
-        // Reenable sorting so next card can be played
-        this.sortableSubmitCards.option("disabled", false);
-
-        if (this.isTrickOver()) {
-            this.endTrick();
-        }
-
+        submitBoxElement.innerHTML = "";
+        this.submitCards = [];
+        this.incomingTrickCard(0, card, false);
+        if (!STANDALONE) socket.send(C2S.PLAY_CARD, { card });
+        reenable();
         return 0;
     }
 
-    incomingTrickCard(pos, val, sui) {
-        // Expecting pos as integer, 0 is you, 1 is left, 2 top, 3 right.
-
-        // IF THIS DOESNT WORK MOVE cardSuits etc INTO TABLE OBJECT (regrettably)
-        if (!allowedSuits.has(sui)) {
-            console.log("Hol* freakin moly we got a fake suit. Not allowed! :", sui);
-            return 1;
-        }
-        if (!allowedVals.has(val)) {
-            console.log("Hol* freakin moly we got a fake value. Not allowed! :", val);
+    incomingTrickCard(pos, card, auto = false) {
+        if (!isValidCardStr(card)) {
+            console.error("incomingTrickCard -- invalid card:", card);
             return 1;
         }
         if (pos < 0 || pos > 3) {
-            console.log("Hol* mol* we got a fake position. Not allowed! :", pos, "pos yields", this.getPosFromInt(pos));
+            console.error("incomingTrickCard -- invalid position:", pos);
+            return 1;
+        }
+        if (this.playedCards[pos] === card) return 0;
+        if (this.playedCards[pos] !== '') {
+            console.error("incomingTrickCard --", getPosName(pos), "already played", this.playedCards[pos], "this trick, got", card);
+            if (!STANDALONE) socket.send(C2S.REQUEST_SYNC);
+            return 1;
+        }
+        const expected = nextToPlay(this.playedCards, this.lastTrickWinner);
+        if (expected !== pos) {
+            console.error("incomingTrickCard -- expected", getPosName(expected), "to play, got", getPosName(pos));
+            if (!STANDALONE) socket.send(C2S.REQUEST_SYNC);
             return 1;
         }
 
-        // TODO check who led and whether this pos is actually next (THIS IS IN DEV BUTTONS FOR NOW)
+        this.playedCards[pos] = card;
+        const ele = document.getElementById('playedCard' + getPosName(pos));
+        ele.src = cardImageUrl(card);
+        ele.className = `fake-card card-played card-played-${getPosName(pos).toLowerCase()} ${getSuitClass(cardStr2CardObj(card).s)}`;
+        ele.style.display = "inline";
+        store.commit('feedPush', `${names()[pos]} played ${card}${auto ? ' (auto)' : ''}.`);
 
-        if (!this.playedCards[pos] === '') {
-            // TODO SEND error MESSAGE TO SERVER AND SET UP RESILIENCY HERE
-            console.log("ERROR there's already a card in", this.getPosFromInt(pos), ".", this.getPosFromInt(pos), "needs to wait until next turn!");
-            return 1;
-        }
-
-        // Update this trick's state (source of truth)
-        this.playedCards[pos] = val + sui;
-
-        // Visually render new card
-        // These are dead cards so no need to use producecard(). TODO Might be nice to make that a function for future though
-        document.getElementById('playedCard' + this.getPosFromInt(pos)).src = "/src/assets/cards/" + val + sui + ".jpeg";
-        document.getElementById('playedCard' + this.getPosFromInt(pos)).className += " " + this.getSuitClass(sui);
-        document.getElementById('playedCard' + this.getPosFromInt(pos)).style.display = "inline";
-
-        // console.log("DEBUG playedCard",this.getPosFromInt(pos),":",
-        //     window.getComputedStyle(
-        //         document.getElementById('playedCard' + this.getPosFromInt(pos))
-        //     ).display
-        // )
-
-        if (this.isTrickOver()) {
+        if (nextToPlay(this.playedCards, this.lastTrickWinner) === -1) {
             this.endTrick();
+        } else {
+            this.updateLegalHighlights();
         }
-
-        return 0
-    }
-
-    isTrickOver() {
-        if (this.lastTrickWinner === -1) {
-            // TODO expose this error to user? Maybe add resiliency
-            console.log("This is not good. LastTrickWinner is not set but we're checking isTrickOver(). Trick state:", this.playedCards);
-        }
-        const didFullArrPlay = !this.playedCards.includes("");
-        const didLastPlayerPlay = !(this.playedCards[(this.lastTrickWinner + 3) % 4] === "");
-        if (!didFullArrPlay === didLastPlayerPlay) {
-            // TODO add resiliency ask server here
-            console.log("DEBUG didFullArrPlay:", didFullArrPlay, "didLastPlayerPlay", didLastPlayerPlay, "first player:", this.lastTrickWinner, "last player:", (this.lastTrickWinner - 1) % 4,);
-            console.log("This is not good. Last player vs all players have different play states. Trick state:", this.playedCards);
-        }
-
-        return didLastPlayerPlay
+        return 0;
     }
 
     endTrick() {
-        console.log("INFO endTrick() -- ending the trick!")
-        this.lastTrickWinner = this.getTrickWinner();
-        console.log("INFO endTrick() -- Announcing", this.lastTrickWinner, "won the trick!");
+        const winner = trickWinner(this.playedCards, this.lastTrickWinner, store.state.trumpSuit);
+        this.predictedTrickWinner = winner;
+        this.applyTrickWinner(winner);
+    }
 
-        this.wonTricks[this.lastTrickWinner] += 1;
-
-        // TODO
-        // sendTrickResultToServer();
-
-        // Clear the arr storing the trick
+    applyTrickWinner(winner) {
+        this.lastTrickWinner = winner;
+        this.wonTricks[winner] += 1;
+        store.commit('feedPush', `${names()[winner]} won the trick.`);
         this.playedCards = ['', '', '', ''];
-
-        // Clear the cards rendered
-        Array.prototype.forEach.call(document.getElementsByClassName("card-played"), (elem) => {
-            elem.firstElementChild.src = "/src/assets/cards/cat_cardback.jpeg";
-            elem.style.display = "none";
-        });
-
+        this.clearPlayedCards();
+        this.renderStacks();
         if (this.isHandOver()) {
             this.endHand();
+        } else {
+            this.updateLegalHighlights();
         }
+    }
+
+    reconcileTrickWinner(winner) {
+        if (this.predictedTrickWinner === -1) {
+            this.applyTrickWinner(winner);
+            return;
+        }
+        if (winner === this.predictedTrickWinner) {
+            this.predictedTrickWinner = -1;
+            return;
+        }
+        console.warn("reconcileTrickWinner -- client predicted", this.predictedTrickWinner, "server says", winner, ". Believing server.");
+        this.wonTricks[this.predictedTrickWinner] -= 1;
+        this.wonTricks[winner] += 1;
+        this.lastTrickWinner = winner;
+        this.predictedTrickWinner = -1;
+        this.renderStacks();
+        this.updateLegalHighlights();
+    }
+
+    restoreTrick(playedCards, leader, wonTricks) {
+        this.playedCards = playedCards.slice();
+        this.lastTrickWinner = leader;
+        this.wonTricks = wonTricks.slice();
+        this.clearPlayedCards();
+        playedCards.forEach((card, pos) => {
+            if (!card) return;
+            const ele = document.getElementById('playedCard' + getPosName(pos));
+            ele.src = cardImageUrl(card);
+            ele.style.display = "inline";
+        });
+        this.renderStacks();
+        this.updateLegalHighlights();
+    }
+
+    clearPlayedCards() {
+        Array.from(document.getElementsByClassName("card-played")).forEach((ele) => {
+            ele.src = CARD_BACK_URL;
+            ele.style.display = "none";
+        });
+    }
+
+    renderStacks() {
+        this.wonTricks.forEach((count, pos) => {
+            const ele = document.getElementById('wonTricks' + getPosName(pos));
+            ele.style.display = count > 0 ? "flex" : "none";
+            ele.textContent = count;
+        });
+    }
+
+    updateLegalHighlights() {
+        const hand = store.getters.getHand();
+        if (!hand) return;
+        const myTurn = store.state.gameState === 5 && nextToPlay(this.playedCards, this.lastTrickWinner) === 0;
+        hand.markLegal(myTurn ? legalPlays(store.getters.getSharedHandCards(), this.playedCards, this.lastTrickWinner, store.state.trumpSuit) : null);
+    }
+
+    botPlay(pos) {
+        if (!STANDALONE || !this.mockHands) return 1;
+        const legal = legalPlays(this.mockHands[pos], this.playedCards, this.lastTrickWinner, store.state.trumpSuit);
+        const card = legal[Math.floor(Math.random() * legal.length)];
+        this.mockHands[pos].splice(this.mockHands[pos].indexOf(card), 1);
+        return this.incomingTrickCard(pos, card, false);
+    }
+
+    getFinishedTricks() {
+        return this.wonTricks.reduce((sum, n) => sum + n, 0);
     }
 
     isHandOver() {
-        gameState = store.getters.getGameState();
-        if (gameState === 5 && this.getFinishedTricks() === 10) {
-            return true;
-        }
-        return false;
+        return store.state.gameState === 5 && this.getFinishedTricks() === 10;
     }
 
     endHand() {
-        const teamTricksWon = [
-            this.wonTricks[0] + this.wonTricks[2],
-            this.wonTricks[1] + this.wonTricks[2]
-        ];
-
         const bb = store.getters.getBidBox();
-        if (bb.getHighestBid() !== bb.bids[bb.winningBidder] || bb.getHighestBid() !== store.getters.getWinningBid()) {
-            console.log("ERROR winning bidder's bid wasn't the highest somehow? Continuing...");
-        }
+        const bid = store.state.winningBid;
+        const bidTeam = bb.winningBidTeam;
+        const teamTricks = [this.wonTricks[0] + this.wonTricks[2], this.wonTricks[1] + this.wonTricks[3]];
+        const { deltas, made } = scoreHand(bid, bidTeam, teamTricks);
+        store.commit('addHandScore', deltas);
+        store.commit('feedPush', `${bidTeam === 0 ? 'We' : 'They'} ${made ? 'made' : 'missed'} ${bid}. Score ${store.state.scores[0]} to ${store.state.scores[1]}.`);
 
-        // Update score for non-bidwinning team
-        const gc = store.getters.getGameCtlr();
-        gc.scores[(bb.winningBidteam + 1) % 2] += teamTricksWon[(bb.winningBidteam + 1) % 2]
-
-        // Update score for bidwinning team
-        const neededTricks = Math.floor((bb.getHighestBid() + 560) / 100);
-        if (teamTricksWon[bb.winningBidteam] >= neededTricks) {
-            gc.scores[bb.winningBidteam] += 2 * bb.getHighestBid();
-        }
-        gc.scores[bb.winningBidteam] -= bb.getHighestBid();
-
-        if (gc.isGameOver()) {
-            gc.endGame();
+        const winnerTeam = gameOutcome(store.state.scores, bidTeam, made);
+        if (winnerTeam !== -1) {
+            this.endGame(winnerTeam);
             return;
         }
-
-        // TODO Come on, can we consolidate some of this?
-        bb.bids = [-1, -1, -1, -1];
-        bb.winningBidder = -1;
-        bb.winningBidteam = -1;
-        store.commit('setWinningBid', -1);
         store.commit('advanceDealer');
         store.commit('setGameState', 0);
-        this.wonTricks = [0, 0, 0, 0];
-
-        return;
+        if (STANDALONE) setTimeout(() => this.dealStandalone(), 800);
     }
 
-    getTrickWinner() {
-        const faceCardValues = new Map([['J', 11], ['Q', 12], ['K', 13], ['A', 14]]);
-        let trumpSuit = store.getters.getTrumpSuit();
-        let specialTrump = new Map([
-            ['n', new Map()],
-            ['s', new Map([['Jc', 15], ['Js', 16]])],
-            ['c', new Map([['Js', 15], ['Jc', 16]])],
-            ['d', new Map([['Jh', 15], ['Jd', 16]])],
-            ['h', new Map([['Jd', 15], ['Jh', 16]])],
-        ]);
-        // TODO assert trumpSuit in specialTrump, otherwise console.log(`ERROR Sorry, we are out of suit: ${trumpSuit}.`);
-        specialTrump = specialTrump.get(trumpSuit);
-        console.log("DEBUG getTrickWinner -- trumpSuit:",trumpSuit)
-        console.log("DEBUG getTrickWinner -- specialTrump after index:",specialTrump)
-
-        // firstElementChild
-
-        // switch (trumpSuit) {
-        //     case 'n':
-        //         specialTrump = new Map();
-        //         break;
-        //     case 's':
-        //         specialTrump = new Map([['Jc', 15], ['Js', 16]]);
-        //         break;
-        //     case 'c':
-        //         specialTrump = new Map([['Js', 15], ['Jc', 16]]);
-        //         break;
-        //     case 'd':
-        //         specialTrump = new Map([['Jh', 15], ['Jd', 16]]);
-        //         break;
-        //     case 'h':
-        //         specialTrump = new Map([['Jd', 15], ['Jh', 16]]);
-        //         break;
-        //     default:
-        //         console.log(`ERROR Sorry, we are out of suit: ${trumpSuit}.`);
-        //         return;
-        // }
-
-        let { _, ledSuit } = this.cardStr2CardObj(this.playedCards[this.lastTrickWinner]);
-        // if (specialTrump.get(trumpSuit).has(this.playedCards[this.lastTrickWinner])) {
-        if (specialTrump.has(this.playedCards[this.lastTrickWinner])) {
-            ledSuit = trumpSuit;
-        }
-
-        let winningValue = 0, winningSuit = 'x';
-        let currentTrickWinner = 0;
-        let iValue, iSuit;
-        for (let i = 0; i < this.playedCards.length; i++) {
-            // TODO I REALLY DON'T THINK THIS DESTRUCTURE IS GONNA WORK
-            ({ iValue, iSuit } = this.cardStr2CardObj(this.playedCards[i]));
-
-            // Originally put j in specialTrump but it simplifies NoTrump tricks to just treat j as edge case
-            if (iSuit === 'j') {
-                return i;
-            }
-
-            if (specialTrump.has(this.playedCards[i])) {
-                iSuit = trumpSuit;
-                iValue = specialTrump.get(this.playedCards[i]);
-            }
-            if (faceCardValues.has(iValue)) {
-                iValue = specialTrump.get(iValue);
-            }
-
-            if (iSuit === winningSuit && iValue < winningValue) {
-                continue;
-            }
-            if (iSuit !== ledSuit && iSuit !== trumpSuit && winningSuit === ledSuit) {
-                continue;
-            }
-            if (iSuit !== trumpSuit && winningSuit === trumpSuit) {
-                continue;
-            }
-
-            currentTrickWinner = i;
-            winningValue = iValue;
-            winningSuit = iSuit;
-        }
-
-        console.log("INFO Got trick winner:", currentTrickWinner)
-        return currentTrickWinner
+    endGame(winnerTeam) {
+        store.commit('setGameState', 6);
+        store.getters.getHand()?.markLegal(null);
+        this.sortableSubmitCards.option("disabled", true);
+        store.commit('notify', winnerTeam === 0 ? "We win!" : "They win.");
+        store.commit('feedPush', `Game over. ${winnerTeam === 0 ? 'We' : 'They'} win ${store.state.scores[0]} to ${store.state.scores[1]}.`);
     }
 }
 
 onMounted(() => {
     const gt = new GameTable();
-
-    // VueX state
     store.commit('setSharedGameTable', gt);
-
-    // Event bus to the parent who will activate other things relying on game table to load
-    emit('gametable-ready');
 })
 </script>
 
 <style scoped>
-/* There is no other sub-class, this is just facedown tricks and blind */
 .card-stack {
     width: 70px;
     height: 100px;
     border-radius: 8px;
     align-items: center;
+    justify-content: center;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s;
     will-change: transform;
     background-color: #3498db;
     color: white;
     font-weight: bold;
+    font-size: 28px;
     position: absolute;
     display: none;
 }
@@ -673,7 +449,6 @@ onMounted(() => {
 .won-tricks-bottom {
     top: 90%;
     left: 70%;
-    /* No idea why but putting this translate in card-stack created completely different behavior...? */
     transform: translate(-50%, -50%);
 }
 
@@ -681,10 +456,8 @@ onMounted(() => {
     top: 90%;
     left: 25%;
     transform: translate(-50%, -50%) rotate(0deg);
-    /* transform: translate(-50%, -50%) rotate(270deg); */
 }
 
-/* class="card card-played card-played-left" */
 .card-played {
     position: absolute;
     display: none;
@@ -727,19 +500,19 @@ onMounted(() => {
     min-width: 70px;
     min-height: 100px;
 }
-/* Cards in places that could in some circumstance be moved manually by player. Also considered naming 'activatable' */
+
 #submitCards :deep(.real-card > *), #blindCards :deep(.real-card > *) {
-  width: 70px;
-  height: 100px;
-  background-color: white;
-  border-radius: 8px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 16px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s;
-  will-change: transform;
+    width: 70px;
+    height: 100px;
+    background-color: white;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+    will-change: transform;
 }
 
 #gameTableContainer {
@@ -751,6 +524,7 @@ onMounted(() => {
     justify-content: center;
     align-items: center;
 }
+
 #gameTable {
     width: 700px;
     height: 500px;
@@ -769,19 +543,5 @@ onMounted(() => {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-}
-#blindCards :deep(.bouncy) {
-    animation: MoveUpDown 2s linear infinite;
-}
-@keyframes MoveUpDown {
-
-    0%,
-    100% {
-        transform: translateY(0px);
-    }
-
-    60% {
-        transform: translateY(-3px);
-    }
 }
 </style>

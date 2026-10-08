@@ -1,38 +1,27 @@
 <script setup>
-import { onMounted } from 'vue';
+import { computed } from 'vue';
 import { useStore } from 'vuex'
 
-// playername IS COMPLETELY REDUNDANT, FEEL FREE TO REMOVE IT
-const props = defineProps(['namepos', 'playername']);
+const props = defineProps(['namepos']);
 const store = useStore();
 
-let namepos2playerindex = new Map([
-    ['nameboxLeftCards', 1],
-    ['nameboxTopCards', 2],
-    ['nameboxRightCards', 3],
-    ['nameboxMe', 0],
-]);
-
-function incomingPlayerName(name) {
-    document.getElementById(props.playername).innerHTML = name;
-    store.commit('setPlayerName', {'pos':namepos2playerindex.get(props.namepos), 'name':name});
-    console.log("INFO incomingPlayerName() -- player at pos",namepos2playerindex.get(props.namepos),"set to name",name,"in state:",store.getters.getPlayerNames);
-    return 0;
-}
-
-// THE FOLLOWING IS FOR TESTING:
-// onMounted(() => {
-//     incomingPlayerName("james1");
-// });
-
-defineExpose({incomingPlayerName})
+const namepos2playerindex = {
+    nameboxLeftCards: 1,
+    nameboxTopCards: 2,
+    nameboxRightCards: 3,
+    nameboxMe: 0,
+};
+const pos = namepos2playerindex[props.namepos] ?? 0;
+const name = computed(() => store.state.playerNames[pos]);
+const isDealer = computed(() => store.state.dealer === pos);
+const isTurn = computed(() => store.state.turn.pos === pos);
 </script>
 
 <template>
-    <div class="namecard-wrapper" :id="namepos">
+    <div class="namecard-wrapper" :class="{ dealer: isDealer, turn: isTurn }" :id="namepos">
         <div class="namecard-bg"></div>
         <div class="namecard"></div>
-        <div class="player-name" :id="playername">{{ playername }}</div>
+        <div class="player-name">{{ name }}<span v-if="isDealer" class="dealer-chip">D</span></div>
     </div>
 </template>
 
@@ -83,6 +72,10 @@ defineExpose({incomingPlayerName})
     opacity: 0.8;
     z-index: 2;
 }
+.namecard-wrapper.turn .namecard-bg {
+    background: linear-gradient(45deg, #f1c40f, #e67e22);
+    opacity: 0.9;
+}
 
 .namecard {
     position: absolute;
@@ -104,5 +97,14 @@ defineExpose({incomingPlayerName})
     font-weight: 600;
     font-family: Arial, sans-serif;
     z-index: 2;
+}
+.dealer-chip {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 0 7px;
+    border-radius: 50%;
+    background-color: #ecf0f1;
+    color: #2c3e50;
+    font-size: 12px;
 }
 </style>

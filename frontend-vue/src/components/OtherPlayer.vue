@@ -1,6 +1,7 @@
 <script setup>
 import {onMounted} from 'vue';
 import NameBox from './NameBox.vue'
+import { CARD_BACK_URL } from '../game/cards.js'
 
 const props = defineProps(['playerpos']);
 let nameplate_pos = "namebox" + props.playerpos[0].toUpperCase() + props.playerpos.slice(1)
@@ -16,7 +17,7 @@ onMounted(() => {
         for (let i = 0; i < 10; i++) {
             newimg = document.createElement("img");
             newimg.classList.add("fake-card", "card-back");
-            newimg.src = "/src/assets/cards/cat_cardback.jpeg";
+            newimg.src = CARD_BACK_URL;
             el.appendChild(newimg);
         }
 
@@ -27,22 +28,22 @@ onMounted(() => {
 <template>
     <div class="card-halfrow" :id="playerpos">
         <div class="section">
-            <img class="fake-card card-back section-member" src="../assets/cards/cat_cardback.jpeg">
-            <img class="fake-card card-back section-member" src="../assets/cards/cat_cardback.jpeg">
-            <img class="fake-card card-back section-member" src="../assets/cards/cat_cardback.jpeg">
-            <img class="fake-card card-back section-member" src="../assets/cards/cat_cardback.jpeg">
-            <img class="fake-card card-back section-member" src="../assets/cards/cat_cardback.jpeg">
+            <img class="fake-card card-back section-member" :src="CARD_BACK_URL">
+            <img class="fake-card card-back section-member" :src="CARD_BACK_URL">
+            <img class="fake-card card-back section-member" :src="CARD_BACK_URL">
+            <img class="fake-card card-back section-member" :src="CARD_BACK_URL">
+            <img class="fake-card card-back section-member" :src="CARD_BACK_URL">
         </div>
         <div class="section">
-            <img class="fake-card card-back section-member" src="../assets/cards/cat_cardback.jpeg">
-            <img class="fake-card card-back section-member" src="../assets/cards/cat_cardback.jpeg">
-            <img class="fake-card card-back section-member" src="../assets/cards/cat_cardback.jpeg">
-            <img class="fake-card card-back section-member" src="../assets/cards/cat_cardback.jpeg">
-            <img class="fake-card card-back section-member" src="../assets/cards/cat_cardback.jpeg">
+            <img class="fake-card card-back section-member" :src="CARD_BACK_URL">
+            <img class="fake-card card-back section-member" :src="CARD_BACK_URL">
+            <img class="fake-card card-back section-member" :src="CARD_BACK_URL">
+            <img class="fake-card card-back section-member" :src="CARD_BACK_URL">
+            <img class="fake-card card-back section-member" :src="CARD_BACK_URL">
         </div>
     </div>
 
-    <NameBox :namepos="nameplate_pos" :playername="props.playerpos.slice(null,-5) + 'Player'" />
+    <NameBox :namepos="nameplate_pos" />
 </template>
 
 <style scoped>

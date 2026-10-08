@@ -1,100 +1,81 @@
 import Vuex from 'vuex'
 
+const FEED_MAX = 30;
+
 export default new Vuex.Store({
     state: {
-        // The blind, trick counts, and Xthing are stored as part of the game table.
         gameTable: null,
         bidBox: null,
-        // Game controller's scope is everything outside the hand level. Interhand things like score and game-over screen.
-        gameCtlr: null,
-        // states -1:uninitialized, 0:dealing/shuffling, 1:hand dealt, 2:I bid, 3:all bids in, blind dealt, 4:I submitted blind, 5:trick play, 6:game over
-        // With this setup, the server never uses states 2 or 4, but client can
+        hand: null,
         gameState: -1,
-        // Hand has card objects: [{v:5,s:s},{v:6,s:c},{v:7,s:h},{v:8,s:d},{v:9,s:d},{v:10,s:d},{v:J,s:d},{v:Q,s:d},{v:K,s:d},{v:'',s:d}]
         handCards: [],
         winningBid: -1,
-        dealer: Math.floor(Math.random() * 4),
-        // s, c, d, h, n
+        dealer: 0,
         trumpSuit: '',
-        // 4 strings, index 0 is my name
-        playerNames: ['', '', '', ''],
-        usScore: -1,
-        themScore: -1,
+        playerNames: ['Me', 'Left', 'Top', 'Right'],
+        scores: [0, 0],
+        handScores: [],
+        turn: { pos: -1, deadlineMs: 0 },
+        connection: 'standalone',
+        notice: '',
+        feed: [],
     },
     mutations: {
-        setSharedGameTable(state, obj) {
-            state.gameTable = obj;
+        setSharedGameTable(state, obj) { state.gameTable = obj; },
+        setSharedBidBox(state, obj) { state.bidBox = obj; },
+        setSharedHand(state, obj) { state.hand = obj; },
+        setGameState(state, n) { state.gameState = n; },
+        setSharedHandCards(state, arr) { state.handCards = arr; },
+        setWinningBid(state, n) { state.winningBid = n; },
+        setDealer(state, n) { state.dealer = n; },
+        advanceDealer(state) { state.dealer = (state.dealer + 1) % 4; },
+        setTrumpSuit(state, s) { state.trumpSuit = s; },
+        setPlayerName(state, { pos, name }) { state.playerNames[pos] = name; },
+        addHandScore(state, deltas) {
+            state.handScores.push(deltas);
+            state.scores = [state.scores[0] + deltas[0], state.scores[1] + deltas[1]];
         },
-        setSharedBidBox(state, obj) {
-            state.bidBox = obj;
+        setScores(state, { scores, handScores }) {
+            state.scores = scores.slice();
+            state.handScores = handScores.map(d => d.slice());
         },
-        setGameCtlr(state, obj) {
-            state.gameCtlr = obj;
+        reconcileScores(state, scores) {
+            if (!Array.isArray(scores) || scores.length !== 2) return;
+            if (scores[0] === state.scores[0] && scores[1] === state.scores[1]) return;
+            console.warn('reconcileScores -- server', scores, 'disagrees with client', state.scores, '. Believing server.');
+            state.scores = scores.slice();
+            if (state.handScores.length) {
+                const last = state.handScores[state.handScores.length - 1];
+                const prior = [state.scores[0] - last[0], state.scores[1] - last[1]];
+                state.handScores[state.handScores.length - 1] = [scores[0] - prior[0], scores[1] - prior[1]];
+            }
         },
-        setGameState(state, n) {
-            state.gameState = n;
+        resetGame(state) {
+            state.scores = [0, 0];
+            state.handScores = [];
+            state.winningBid = -1;
+            state.trumpSuit = '';
+            state.turn = { pos: -1, deadlineMs: 0 };
         },
-        setSharedHandCards(state, arr) {
-            state.handCards = arr;
-        },
-        setWinningBid(state, n) {
-            state.winningBid = n;
-        },
-        advanceDealer(state) {
-            state.dealer = (state.dealer+1)%4;
-        },
-        setTrumpSuit(state, s) {
-            state.trumpSuit = s;
-        },
-        setPlayerName(state, payload) {
-            state.playerNames[payload.pos] = payload.name;
-        },
-        addUsScore(state, n) {
-            state.usScore += n;
-        },
-        addThemScore(state, n) {
-            state.themScore += n;
+        setTurn(state, turn) { state.turn = turn; },
+        setConnection(state, s) { state.connection = s; },
+        notify(state, msg) { state.notice = msg; },
+        clearNotice(state) { state.notice = ''; },
+        feedPush(state, msg) {
+            state.feed.push(msg);
+            if (state.feed.length > FEED_MAX) state.feed.shift();
         },
     },
     getters: {
-        // No getters for gameTable nor bidBox because they are object ptrs and react correctly without
-        // ^^ JUST KIDDING
-        getGameTable: (state) => () => {
-            return state.gameTable;
-        },
-        getBidBox: (state) => () => {
-            return state.bidBox;
-        },
-        getGameCtlr: (state) => () => {
-            return state.gameCtlr;
-        },
-        getGameState: (state) => () => {
-            return state.gameState;
-        },
-        getSharedHandCards: (state) => () => {
-            return state.handCards;
-        },
-        getScore: (state) => () => {
-            return state.score;
-        },
-        getWinningBid: (state) => () => {
-            return state.winningBid;
-        },
-        getDealer: (state) => () => {
-            return state.dealer;
-        },
-        getTrumpSuit: (state) => () => {
-            return state.trumpSuit;
-        },
-        getPlayerNames(state) {
-            return state.playerNames;
-        },
-        getUsScore(state) {
-            return state.usScore;
-        },
-        getThemScore(state) {
-            return state.themScore;
-        },
-
+        getGameTable: (state) => () => state.gameTable,
+        getBidBox: (state) => () => state.bidBox,
+        getHand: (state) => () => state.hand,
+        getGameState: (state) => () => state.gameState,
+        getSharedHandCards: (state) => () => state.handCards,
+        getWinningBid: (state) => () => state.winningBid,
+        getDealer: (state) => () => state.dealer,
+        getTrumpSuit: (state) => () => state.trumpSuit,
+        getPlayerNames: (state) => state.playerNames,
+        getScores: (state) => state.scores,
     }
 });

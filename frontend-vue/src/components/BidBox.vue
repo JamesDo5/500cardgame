@@ -1,248 +1,215 @@
 <template>
+    <div class="standing-bid-display" id="finalBidDisplay">Standing Bid: {{ standingLabel }}</div>
     <div class="bidbox" id="bidbox">
-        <div class="bottom-bid my-bid bid-display" id="bottomBid" style="color:white;">My Bid: 000</div>
-        <div class="left-bid other-bid bid-display" id="leftBid" style="color:white;">Bid:<br />000
-        </div>
-        <div class="top-bid other-bid bid-display" id="topBid" style="color:white;">Bid: 000</div>
-        <div class="right-bid other-bid bid-display" id="rightBid" style="color:white;">Bid:<br />000
-        </div>
-        <span class="close-bidbox" id="closeBidBox">&times;</span>
+        <div class="bottom-bid my-bid bid-display" id="bottomBid">My Bid: ---</div>
+        <div class="left-bid other-bid bid-display" id="leftBid">Bid:<br />---</div>
+        <div class="top-bid other-bid bid-display" id="topBid">Bid: ---</div>
+        <div class="right-bid other-bid bid-display" id="rightBid">Bid:<br />---</div>
+        <span class="close-bidbox" id="closeBidBox" @click="hide">&times;</span>
         <table>
             <tbody>
                 <tr>
                     <th></th>
-                    <th style="font-size:2vw">♠</th>
-                    <th style="font-size:2vw">♣</th>
-                    <th style="color:red;font-size:2vw">♦</th>
-                    <th style="color:red;font-size:2vw">♥</th>
-                    <th style="font-size:1vw">NoTrmp</th>
+                    <th v-for="col in COLUMNS" :key="col.suit" :style="col.style">{{ col.label }}</th>
                 </tr>
-                <tr>
-                    <td style="font-size:1.5vw">6</td>
-                    <td><button class="bid-amount-button">40</button></td>
-                    <td><button class="bid-amount-button">60</button></td>
-                    <td><button class="bid-amount-button">80</button></td>
-                    <td><button class="bid-amount-button">100</button></td>
-                    <td><button class="bid-amount-button">120</button></td>
-                </tr>
-                <tr>
-                    <td style="font-size:1.5vw">7</td>
-                    <td><button class="bid-amount-button">140</button></td>
-                    <td><button class="bid-amount-button">160</button></td>
-                    <td><button class="bid-amount-button">180</button></td>
-                    <td><button class="bid-amount-button">200</button></td>
-                    <td><button class="bid-amount-button">220</button></td>
-                </tr>
-                <tr>
-                    <td style="font-size:1.5vw">8</td>
-                    <td><button class="bid-amount-button">240</button></td>
-                    <td><button class="bid-amount-button">260</button></td>
-                    <td><button class="bid-amount-button">280</button></td>
-                    <td><button class="bid-amount-button">300</button></td>
-                    <td><button class="bid-amount-button">320</button></td>
-                </tr>
-                <tr>
-                    <td style="font-size:1.5vw">9</td>
-                    <td><button class="bid-amount-button">340</button></td>
-                    <td><button class="bid-amount-button">360</button></td>
-                    <td><button class="bid-amount-button">380</button></td>
-                    <td><button class="bid-amount-button">400</button></td>
-                    <td><button class="bid-amount-button">420</button></td>
-                </tr>
-                <tr>
-                    <td style="font-size:1.5vw">10</td>
-                    <td><button class="bid-amount-button">440</button></td>
-                    <td><button class="bid-amount-button">460</button></td>
-                    <td><button class="bid-amount-button">480</button></td>
-                    <td><button class="bid-amount-button">500</button></td>
-                    <td><button class="bid-amount-button">520</button></td>
+                <tr v-for="(tricks, row) in TRICK_ROWS" :key="tricks">
+                    <td style="font-size:1.5vw">{{ tricks }}</td>
+                    <td v-for="(col, c) in COLUMNS" :key="col.suit">
+                        <button class="bid-amount-button" :value="bidAt(row, c)" :disabled="bidAt(row, c) <= highest || !myTurn" :class="{ selected: selected === bidAt(row, c) }" @click="select(bidAt(row, c))">{{ bidAt(row, c) }}</button>
+                    </td>
                 </tr>
             </tbody>
         </table>
-        <!-- <button class="pass-button" type="button" id="passBidBtn" style="font-size:2vw">Pass</button> -->
-        <button class="bid-amount-button" type="button" id="passBidBtn" style="font-size:2vw">Pass</button>
+        <button class="bid-amount-button pass-button" type="button" id="passBidBtn" :class="{ selected: selected === PASS }" :disabled="!myTurn" @click="select(PASS)">Pass</button>
+        <button class="bid-amount-button submit-bid-button" type="button" id="submitBidBtn" :disabled="selected === -1 || !myTurn" @click="submit">Submit</button>
     </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useStore } from 'vuex'
+import { STANDALONE } from '../config.js';
+import { socket } from '../net/socket.js';
+import { C2S } from '../net/messages.js';
+import { teamOf } from '../game/cards.js';
+import { PASS, isValidBid, trumpSuitForBid, nextToBid, isBiddingOver, highestBid, winningBidder } from '../game/rules.js';
 
 const store = useStore()
-let gameState = store.state.sharedGameState; //-1:uninitialized, 0:dealing/shuffling, 1:hands dealt, 2:I bid, 3:all bids in, blind dealt, 4:I submitted blind, 5:trick play, 6:game over
-let dealer = store.state.dealer;
+
+const COLUMNS = [
+    { suit: 's', label: '♠', style: 'font-size:2vw' },
+    { suit: 'c', label: '♣', style: 'font-size:2vw' },
+    { suit: 'd', label: '♦', style: 'color:red;font-size:2vw' },
+    { suit: 'h', label: '♥', style: 'color:red;font-size:2vw' },
+    { suit: 'n', label: 'NoTrmp', style: 'font-size:1vw' },
+];
+const TRICK_ROWS = [6, 7, 8, 9, 10];
+const bidAt = (row, col) => 40 + row * 100 + col * 20;
+
+const selected = ref(-1);
+const highest = ref(PASS);
+const myTurn = ref(false);
+const standingLabel = computed(() => highest.value > PASS ? highest.value : '---');
+
+const names = () => store.state.playerNames;
 
 class BidBox {
     constructor() {
-        // -1 is none, 0 is 'Pass', 40+ is a bid
         this.bids = [-1, -1, -1, -1];
         this.winningBidder = -1;
-        this.winningBidteam = -1;
-
-        this.initializeBidBox();
+        this.winningBidTeam = -1;
     }
 
-    async initializeBidBox() {
-        try {
-            // Outline from FJolt
-            Array.prototype.forEach.call(document.getElementsByClassName("bid-amount-button"), (item) => {
-                item.addEventListener("click", function () {
-
-                    // can also use this.innerHTML
-                    document.getElementById("bottomBid").innerHTML = "My Bid: ".concat(item.innerHTML);
-                });
-            });
-            this.disableImpossibleBids();
-            this.updateBidDisplays();
-        } catch (error) {
-            console.error('Failed to initialize bidbox:', error);
-        }
+    reset() {
+        this.bids = [-1, -1, -1, -1];
+        this.winningBidder = -1;
+        this.winningBidTeam = -1;
+        selected.value = -1;
+        this.updateBidDisplays();
     }
 
-    disableImpossibleBids() {
-        Array.prototype.forEach.call(document.getElementsByClassName("bid-amount-button"), (item) => {
-            if (item.innerHTML <= this.getHighestBid()) {
-                item.disabled = true;
-            }
-        });
+    show() {
+        document.getElementById("bidbox").style.display = "inline";
+        document.getElementById("submitCards").style.display = "none";
+        this.updateBidDisplays();
     }
 
-    updateBidDisplays() {
-        dealer = store.getters.getDealer();
-        const index2PosName = ["bottom", "left", "top", "right"]
+    hide() {
+        document.getElementById("bidbox").style.display = "none";
+        document.getElementById("submitCards").style.display = "flex";
+    }
 
-        for (let i = 1; i < 5; i++) {
-            let pos = (dealer + i) % 4
-
-            if (this.bids[pos] === -1) {
-                console.log("INFO updateBidDisplays() updated from firstbid", dealer+1, "to", pos, ". Dealer was",dealer)
-                break;
-            }
-            // Get rid of this function... edit: why? Seems to detect if anything went wrong in bidding
-            if (this.bids[pos] < this.bids[(pos - 1) % 4] && pos !== dealer && this.bids[pos] > 0) {
-                console.log("ERROR Illegal bid found at", pos, ":", this.bids[pos], "is < prev bidder:", this.bids[(pos - 1) % 4], ". Dealer was:", dealer)
-                break;
-            }
-
-            let prefix = "Bid:<br />";
-            if (pos === 0) {
-                prefix = "My Bid: ";
-            }
-            if (pos === 2) {
-                prefix = "Bid: ";
-            }
-
-            // console.log("INFO updateBidDisplays() element with id:", index2PosName[pos] + "Bid", "pos:", pos, "dealer:", dealer)
-            document.getElementById(index2PosName[pos] + "Bid").innerHTML = prefix.concat(this.bids[pos]);
-
-            // 0 is pass
-            if (this.bids[pos] === 0) {
-                document.getElementById(index2PosName[pos] + "Bid").innerHTML = prefix.concat("Pass");
-            }
-        }
-
-        document.getElementById("finalBidDisplay").innerHTML = "Standing Bid: ".concat(this.getHighestBid());
-
-        return 0
+    toggle() {
+        if (document.getElementById("bidbox").style.display === "inline") this.hide(); else this.show();
     }
 
     getHighestBid() {
-        return Math.max(...this.bids)
+        return highestBid(this.bids);
+    }
+
+    updateBidDisplays() {
+        const index2PosName = ["bottom", "left", "top", "right"];
+        const prefixes = ["My Bid: ", "Bid:<br />", "Bid: ", "Bid:<br />"];
+        this.bids.forEach((bid, pos) => {
+            const label = bid === -1 ? '---' : bid === PASS ? 'Pass' : bid;
+            const ele = document.getElementById(index2PosName[pos] + "Bid");
+            ele.innerHTML = prefixes[pos] + label;
+            ele.style.color = bid === -1 ? "white" : "lightgreen";
+        });
+        highest.value = Math.max(this.getHighestBid(), PASS);
+        myTurn.value = !isBiddingOver(this.bids) && nextToBid(this.bids, store.state.dealer) === 0 && store.state.gameState === 1;
+        return 0;
     }
 
     submitBid() {
-        let myBid =
-            Number.isNaN(Number(document.getElementById("bottomBid").innerText.slice(-3, undefined))) ?
-                0 :
-                Number(document.getElementById("bottomBid").innerText.slice(-3, undefined));
-
-        if (this.bids[0] !== -1) {
-            // TODO raise this error to user, they should get a little indicator that they already bid somehow
-            console.log("WARN somehow we already have our bid:", this.bids[0], "but we will update it to:", myBid);
+        const myBid = selected.value;
+        if (!isValidBid(myBid)) {
+            store.commit('notify', "Pick a bid or pass first.");
             return 1;
         }
-
-        // Update bids source of truth
-        this.bids[0] = myBid;
-
-        document.getElementById("bottomBid").style.color = "green";
-
-        if (this.isBiddingOver()) {
-            this.endBidding();
+        if (this.bids[0] !== -1) {
+            store.commit('notify', "You already bid.");
+            return 1;
         }
-
-        return;
+        if (nextToBid(this.bids, store.state.dealer) !== 0) {
+            store.commit('notify', "It's not your turn to bid.");
+            return 1;
+        }
+        if (myBid !== PASS && myBid <= this.getHighestBid()) {
+            store.commit('notify', "Bid must beat the standing bid.");
+            return 1;
+        }
+        store.commit('setGameState', 2);
+        this.incomingBid(0, myBid);
+        if (!STANDALONE) socket.send(C2S.BID, { bid: myBid });
+        return 0;
     }
 
     incomingBid(pos, bid) {
-        // Expecting pos as integer, 0 is you, 1 is left, 2 top, 3 right.
-
-        if (bid <= this.getHighestBid() && bid !== 0) {
-            console.log("Incoming bid not allowed, highest current bid:", this.getHighestBid(), "But incoming bid:", bid);
-            return 1;
-        }
         if (pos < 0 || pos > 3) {
-            console.log("Fake position not allowed:", pos, "is >3 or <0");
+            console.error("incomingBid -- invalid position:", pos);
             return 1;
         }
+        if (!isValidBid(bid)) {
+            console.error("incomingBid -- invalid bid:", bid);
+            return 1;
+        }
+        if (this.bids[pos] === bid) return 0;
         if (this.bids[pos] !== -1) {
-            // TODO SEND error MESSAGE TO SERVER AND SET UP RESILIENCY HERE
-            console.log("ERROR There's already a bid for pos", pos, ".");
+            console.error("incomingBid -- position", pos, "already bid", this.bids[pos], "got", bid);
+            if (!STANDALONE) socket.send(C2S.REQUEST_SYNC);
+            return 1;
+        }
+        const expected = nextToBid(this.bids, store.state.dealer);
+        if (expected !== pos) {
+            console.error("incomingBid -- expected position", expected, "to bid, got", pos);
+            if (!STANDALONE) socket.send(C2S.REQUEST_SYNC);
+            return 1;
+        }
+        if (bid !== PASS && bid <= this.getHighestBid()) {
+            console.error("incomingBid -- bid", bid, "does not beat", this.getHighestBid());
             return 1;
         }
 
-        // TODO check who dealt and whether this pos is actually next bidder (THIS IS IN DEV BUTTONS FOR NOW)
-
-        // Update bids source of truth
         this.bids[pos] = bid;
-
-        // Visually render bids
+        store.commit('feedPush', `${names()[pos]} ${bid === PASS ? 'passed' : 'bid ' + bid}.`);
         this.updateBidDisplays();
-
-        console.log("INFO -- incomingBid(",pos,",",bid,")"," resulting in this.bids[pos]",this.bids[pos],"FULL ARR:",this.bids)
-
-        // console.log("DEBUG incomingBid() -- isBiddingOver():",this.isBiddingOver())
-        if (this.isBiddingOver()) {
-            this.endBidding();
-        }
-
-        return 0
-    }
-
-    isBiddingOver() {
-        if (this.bids.includes(-1)) {
-            return false;
-        }
-        return true;
+        if (isBiddingOver(this.bids)) this.endBidding();
+        return 0;
     }
 
     endBidding() {
-        const bid2Suit = new Map([[1, 'n'], [2, 's'], [3, 'c'], [4, 'd'], [5, 'h']]);
-        // HUGE TODO -- what to do when everyone passes
-        const winningSuit = bid2Suit.get((this.getHighestBid() / 20) % 5)
-        console.log("INFO endBidding() -- committing winningSuit:",winningSuit,", winning bid amount:",this.getHighestBid(),"DEBUG:",(this.getHighestBid() / 20) % 5)
-        store.commit('setTrumpSuit', winningSuit);
-        store.commit('setWinningBid', this.getHighestBid());
+        const winner = winningBidder(this.bids);
+        if (winner === -1) {
+            this.applyBiddingResult({ redeal: true });
+            return;
+        }
+        const bid = this.getHighestBid();
+        this.applyBiddingResult({ winner, bid, trump: trumpSuitForBid(bid) });
+    }
 
+    incomingBiddingResult(result) {
+        const same = result.redeal
+            ? this.winningBidder === -1 && isBiddingOver(this.bids)
+            : result.winner === this.winningBidder && result.bid === store.state.winningBid && result.trump === store.state.trumpSuit;
+        if (same) return;
+        console.warn("incomingBiddingResult -- server result", result, "differs from client. Believing server.");
+        this.applyBiddingResult(result);
+    }
+
+    applyBiddingResult({ redeal, winner, bid, trump }) {
         const gt = store.getters.getGameTable();
-
-        // The person who won the bid plays first 
-        gt.lastTrickWinner = this.bids.indexOf(this.getHighestBid());
-
-        this.winningBidPos = this.bids.indexOf(this.getHighestBid());
-        this.winningBidTeam = this.bids.indexOf(this.getHighestBid()) % 2;
-
-        // Don't need to wipe bid table, that will be done at end of a hand
-
-        // TODO Visually update board for which player won bid
+        if (redeal) {
+            store.commit('notify', "Everyone passed. Redealing.");
+            store.commit('feedPush', "Everyone passed. Same dealer redeals.");
+            store.commit('setGameState', 0);
+            this.hide();
+            if (STANDALONE) setTimeout(() => gt.dealStandalone(), 800);
+            return;
+        }
+        this.winningBidder = winner;
+        this.winningBidTeam = teamOf(winner);
+        store.commit('setTrumpSuit', trump);
+        store.commit('setWinningBid', bid);
+        store.commit('setGameState', 3);
+        gt.lastTrickWinner = winner;
+        store.commit('feedPush', `${names()[winner]} won the bid at ${bid} (${trump === 'n' ? 'no trump' : trump}).`);
+        setTimeout(() => this.hide(), 1200);
+        if (STANDALONE) {
+            if (winner === 0) gt.incomingBlind(gt.mockBlind, true);
+            else setTimeout(() => gt.botBlind(winner), 1500);
+        }
     }
 }
 
-onMounted(() => {
-    const bidbox = new BidBox();
+const bidbox = new BidBox();
+const select = (bid) => { selected.value = bid; };
+const submit = () => bidbox.submitBid();
+const hide = () => bidbox.hide();
 
-    // VueX state
-    store.commit('setSharedBidBox', bidbox)
+onMounted(() => {
+    store.commit('setSharedBidBox', bidbox);
+    bidbox.updateBidDisplays();
 });
 </script>
 
@@ -271,22 +238,17 @@ onMounted(() => {
 
 .standing-bid-display {
     position: absolute;
-    top: 25px;
+    top: 75px;
     right: 25px;
     font-size: 2vw;
-}
-
-.final-bid-display {
-    position: absolute;
-    top: 50px;
-    right: 11px;
-    font-size: 2vw;
+    color: white;
 }
 
 .bid-display {
     position: absolute;
     transform: translate(-50%, 50%);
     font-size: 2vw;
+    color: white;
 }
 .bottom-bid {
     bottom: -60px;
@@ -315,5 +277,12 @@ button.bid-amount-button {
     height: 50px;
     font-size: 2vw;
     min-width: fit-content;
+}
+button.bid-amount-button.selected {
+    outline: 3px solid #2ecc71;
+}
+button.pass-button, button.submit-bid-button {
+    margin-top: 10px;
+    width: 45%;
 }
 </style>

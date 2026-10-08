@@ -1,29 +1,39 @@
 <script setup>
-import { onMounted } from 'vue';
+import { computed, ref, watch, nextTick } from 'vue';
 import { useStore } from 'vuex'
 
-// playername IS COMPLETELY REDUNDANT, FEEL FREE TO REMOVE IT
-const props = defineProps(['namepos', 'playername']);
 const store = useStore();
+const feed = computed(() => store.state.feed);
+const listRef = ref(null);
 
-function incomingPlayerName(name) {
-    document.getElementById(props.playername).innerHTML = name;
-    return 0;
-}
-
-// THE FOLLOWING IS FOR TESTING:
-// onMounted(() => {
-//     incomingPlayerName("james1");
-// });
+watch(() => feed.value.length, async () => {
+    await nextTick();
+    if (listRef.value) listRef.value.scrollTop = listRef.value.scrollHeight;
+});
 </script>
 
 <template>
-    <div class="namecard-wrapper" :id="namepos">
-        <div class="namecard-bg"></div>
-        <div class="namecard"></div>
-        <div class="player-name" :id="playername">{{ playername }}</div>
+    <div class="activity-feed" ref="listRef">
+        <div v-for="(msg, i) in feed" :key="i" class="feed-line">{{ msg }}</div>
     </div>
 </template>
 
 <style scoped>
+.activity-feed {
+    position: absolute;
+    right: 20px;
+    bottom: 220px;
+    width: 260px;
+    max-height: 180px;
+    overflow-y: auto;
+    color: gainsboro;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    background-color: rgba(0, 0, 0, 0.25);
+    border-radius: 8px;
+    padding: 8px;
+}
+.feed-line {
+    padding: 2px 0;
+}
 </style>
