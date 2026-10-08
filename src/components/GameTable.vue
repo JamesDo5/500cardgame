@@ -1,0 +1,1044 @@
+<template>
+    <div id="gameTableContainer">
+        <div id="gameTable">
+            <img class="fake-card card-played card-played-left" id="playedCardLeft" :src="CARD_BACK_URL">
+            <img class="fake-card card-played card-played-top" id="playedCardTop" :src="CARD_BACK_URL">
+            <img class="fake-card card-played card-played-right" id="playedCardRight" :src="CARD_BACK_URL">
+            <img class="fake-card card-played card-played-bottom" id="playedCardBottom" :src="CARD_BACK_URL">
+            <div class="card-row" id="submitCards" :class="{ parked: !showPlayButton }"></div>
+            <button v-if="showPlayButton" class="table-button play-button" :class="{ armed: playArmed }" type="button" @click="playNow">Play card</button>
+            <button v-if="showBlindButton" class="table-button blind-button" type="button" @click="submitBlindNow">Submit blind</button>
+            <div class="card-stack won-tricks-bottom" id="wonTricksBottom"></div>
+            <div class="card-stack won-tricks-left" id="wonTricksLeft"></div>
+            <div class="card-stack won-tricks-top" id="wonTricksTop"></div>
+            <div class="card-stack won-tricks-right" id="wonTricksRight"></div>
+            <div class="card-stack discard-blind" id="blindDiscard"></div>
+            <div v-if="dealing" class="shuffle">
+                <img v-for="n in 7" :key="n" class="fake-card card-back shuffle-card" :style="{ animationDelay: `${(n - 1) * 0.12}s` }" :src="CARD_BACK_URL">
+            </div>
+            <div v-if="dealing" class="deal-caption">{{ dealCaption }}</div>
+            <button v-if="dealing && iAmDealer" class="deal-button" type="button" @click="dealNow">Deal</button>
+        </div>
+        <div class="card-row" id="blindCards"></div>
+    </div>
+</template>
+
+<script setup>
+import { onMounted, onBeforeUnmount, computed, toRaw } from 'vue';
+import { useStore } from 'vuex'
+import Sortable from 'sortablejs';
+import { STANDALONE, TURN_TIMEOUT_MS, BID_TIMEOUT_MS, BLIND_TIMEOUT_MS, DEAL_TIMEOUT_MS, TABLE_WIDTH, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS, TRICK_HOLD_MS, CARD_FLY_MS, TRICK_SWEEP_MS } from '../config.js';
+import { socket } from '../net/socket.js';
+import { C2S } from '../net/messages.js';
+import { CARD_BACK_URL, cardImageUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, dealMock, teamOf } from '../game/cards.js';
+import { trickWinner, trickWinnerWithout, legalPlays, lowestCards, nextToPlay, nextToBid, scoreHand, gameOutcome } from '../game/rules.js';
+
+const store = useStore()
+
+const names = () => store.state.playerNames;
+const dealing = computed(() => store.state.gameState === 0);
+const iAmDealer = computed(() => store.state.dealer === 0);
+const dealCaption = computed(() => iAmDealer.value ? 'Your deal' : `${store.state.playerNames[store.state.dealer]} is dealing`);
+const showPlayButton = computed(() => store.state.gameState === 5);
+const playArmed = computed(() => store.state.stagedCount > 0 && store.state.turn.pos === 0);
+const showBlindButton = computed(() => store.state.gameState === 3 && store.getters.getBidBox()?.winningBidder === 0 && store.state.turn.pos === 0);
+function playNow() {
+    store.getters.getGameTable().submitTrick();
+}
+function submitBlindNow() {
+    store.getters.getGameTable().submitBlind();
+}
+function dealNow() {
+    const gt = store.getters.getGameTable();
+    if (STANDALONE) gt.dealStandalone(); else socket.send(C2S.DEAL);
+}
+
+const PARTNER_JOKES = [
+    "Partner: \"I had that the whole time.\"",
+    "Partner: \"You're welcome.\"",
+    "Partner: \"Don't worry, I'll carry us.\"",
+    "Partner: \"That one was looking rough.\"",
+    "Partner: \"Teamwork. Mostly me, but teamwork.\"",
+    "Partner: \"I saw that coming three tricks ago.\"",
+];
+const SOURCE_ELEMENT_IDS = ['submitCards', 'leftCards', 'topCards', 'rightCards'];
+
+class GameTable {
+    constructor() {
+        this.blindCards = [];
+        this.submitCards = [];
+        this.playedCards = ['', '', '', ''];
+        this.lastTrickWinner = -1;
+        this.predictedTrickWinner = -1;
+        this.wonTricks = [0, 0, 0, 0];
+        this.mockHands = null;
+        this.mockBlind = null;
+        this.sortableBlindCards = null;
+        this.sortableSubmitCards = null;
+        this.handledDeadline = 0;
+        this.resolving = false;
+        this.resolveTarget = -1;
+        this.pendingCards = [];
+        this.heldPlayCard = '';
+        this.dropHeld = false;
+        this.initializeSortables();
+        this.ticker = setInterval(() => this.tickTurn(), 200);
+    }
+
+    initializeSortables() {
+        const blindCardsElem = document.getElementById('blindCards');
+        const submitCardsElem = document.getElementById('submitCards');
+        if (!blindCardsElem || !submitCardsElem) {
+            console.error("initializeSortables() -- missing blind or submit element");
+            return 1;
+        }
+        const handOrNot = (evt) => {
+            if (evt.to.id === "bottomCards") store.getters.getHand().handifyCard?.(evt.item);
+        };
+        this.sortableBlindCards = new Sortable(blindCardsElem, {
+            disabled: true,
+            group: 'shared',
+            animation: 0,
+            forceFallback: true,
+        fallbackOnBody: true,
+            fallbackOnBody: true,
+            fallbackTolerance: 3,
+            emptyInsertThreshold: 60,
+            onStart: (evt) => evt.item.classList.remove('spun'),
+            onAdd: (evt) => this.trackAdd(this.blindCards, evt.item, 'blind'),
+            onRemove: (evt) => this.trackRemove(this.blindCards, evt.item, 'blind'),
+            onChange: handOrNot,
+            onEnd: (evt) => this.afterDragEnd(evt.item),
+        });
+        blindCardsElem.addEventListener("click", () => {
+            const first = blindCardsElem.firstElementChild;
+            if (first && first.classList.contains('card-back') && store.state.gameState === 3) this.flipBlind();
+        });
+        this.sortableSubmitCards = new Sortable(submitCardsElem, {
+            disabled: true,
+            group: 'shared',
+            animation: 0,
+            forceFallback: true,
+        fallbackOnBody: true,
+            fallbackOnBody: true,
+            fallbackTolerance: 3,
+            emptyInsertThreshold: 5,
+            onStart: (evt) => evt.item.classList.remove('spun'),
+            onAdd: (evt) => { this.trackAdd(this.submitCards, evt.item, 'submit'); this.syncStaged(); },
+            onEnd: (evt) => { this.keepSingleStaged(evt.item); this.afterDragEnd(evt.item); },
+            onRemove: (evt) => { this.trackRemove(this.submitCards, evt.item, 'submit'); this.syncStaged(); },
+            onChange: handOrNot,
+        });
+        store.getters.getHand()?.onDragEnd?.((item) => { this.keepSingleStaged(item); this.afterDragEnd(item); });
+        return 0;
+    }
+
+    trackAdd(arr, item, label) {
+        if (this.dropHeld) return;
+        const card = elem2CardStr(item);
+        if (arr.includes(card)) {
+            console.error(`onAdd ${label} -- card already present:`, card, arr);
+            return;
+        }
+        arr.push(card);
+        this.unHandify(item);
+    }
+
+    trackRemove(arr, item, label) {
+        if (this.dropHeld) return;
+        const ind = arr.indexOf(elem2CardStr(item));
+        if (ind === -1) {
+            console.error(`onRemove ${label} -- card not tracked:`, elem2CardStr(item), arr);
+            return;
+        }
+        arr.splice(ind, 1);
+    }
+
+    syncStaged() {
+        store.commit('setStagedCount', this.submitCards.length);
+    }
+
+    afterDragEnd(item) {
+        if (this.dropHeld) {
+            this.dropHeld = false;
+            item.remove();
+            this.syncStaged();
+            this.updateLegalHighlights();
+            return;
+        }
+        if (!this.heldPlayCard || elem2CardStr(item) !== this.heldPlayCard) return;
+        const card = this.heldPlayCard;
+        this.heldPlayCard = '';
+        item.remove();
+        store.commit('setSharedHandCards', store.getters.getSharedHandCards().filter(c => c !== card));
+        this.submitCards = this.submitCards.filter(c => c !== card);
+        this.blindCards = this.blindCards.filter(c => c !== card);
+        this.syncStaged();
+        this.updateLegalHighlights();
+    }
+
+    keepSingleStaged(newItem) {
+        const submitBox = document.getElementById('submitCards');
+        if (newItem.parentElement !== submitBox || submitBox.children.length < 2) return;
+        const handBox = document.getElementById('bottomCards');
+        Array.from(submitBox.children).filter(ele => ele !== newItem).forEach(ele => {
+            const card = elem2CardStr(ele);
+            const ind = this.submitCards.indexOf(card);
+            if (ind !== -1) this.submitCards.splice(ind, 1);
+            handBox.appendChild(ele);
+            store.getters.getHand().handifyCard(ele);
+            const hcs = store.getters.getSharedHandCards();
+            if (!hcs.includes(card)) store.commit('setSharedHandCards', hcs.concat(card));
+        });
+        this.updateLegalHighlights();
+    }
+
+    unHandify(item) {
+        item.classList.add("real-card");
+        item.classList.remove("bouncy", "hand-card", "spun", "illegal");
+    }
+
+    setTurn(pos) {
+        if (pos === -1) {
+            store.commit('setTurn', { pos: -1, deadlineMs: 0 });
+            return;
+        }
+        const gs = store.state.gameState;
+        const bot = STANDALONE && pos !== 0;
+        if (bot && store.state.autoBots) {
+            store.commit('setTurn', { pos, deadlineMs: Date.now() + BOT_DELAY_MS });
+            return;
+        }
+        if (!store.state.timersEnabled) {
+            store.commit('setTurn', { pos, deadlineMs: 0 });
+            return;
+        }
+        const ms = gs === 0 ? DEAL_TIMEOUT_MS : gs === 1 || gs === 2 ? BID_TIMEOUT_MS : gs === 3 || gs === 4 ? BLIND_TIMEOUT_MS : TURN_TIMEOUT_MS;
+        store.commit('setTurn', { pos, deadlineMs: Date.now() + ms });
+    }
+
+    expectedActor() {
+        const gs = store.state.gameState;
+        const bb = store.getters.getBidBox();
+        if (gs === 0) return store.state.dealer;
+        if (gs === 1 || gs === 2) return bb ? nextToBid(bb.bids, store.state.dealer) : -1;
+        if (gs === 3 || gs === 4) return bb ? bb.winningBidder : -1;
+        if (gs === 5) return this.resolving ? -1 : nextToPlay(this.playedCards, this.lastTrickWinner);
+        return -1;
+    }
+
+    dispose() {
+        clearInterval(this.ticker);
+        this.sortableBlindCards?.destroy();
+        this.sortableSubmitCards?.destroy();
+    }
+
+    tickTurn() {
+        if (toRaw(store.state.gameTable) !== toRaw(this)) {
+            this.dispose();
+            return;
+        }
+        const { pos, deadlineMs } = store.state.turn;
+        if (pos === -1) return;
+        const expected = this.expectedActor();
+        if (expected !== -1 && expected !== pos) {
+            console.warn("tickTurn -- turn pointed at", getPosName(pos), "but", getPosName(expected), "must act. Correcting.");
+            this.setTurn(expected);
+            return;
+        }
+        if (deadlineMs === 0 || deadlineMs === this.handledDeadline) return;
+        const now = Date.now();
+        if (pos === 0 && now >= deadlineMs - AUTOPLAY_MARGIN_MS) {
+            this.handledDeadline = deadlineMs;
+            this.autoAct(0);
+        } else if (pos !== 0 && STANDALONE && store.state.autoBots && now >= deadlineMs) {
+            this.handledDeadline = deadlineMs;
+            this.autoAct(pos);
+        }
+    }
+
+    autoAct(pos) {
+        const gs = store.state.gameState;
+        const bb = store.getters.getBidBox();
+        if (gs === 0) {
+            if (STANDALONE) this.dealStandalone(); else this.setTurn(-1);
+        } else if (gs === 1 || gs === 2) {
+            if (pos === 0) bb.autoBid(); else bb.botBid(pos);
+        } else if (gs === 3 || gs === 4) {
+            if (pos === 0) this.autoBlind(); else this.botBlind(pos);
+        } else if (gs === 5) {
+            if (pos === 0) this.autoPlay(); else this.botPlay(pos);
+        } else {
+            this.setTurn(-1);
+        }
+    }
+
+    newHand() {
+        this.blindCards = [];
+        this.submitCards = [];
+        this.playedCards = ['', '', '', ''];
+        this.lastTrickWinner = -1;
+        this.predictedTrickWinner = -1;
+        this.wonTricks = [0, 0, 0, 0];
+        this.mockHands = null;
+        this.mockBlind = null;
+        this.resolving = false;
+        this.resolveTarget = -1;
+        this.pendingCards = [];
+        store.commit('resetCardCounts');
+        store.commit('setFirstCardPlayed', false);
+        this.heldPlayCard = '';
+        document.getElementById('submitCards').innerHTML = "";
+        this.syncStaged();
+        document.getElementById('blindCards').innerHTML = "";
+        document.getElementById('blindCards').style.display = "flex";
+        document.getElementById('blindDiscard').style.display = "none";
+        this.sortableBlindCards.option("disabled", true);
+        this.sortableSubmitCards.option("disabled", true);
+        this.clearPlayedCards();
+        this.renderStacks();
+        store.commit('setTrumpSuit', '');
+        store.commit('setWinningBid', -1);
+        store.getters.getHand()?.markLegal(null);
+    }
+
+    startBidding() {
+        store.commit('setGameState', 1);
+        store.getters.getBidBox().show();
+        this.setTurn(nextToBid(store.getters.getBidBox().bids, store.state.dealer));
+    }
+
+    dealStandalone() {
+        if (!STANDALONE) return 1;
+        const { hands, blind } = dealMock();
+        this.newHand();
+        this.mockHands = hands;
+        this.mockBlind = blind;
+        store.getters.getBidBox().reset();
+        store.getters.getHand().incomingHandCards(hands[0]);
+        store.commit('feedPush', `${names()[store.state.dealer]} dealt.`);
+        this.startBidding();
+        return 0;
+    }
+
+    incomingBlind(cards, faceDown) {
+        if (!Array.isArray(cards) || cards.length !== 5 || !cards.every(isValidCardStr)) {
+            console.error("incomingBlind() -- expected 5 valid cards:", cards);
+            return 1;
+        }
+        this.blindCards = cards.slice();
+        this.renderBlind(faceDown);
+        return 0;
+    }
+
+    renderBlind(faceDown) {
+        const cardsElement = document.getElementById('blindCards');
+        cardsElement.style.display = "flex";
+        cardsElement.innerHTML = this.blindCards.map(card => produceCardHtml(card, faceDown, 'real-card')).join('');
+        this.sortableBlindCards.option("disabled", faceDown);
+    }
+
+    flipBlind() {
+        const first = document.getElementById('blindCards').firstElementChild;
+        if (!first) return 1;
+        this.renderBlind(!first.classList.contains('card-back'));
+        return 0;
+    }
+
+    submitBlind() {
+        const blindElement = document.getElementById('blindCards');
+        this.sortableBlindCards.option("disabled", true);
+        const items = Array.from(blindElement.children);
+        if (items.length !== 5) {
+            store.commit('notify', "Discard exactly 5 cards to the blind.");
+            this.sortableBlindCards.option("disabled", false);
+            return 1;
+        }
+        if (items.some(ele => ele.classList.contains('card-back'))) {
+            store.commit('notify', "Flip the blind over before submitting.");
+            this.sortableBlindCards.option("disabled", false);
+            return 1;
+        }
+        const discards = items.map(elem2CardStr);
+        if (store.getters.getSharedHandCards().length !== 10) {
+            store.commit('notify', "You must hold exactly 10 cards.");
+            this.sortableBlindCards.option("disabled", false);
+            return 1;
+        }
+        this.blindCards = discards;
+        store.commit('setGameState', 4);
+        if (STANDALONE) {
+            this.incomingBlindDiscard(0);
+        } else {
+            socket.send(C2S.SUBMIT_BLIND, { discards });
+        }
+        return 0;
+    }
+
+    autoBlind() {
+        const inBox = this.blindCards.slice(0, 5);
+        const overflow = this.blindCards.slice(5);
+        const hand = store.getters.getSharedHandCards().concat(overflow);
+        const fill = lowestCards(hand, 5 - inBox.length);
+        const discards = inBox.concat(fill);
+        const newHand = hand.filter(c => !fill.includes(c));
+        if (discards.length !== 5 || newHand.length !== 10) {
+            console.error("autoBlind -- could not form a 5 card discard and 10 card hand:", discards, newHand);
+            this.setTurn(-1);
+            return 1;
+        }
+        if (Sortable.dragged) this.dropHeld = true;
+        store.getters.getHand().replaceHand(newHand);
+        this.blindCards = discards;
+        this.renderBlind(false);
+        store.commit('notify', fill.length ? `Time's up, discarded ${discards.join(' ')} for you.` : "Time's up, blind submitted for you.");
+        return this.submitBlind();
+    }
+
+    incomingBlindDiscard(pos) {
+        const bb = store.getters.getBidBox();
+        if (pos !== bb.winningBidder) {
+            console.warn("incomingBlindDiscard -- server says", pos, "finished blind but client thought bid winner was", bb.winningBidder, ". Believing server.");
+            bb.winningBidder = pos;
+            bb.winningBidTeam = teamOf(pos);
+        }
+        document.getElementById('blindCards').style.display = "none";
+        document.getElementById('blindCards').innerHTML = "";
+        const discard = document.getElementById('blindDiscard');
+        discard.className = `card-stack discard-blind discard-blind-${getPosName(pos).toLowerCase()}`;
+        discard.style.display = "flex";
+        this.lastTrickWinner = pos;
+        this.sortableSubmitCards.option("disabled", false);
+        store.commit('setGameState', 5);
+        store.commit('feedPush', `${names()[pos]} took the blind and leads.`);
+        this.setTurn(pos);
+        this.updateLegalHighlights();
+        return 0;
+    }
+
+    botBlind(pos) {
+        if (!STANDALONE || !this.mockHands) return 1;
+        const all = this.mockHands[pos].concat(this.mockBlind);
+        for (let i = 0; i < 5; i++) all.splice(Math.floor(Math.random() * all.length), 1);
+        this.mockHands[pos] = all;
+        return this.incomingBlindDiscard(pos);
+    }
+
+    submitTrick() {
+        const submitBoxElement = document.getElementById('submitCards');
+        this.sortableSubmitCards.option("disabled", true);
+        const reenable = () => this.sortableSubmitCards.option("disabled", false);
+
+        if (store.state.gameState !== 5) {
+            store.commit('notify', "Trick play hasn't started.");
+            reenable();
+            return 1;
+        }
+        if (nextToPlay(this.playedCards, this.lastTrickWinner) !== 0) {
+            store.commit('notify', "It's not your turn.");
+            reenable();
+            return 1;
+        }
+        if (submitBoxElement.children.length === 0) {
+            const hand = store.getters.getSharedHandCards();
+            const legalInHand = legalPlays(hand, this.playedCards, this.lastTrickWinner, store.state.trumpSuit);
+            if (legalInHand.length !== 1) {
+                store.commit('notify', hand.length ? "Drag a card to the play box first." : "No cards left.");
+                reenable();
+                return 1;
+            }
+            const only = legalInHand[0];
+            document.querySelectorAll(`#bottomCards [data-card="${only}"]`).forEach(ele => ele.remove());
+            store.commit('setSharedHandCards', hand.filter(c => c !== only));
+            store.commit('setFirstCardPlayed', true);
+            this.incomingTrickCard(0, only, false);
+            if (!STANDALONE) socket.send(C2S.PLAY_CARD, { card: only });
+            reenable();
+            return 0;
+        }
+        if (submitBoxElement.children.length !== 1) {
+            store.commit('notify', "Put exactly one card in the play box.");
+            reenable();
+            return 1;
+        }
+        const card = elem2CardStr(submitBoxElement.firstElementChild);
+        const legal = legalPlays(store.getters.getSharedHandCards().concat(card), this.playedCards, this.lastTrickWinner, store.state.trumpSuit);
+        if (!legal.includes(card)) {
+            store.commit('notify', "You must follow suit.");
+            reenable();
+            return 1;
+        }
+
+        submitBoxElement.innerHTML = "";
+        this.submitCards = [];
+        this.syncStaged();
+        store.commit('setFirstCardPlayed', true);
+        this.incomingTrickCard(0, card, false);
+        if (!STANDALONE) socket.send(C2S.PLAY_CARD, { card });
+        reenable();
+        return 0;
+    }
+
+    autoPlay() {
+        if (store.state.gameState !== 5 || nextToPlay(this.playedCards, this.lastTrickWinner) !== 0) return 1;
+        const dragged = Sortable.dragged;
+        const draggedCard = dragged ? elem2CardStr(dragged) : '';
+        const boxed = this.submitCards.slice();
+        const hand = store.getters.getSharedHandCards();
+        const all = Array.from(new Set(hand.concat(boxed, draggedCard ? [draggedCard] : [])));
+        const legal = legalPlays(all, this.playedCards, this.lastTrickWinner, store.state.trumpSuit);
+        const card = boxed.find(c => legal.includes(c)) ?? (legal.includes(draggedCard) ? draggedCard : lowestCards(legal, 1)[0]);
+        if (!card) {
+            this.setTurn(-1);
+            return 1;
+        }
+        if (card === draggedCard) {
+            this.heldPlayCard = card;
+        } else {
+            document.querySelectorAll(`#submitCards [data-card="${card}"], #bottomCards [data-card="${card}"]`).forEach(ele => ele.remove());
+        }
+        store.commit('setSharedHandCards', hand.filter(c => c !== card));
+        this.submitCards = boxed.filter(c => c !== card);
+        this.syncStaged();
+        store.commit('notify', card === draggedCard ? `Time's up, played the ${card} you were holding.` : `Time's up, played ${card} for you.`);
+        store.commit('setFirstCardPlayed', true);
+        this.incomingTrickCard(0, card, true);
+        if (!STANDALONE) socket.send(C2S.PLAY_CARD, { card });
+        return 0;
+    }
+
+    incomingTrickCard(pos, card, auto = false) {
+        if (this.resolving) {
+            this.pendingCards.push([pos, card, auto]);
+            return 0;
+        }
+        if (!isValidCardStr(card)) {
+            console.error("incomingTrickCard -- invalid card:", card);
+            return 1;
+        }
+        if (pos < 0 || pos > 3) {
+            console.error("incomingTrickCard -- invalid position:", pos);
+            return 1;
+        }
+        if (this.playedCards[pos] === card) return 0;
+        if (this.playedCards[pos] !== '') {
+            console.error("incomingTrickCard --", getPosName(pos), "already played", this.playedCards[pos], "this trick, got", card);
+            if (!STANDALONE) socket.send(C2S.REQUEST_SYNC);
+            return 1;
+        }
+        const expected = nextToPlay(this.playedCards, this.lastTrickWinner);
+        if (expected !== pos) {
+            console.error("incomingTrickCard -- expected", getPosName(expected), "to play, got", getPosName(pos));
+            if (!STANDALONE) socket.send(C2S.REQUEST_SYNC);
+            return 1;
+        }
+
+        this.playedCards[pos] = card;
+        store.commit('setCardCount', { pos, n: store.state.cardCounts[pos] - 1 });
+        const ele = document.getElementById('playedCard' + getPosName(pos));
+        ele.src = cardImageUrl(card);
+        ele.className = `fake-card card-played card-played-${getPosName(pos).toLowerCase()} ${getSuitClass(cardStr2CardObj(card).s)}`;
+        ele.style.display = "inline";
+        this.flyIn(ele, pos);
+        store.commit('feedPush', `${names()[pos]} played ${card}${auto ? ' (auto)' : ''}.`);
+
+        const next = nextToPlay(this.playedCards, this.lastTrickWinner);
+        if (next === -1) {
+            this.endTrick();
+        } else {
+            this.setTurn(next);
+            this.updateLegalHighlights();
+        }
+        return 0;
+    }
+
+    tableLocal(rect) {
+        const table = document.getElementById('gameTable').getBoundingClientRect();
+        const scale = table.width / TABLE_WIDTH;
+        return { x: (rect.left + rect.width / 2 - table.left) / scale, y: (rect.top + rect.height / 2 - table.top) / scale };
+    }
+
+    flyIn(ele, pos) {
+        const source = document.getElementById(SOURCE_ELEMENT_IDS[pos]);
+        if (!source || typeof ele.animate !== 'function') return;
+        const from = this.tableLocal(source.getBoundingClientRect());
+        const cs = getComputedStyle(ele);
+        const startScale = pos === 0 ? 1.2 : 0.7;
+        ele.animate(
+            [{ left: `${from.x}px`, top: `${from.y}px`, transform: `${cs.transform} scale(${startScale})`, opacity: 0.6 }, { left: cs.left, top: cs.top, transform: cs.transform, opacity: 1 }],
+            { duration: CARD_FLY_MS, easing: 'cubic-bezier(.2,.8,.2,1)' }
+        );
+    }
+
+    endTrick() {
+        const winner = trickWinner(this.playedCards, this.lastTrickWinner, store.state.trumpSuit);
+        this.predictedTrickWinner = winner;
+        this.resolveTrick(winner);
+    }
+
+    resolveTrick(winner) {
+        this.resolving = true;
+        this.resolveTarget = winner;
+        this.setTurn(-1);
+        store.getters.getHand()?.markLegal(null);
+        setTimeout(() => this.sweepTrick(), TRICK_HOLD_MS);
+    }
+
+    sweepTrick() {
+        const winner = this.resolveTarget;
+        const stack = document.getElementById('wonTricks' + getPosName(winner));
+        const stackStyle = getComputedStyle(stack);
+        const cards = Array.from(document.getElementsByClassName("card-played")).filter(ele => ele.style.display !== "none");
+        const animations = cards.map((ele, i) => {
+            if (typeof ele.animate !== 'function') return Promise.resolve();
+            const cs = getComputedStyle(ele);
+            const anim = ele.animate(
+                [
+                    { left: cs.left, top: cs.top, transform: cs.transform, opacity: 1 },
+                    { left: stackStyle.left, top: stackStyle.top, transform: `${stackStyle.transform} scale(0.55)`, opacity: 0.2 },
+                ],
+                { duration: TRICK_SWEEP_MS, delay: i * 40, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'forwards' }
+            );
+            return anim.finished.catch(() => {});
+        });
+        Promise.all(animations).then(() => {
+            cards.forEach(ele => ele.getAnimations().forEach(a => a.cancel()));
+            this.finishTrick(winner);
+        });
+    }
+
+    finishTrick(winner) {
+        const trick = this.playedCards.slice();
+        const leader = this.lastTrickWinner;
+        this.lastTrickWinner = winner;
+        this.wonTricks[winner] += 1;
+        store.commit('feedPush', `${names()[winner]} won the trick.`);
+        this.maybePartnerJoke(trick, leader, winner);
+        this.playedCards = ['', '', '', ''];
+        this.clearPlayedCards();
+        this.renderStacks();
+        this.resolving = false;
+        this.resolveTarget = -1;
+        if (this.isHandOver()) {
+            this.endHand();
+            return;
+        }
+        this.setTurn(winner);
+        this.updateLegalHighlights();
+        const pending = this.pendingCards;
+        this.pendingCards = [];
+        pending.forEach(([pos, card, auto]) => this.incomingTrickCard(pos, card, auto));
+    }
+
+    maybePartnerJoke(trick, leader, winner) {
+        if (winner !== 2 || !trick[0]) return;
+        const withoutPartner = trickWinnerWithout(trick, leader, store.state.trumpSuit, 2);
+        if (withoutPartner !== 1 && withoutPartner !== 3) return;
+        const joke = PARTNER_JOKES[Math.floor(Math.random() * PARTNER_JOKES.length)];
+        store.commit('notify', joke);
+        store.commit('feedPush', joke);
+    }
+
+    reconcileTrickWinner(winner) {
+        if (this.resolving) {
+            if (winner !== this.resolveTarget) {
+                console.warn("reconcileTrickWinner -- client predicted", this.resolveTarget, "server says", winner, ". Believing server.");
+                this.resolveTarget = winner;
+            }
+            this.predictedTrickWinner = -1;
+            return;
+        }
+        if (this.predictedTrickWinner === -1) {
+            this.resolveTrick(winner);
+            return;
+        }
+        if (winner === this.predictedTrickWinner) {
+            this.predictedTrickWinner = -1;
+            return;
+        }
+        console.warn("reconcileTrickWinner -- client predicted", this.predictedTrickWinner, "server says", winner, ". Believing server.");
+        this.wonTricks[this.predictedTrickWinner] -= 1;
+        this.wonTricks[winner] += 1;
+        this.lastTrickWinner = winner;
+        this.predictedTrickWinner = -1;
+        this.renderStacks();
+        this.setTurn(winner);
+        this.updateLegalHighlights();
+    }
+
+    restoreTrick(playedCards, leader, wonTricks) {
+        this.playedCards = playedCards.slice();
+        this.lastTrickWinner = leader;
+        this.wonTricks = wonTricks.slice();
+        this.clearPlayedCards();
+        playedCards.forEach((card, pos) => {
+            if (!card) return;
+            const ele = document.getElementById('playedCard' + getPosName(pos));
+            ele.src = cardImageUrl(card);
+            ele.style.display = "inline";
+        });
+        this.renderStacks();
+        this.updateLegalHighlights();
+    }
+
+    clearPlayedCards() {
+        Array.from(document.getElementsByClassName("card-played")).forEach((ele) => {
+            ele.src = CARD_BACK_URL;
+            ele.style.display = "none";
+        });
+    }
+
+    renderStacks() {
+        this.wonTricks.forEach((count, pos) => {
+            const ele = document.getElementById('wonTricks' + getPosName(pos));
+            ele.style.visibility = count > 0 ? "visible" : "hidden";
+            ele.textContent = count;
+        });
+    }
+
+    updateLegalHighlights() {
+        const hand = store.getters.getHand();
+        if (!hand) return;
+        const myTurn = store.state.gameState === 5 && nextToPlay(this.playedCards, this.lastTrickWinner) === 0;
+        hand.markLegal(myTurn ? legalPlays(store.getters.getSharedHandCards(), this.playedCards, this.lastTrickWinner, store.state.trumpSuit) : null);
+    }
+
+    botPlay(pos) {
+        if (!STANDALONE || !this.mockHands) return 1;
+        const legal = legalPlays(this.mockHands[pos], this.playedCards, this.lastTrickWinner, store.state.trumpSuit);
+        const card = legal[Math.floor(Math.random() * legal.length)];
+        this.mockHands[pos].splice(this.mockHands[pos].indexOf(card), 1);
+        return this.incomingTrickCard(pos, card, false);
+    }
+
+    getFinishedTricks() {
+        return this.wonTricks.reduce((sum, n) => sum + n, 0);
+    }
+
+    isHandOver() {
+        return store.state.gameState === 5 && this.getFinishedTricks() === 10;
+    }
+
+    endHand() {
+        const bb = store.getters.getBidBox();
+        const bid = store.state.winningBid;
+        const bidTeam = bb.winningBidTeam;
+        const teamTricks = [this.wonTricks[0] + this.wonTricks[2], this.wonTricks[1] + this.wonTricks[3]];
+        const { deltas, made } = scoreHand(bid, bidTeam, teamTricks);
+        store.commit('addHandScore', deltas);
+        store.commit('feedPush', `${bidTeam === 0 ? 'We' : 'They'} ${made ? 'made' : 'missed'} ${bid}. Score ${store.state.scores[0]} to ${store.state.scores[1]}.`);
+
+        store.commit('setCardCount', { pos: 0, n: 10 });
+        const winnerTeam = gameOutcome(store.state.scores, bidTeam, made);
+        if (winnerTeam !== -1) {
+            this.endGame(winnerTeam);
+            return;
+        }
+        store.commit('advanceDealer');
+        store.commit('setGameState', 0);
+        this.setTurn(store.state.dealer);
+    }
+
+    endGame(winnerTeam) {
+        store.commit('setGameState', 6);
+        store.commit('setGameWinner', winnerTeam);
+        this.setTurn(-1);
+        store.getters.getHand()?.markLegal(null);
+        this.sortableSubmitCards.option("disabled", true);
+        store.commit('notify', winnerTeam === 0 ? "We win!" : "They win.");
+        store.commit('feedPush', `Game over. ${winnerTeam === 0 ? 'We' : 'They'} win ${store.state.scores[0]} to ${store.state.scores[1]}.`);
+    }
+
+    newGame() {
+        store.commit('resetGame');
+        store.commit('setGameState', 0);
+        this.newHand();
+        if (STANDALONE) this.dealStandalone();
+    }
+}
+
+let instance = null;
+onMounted(() => {
+    instance = new GameTable();
+    store.commit('setSharedGameTable', instance);
+})
+onBeforeUnmount(() => {
+    instance?.dispose();
+})
+</script>
+
+<style scoped>
+.card-stack {
+    width: 70px;
+    height: 100px;
+    border-radius: 8px;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+    will-change: transform;
+    background-color: #3498db;
+    color: white;
+    font-weight: bold;
+    font-size: 28px;
+    position: absolute;
+    display: flex;
+    visibility: hidden;
+}
+
+.won-tricks-left {
+    top: 60%;
+    left: 8%;
+    transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.won-tricks-top {
+    top: 10%;
+    left: 35%;
+    transform: translate(-50%, -50%) rotate(180deg);
+}
+
+.won-tricks-right {
+    top: 40%;
+    left: 92%;
+    transform: translate(-50%, -50%) rotate(270deg);
+}
+
+.won-tricks-bottom {
+    top: 90%;
+    left: 70%;
+    transform: translate(-50%, -50%);
+}
+
+.discard-blind {
+    background-color: #2c3e50;
+    opacity: 0.85;
+    display: none;
+    visibility: visible;
+}
+.discard-blind-bottom {
+    top: 90%;
+    left: 25%;
+    transform: translate(-50%, -50%);
+}
+.discard-blind-left {
+    top: 35%;
+    left: 8%;
+    transform: translate(-50%, -50%) rotate(90deg);
+}
+.discard-blind-top {
+    top: 10%;
+    left: 65%;
+    transform: translate(-50%, -50%) rotate(180deg);
+}
+.discard-blind-right {
+    top: 65%;
+    left: 92%;
+    transform: translate(-50%, -50%) rotate(270deg);
+}
+
+.card-played {
+    position: absolute;
+    display: none;
+    width: 140px;
+    height: 200px;
+}
+
+.card-played-left {
+    top: 42%;
+    left: 28%;
+    transform: translate(-50%, -50%) rotate(90deg);
+    z-index: 3;
+}
+
+.card-played-top {
+    top: 22%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(180deg);
+    z-index: 2;
+}
+
+.card-played-right {
+    top: 42%;
+    left: 72%;
+    transform: translate(-50%, -50%) rotate(270deg);
+    z-index: 1;
+}
+
+.card-played-bottom {
+    top: 62%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 4;
+}
+
+#submitCards {
+    top: 100%;
+    left: 50%;
+    transform: translate(-50%, -62%);
+    z-index: 2;
+    border: 3px dashed #95a5a6;
+    border-radius: 14px;
+    padding: 16px;
+    min-width: 150px;
+    min-height: 214px;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(32, 50, 67, 0.92);
+}
+#submitCards:empty {
+    background-color: rgba(32, 50, 67, 0.25);
+}
+#submitCards.parked {
+    display: none;
+}
+#submitCards :deep(.real-card > *), #submitCards :deep(.hand-card > *) {
+    width: 150px;
+    height: 214px;
+}
+
+#blindCards :deep(.real-card > *), #blindCards :deep(.hand-card > *) {
+    width: 150px;
+    height: 214px;
+    background-color: white;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+    will-change: transform;
+}
+
+#gameTableContainer {
+    position: absolute;
+    top: 130px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1000px;
+    height: 560px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#gameTable {
+    width: 800px;
+    height: 560px;
+    background-color: #34495e;
+    border-radius: 24px;
+    position: absolute;
+}
+
+.card-row {
+    position: absolute;
+    display: flex;
+    gap: 10px;
+}
+
+#blindCards {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.table-button {
+    position: absolute;
+    padding: 8px 22px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #2c3e50;
+    background: #ecf0f1;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+    z-index: 6;
+}
+.table-button:hover {
+    background: #f1c40f;
+}
+.play-button {
+    top: 100%;
+    left: 50%;
+    transform: translateX(110px) translateY(30px);
+    font-size: 24px;
+    padding: 16px 44px;
+    border-radius: 14px;
+}
+.play-button.armed {
+    background: linear-gradient(45deg, #f1c40f, #f39c12);
+    animation: armedGlow 1.1s ease-in-out infinite;
+}
+@keyframes armedGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(110px) translateY(30px) scale(1); }
+    50% { box-shadow: 0 0 0 14px rgba(241, 196, 15, 0), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(110px) translateY(30px) scale(1.05); }
+}
+.blind-button {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, 135px);
+}
+.won-tricks-bottom {
+    top: 88%;
+    left: 78%;
+}
+.discard-blind-bottom {
+    top: 88%;
+    left: 22%;
+}
+
+.shuffle {
+    position: absolute;
+    top: 42%;
+    left: 50%;
+    width: 0;
+    height: 0;
+}
+.shuffle-card {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    animation: shuffleSlide 1.6s ease-in-out infinite;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+@keyframes shuffleSlide {
+    0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+    25% { transform: translate(-130%, -50%) rotate(-8deg); }
+    50% { transform: translate(-50%, -50%) rotate(0deg); }
+    75% { transform: translate(30%, -50%) rotate(8deg); }
+}
+.deal-caption {
+    position: absolute;
+    top: 62%;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #ecf0f1;
+    font-family: Arial, sans-serif;
+    font-size: 20px;
+    letter-spacing: 1px;
+}
+.deal-button {
+    position: absolute;
+    top: 70%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 40px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #2c3e50;
+    background: linear-gradient(45deg, #f1c40f, #f39c12);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    animation: dealPulse 1.2s ease-in-out infinite;
+}
+.deal-button:hover {
+    filter: brightness(1.1);
+}
+@keyframes dealPulse {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.06); }
+}
+</style>
