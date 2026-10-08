@@ -1,19 +1,26 @@
 <template>
+    <button v-if="canSort" class="sort-button" type="button" @click="sortNow">Sort hand</button>
     <div class="card-row" id="bottomCards">
         <div v-for="n in 10" :key="n" class="card-back hand-card"><img draggable="false" :src="CARD_BACK_URL"></div>
     </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, computed } from 'vue';
 import { useStore } from 'vuex'
 import Sortable from 'sortablejs';
 import { CARD_BACK_URL, elem2CardStr, isValidCardStr, produceCardHtml } from '../game/cards.js';
+import { sortHand } from '../game/rules.js';
 
 const emit = defineEmits(['hand-rendered'])
 const store = useStore()
 
 let sortableHandCards;
+const canSort = computed(() => store.state.gameState >= 1 && store.state.gameState <= 5 && !store.state.firstCardPlayed && store.state.handCards.length > 1);
+
+function sortNow() {
+    replaceHand(sortHand(store.getters.getSharedHandCards(), store.state.trumpSuit));
+}
 
 function initSortable() {
     const bottomCardsElem = document.getElementById('bottomCards');
@@ -165,6 +172,25 @@ onMounted(() => {
 
 #bottomCards :deep(.spun) {
     transform: rotate(0.5turn);
+}
+
+.sort-button {
+    position: absolute;
+    bottom: 215px;
+    right: 300px;
+    padding: 8px 18px;
+    font-size: 15px;
+    font-weight: bold;
+    color: #2c3e50;
+    background: #ecf0f1;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+    z-index: 6;
+}
+.sort-button:hover {
+    background: #f1c40f;
 }
 
 #bottomCards :deep(.illegal) {

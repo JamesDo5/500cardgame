@@ -30,13 +30,15 @@
 - [x] Auto-play should play from the client's submit card box first, maybe 10 seconds locally it tries to submit and then at 15 the server auto-plays
 
 ### Priority 2a: First order aesthetic concerns
-- [ ] Shuffle animation between games
+- [x] Shuffle animation between games
 - [x] Cards should flip 180 when clicked
 - [x] Cards should "breathe"
 - [ ] ^ Cards should bounce around slightly in addition to breathing (maybe not tho?)
-- [ ] Timer should have a cute clock animation, pref a cat clock style
-- [ ] Little game winner animation or page
-- [ ] Little trick animation for trick stack addition
+- [x] Timer should have a cute clock animation, pref a cat clock style
+- [x] Little game winner animation or page
+- [x] Little trick animation for trick stack addition
+- [ ] Hand sort: dealt order is preserved, Sort button sorts trump first then alternating colors and hides after the first card is played. Consider auto-sort preference in a settings menu.
+- [ ] Won-trick stacks are just a number on a blue block. Make them fun: fanned card backs, a little bounce when one lands, maybe a cat paw dragging them in.
 - [x] Make text show for user when they play a card
 
 ### Priority 3: Do later
@@ -49,7 +51,7 @@
 - [x] Move top player code into OtherPlayer.vue
 - [ ] Look into making a settings/prefs menu
 - [x] Look into style scoping elements that come under a parent purview during code execution in vue. Right now they do not get the scoped component styles.
-- [ ] Partner jokes when your partner saves you
+- [x] Partner jokes when your partner saves you
 - [x] Little noise or animation when user tries to do something that's not allowed locally
 - [ ] Mark cheaters when user submits card they don't have
 - [ ] ^Similar but enforce server state

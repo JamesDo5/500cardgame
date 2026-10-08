@@ -20,13 +20,33 @@ const secondsLeft = computed(() => {
     if (!isTurn.value || !store.state.turn.deadlineMs) return null;
     return Math.max(0, Math.ceil((store.state.turn.deadlineMs - now.value) / 1000));
 });
+const fraction = computed(() => {
+    const { deadlineMs, startedMs } = store.state.turn;
+    if (!isTurn.value || !deadlineMs) return 0;
+    const total = Math.max(1, deadlineMs - startedMs);
+    return Math.min(1, Math.max(0, (deadlineMs - now.value) / total));
+});
+const RING = 2 * Math.PI * 11;
+const dashOffset = computed(() => RING * (1 - fraction.value));
+const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <= 5);
 </script>
 
 <template>
     <div class="namecard-wrapper" :class="{ dealer: isDealer, turn: isTurn }" :id="namepos">
         <div class="namecard-bg"></div>
         <div class="namecard"></div>
-        <div class="player-name">{{ name }}<span v-if="isDealer" class="dealer-chip">D</span><span v-if="secondsLeft !== null" class="turn-timer" :class="{ urgent: secondsLeft <= 5 }">{{ secondsLeft }}s</span></div>
+        <div class="player-name">
+            {{ name }}
+            <span v-if="isDealer" class="dealer-chip" title="Dealer">D</span>
+            <span v-if="secondsLeft !== null" class="cat-clock" :class="{ urgent }">
+                <svg viewBox="0 0 28 28" class="clock-ring">
+                    <circle cx="14" cy="14" r="11" class="ring-bg" />
+                    <circle cx="14" cy="14" r="11" class="ring-fg" :style="{ strokeDasharray: RING, strokeDashoffset: dashOffset }" />
+                </svg>
+                <span class="cat-face">🐱</span>
+                <span class="clock-seconds">{{ secondsLeft }}</span>
+            </span>
+        </div>
     </div>
 </template>
 
@@ -77,9 +97,24 @@ const secondsLeft = computed(() => {
     opacity: 0.8;
     z-index: 2;
 }
+.namecard-wrapper.dealer .namecard-bg {
+    background: linear-gradient(90deg, #f1c40f, #f39c12, #f1c40f, #f39c12);
+    background-size: 300% 100%;
+    opacity: 0.95;
+    animation: dealerShimmer 3s linear infinite;
+}
 .namecard-wrapper.turn .namecard-bg {
     background: linear-gradient(45deg, #f1c40f, #e67e22);
     opacity: 0.9;
+}
+.namecard-wrapper.dealer.turn .namecard-bg {
+    background: linear-gradient(90deg, #f1c40f, #e74c3c, #f1c40f, #e74c3c);
+    background-size: 300% 100%;
+    animation: dealerShimmer 1.5s linear infinite;
+}
+@keyframes dealerShimmer {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 300% 50%; }
 }
 
 .namecard {
@@ -102,29 +137,75 @@ const secondsLeft = computed(() => {
     font-weight: 600;
     font-family: Arial, sans-serif;
     z-index: 2;
-}
-.turn-timer {
-    display: inline-block;
-    margin-left: 8px;
-    padding: 0 6px;
-    border-radius: 6px;
-    background-color: #f1c40f;
-    color: #2c3e50;
-    font-size: 12px;
-    min-width: 24px;
-    text-align: center;
-}
-.turn-timer.urgent {
-    background-color: #e74c3c;
-    color: white;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
 }
 .dealer-chip {
     display: inline-block;
-    margin-left: 8px;
     padding: 0 7px;
     border-radius: 50%;
-    background-color: #ecf0f1;
+    background-color: #f1c40f;
     color: #2c3e50;
     font-size: 12px;
+    font-weight: 800;
+}
+
+.cat-clock {
+    position: relative;
+    width: 34px;
+    height: 34px;
+    display: inline-block;
+    animation: catTick 1s ease-in-out infinite alternate;
+}
+.clock-ring {
+    position: absolute;
+    inset: 0;
+    width: 34px;
+    height: 34px;
+    transform: rotate(-90deg);
+}
+.ring-bg {
+    fill: #2c3e50;
+    stroke: rgba(255, 255, 255, 0.25);
+    stroke-width: 3;
+}
+.ring-fg {
+    fill: none;
+    stroke: #f1c40f;
+    stroke-width: 3;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.25s linear, stroke 0.3s;
+}
+.cat-clock.urgent .ring-fg {
+    stroke: #e74c3c;
+}
+.cat-face {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    line-height: 1;
+}
+.clock-seconds {
+    position: absolute;
+    bottom: -6px;
+    right: -8px;
+    background: #2c3e50;
+    border-radius: 8px;
+    padding: 0 4px;
+    font-size: 10px;
+    line-height: 12px;
+    color: #f1c40f;
+}
+.cat-clock.urgent .clock-seconds {
+    color: #e74c3c;
+}
+@keyframes catTick {
+    from { transform: rotate(-10deg); }
+    to { transform: rotate(10deg); }
 }
 </style>

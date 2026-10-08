@@ -11,24 +11,46 @@
             <div class="card-stack won-tricks-top" id="wonTricksTop"></div>
             <div class="card-stack won-tricks-right" id="wonTricksRight"></div>
             <div class="card-stack discard-blind" id="blindDiscard"></div>
+            <div v-if="dealing" class="shuffle">
+                <img v-for="n in 7" :key="n" class="fake-card card-back shuffle-card" :style="{ animationDelay: `${(n - 1) * 0.12}s` }" :src="CARD_BACK_URL">
+            </div>
+            <div v-if="dealing" class="deal-caption">{{ dealCaption }}</div>
+            <button v-if="dealing && iAmDealer" class="deal-button" type="button" @click="dealNow">Deal</button>
         </div>
         <div class="card-row" id="blindCards"></div>
     </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, computed } from 'vue';
 import { useStore } from 'vuex'
 import Sortable from 'sortablejs';
-import { STANDALONE, TURN_TIMEOUT_MS, DEAL_TIMEOUT_MS, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS } from '../config.js';
+import { STANDALONE, TURN_TIMEOUT_MS, DEAL_TIMEOUT_MS, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS, TRICK_HOLD_MS, CARD_FLY_MS, TRICK_SWEEP_MS } from '../config.js';
 import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
 import { CARD_BACK_URL, cardImageUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, dealMock, teamOf } from '../game/cards.js';
-import { trickWinner, legalPlays, nextToPlay, nextToBid, scoreHand, gameOutcome } from '../game/rules.js';
+import { trickWinner, trickWinnerWithout, legalPlays, nextToPlay, nextToBid, scoreHand, gameOutcome } from '../game/rules.js';
 
 const store = useStore()
 
 const names = () => store.state.playerNames;
+const dealing = computed(() => store.state.gameState === 0);
+const iAmDealer = computed(() => store.state.dealer === 0);
+const dealCaption = computed(() => iAmDealer.value ? 'Your deal' : `${store.state.playerNames[store.state.dealer]} is dealing`);
+function dealNow() {
+    const gt = store.getters.getGameTable();
+    if (STANDALONE) gt.dealStandalone(); else socket.send(C2S.DEAL);
+}
+
+const PARTNER_JOKES = [
+    "Partner: \"I had that the whole time.\"",
+    "Partner: \"You're welcome.\"",
+    "Partner: \"Don't worry, I'll carry us.\"",
+    "Partner: \"That one was looking rough.\"",
+    "Partner: \"Teamwork. Mostly me, but teamwork.\"",
+    "Partner: \"I saw that coming three tricks ago.\"",
+];
+const SOURCE_ELEMENT_IDS = ['submitCards', 'leftCards', 'topCards', 'rightCards'];
 
 class GameTable {
     constructor() {
@@ -43,6 +65,9 @@ class GameTable {
         this.sortableBlindCards = null;
         this.sortableSubmitCards = null;
         this.handledDeadline = 0;
+        this.resolving = false;
+        this.resolveTarget = -1;
+        this.pendingCards = [];
         this.initializeSortables();
         setInterval(() => this.tickTurn(), 200);
     }
@@ -149,6 +174,11 @@ class GameTable {
         this.wonTricks = [0, 0, 0, 0];
         this.mockHands = null;
         this.mockBlind = null;
+        this.resolving = false;
+        this.resolveTarget = -1;
+        this.pendingCards = [];
+        store.commit('resetCardCounts');
+        store.commit('setFirstCardPlayed', false);
         document.getElementById('submitCards').innerHTML = "";
         document.getElementById('blindCards').innerHTML = "";
         document.getElementById('blindCards').style.display = "flex";
@@ -308,6 +338,7 @@ class GameTable {
 
         submitBoxElement.innerHTML = "";
         this.submitCards = [];
+        store.commit('setFirstCardPlayed', true);
         this.incomingTrickCard(0, card, false);
         if (!STANDALONE) socket.send(C2S.PLAY_CARD, { card });
         reenable();
@@ -328,12 +359,17 @@ class GameTable {
         this.submitCards = [];
         store.getters.getHand().replaceHand(all.filter(c => c !== card));
         store.commit('notify', `Time's up, played ${card} for you.`);
+        store.commit('setFirstCardPlayed', true);
         this.incomingTrickCard(0, card, true);
         if (!STANDALONE) socket.send(C2S.PLAY_CARD, { card });
         return 0;
     }
 
     incomingTrickCard(pos, card, auto = false) {
+        if (this.resolving) {
+            this.pendingCards.push([pos, card, auto]);
+            return 0;
+        }
         if (!isValidCardStr(card)) {
             console.error("incomingTrickCard -- invalid card:", card);
             return 1;
@@ -356,10 +392,12 @@ class GameTable {
         }
 
         this.playedCards[pos] = card;
+        store.commit('setCardCount', { pos, n: store.state.cardCounts[pos] - 1 });
         const ele = document.getElementById('playedCard' + getPosName(pos));
         ele.src = cardImageUrl(card);
         ele.className = `fake-card card-played card-played-${getPosName(pos).toLowerCase()} ${getSuitClass(cardStr2CardObj(card).s)}`;
         ele.style.display = "inline";
+        this.flyIn(ele, pos);
         store.commit('feedPush', `${names()[pos]} played ${card}${auto ? ' (auto)' : ''}.`);
 
         const next = nextToPlay(this.playedCards, this.lastTrickWinner);
@@ -372,30 +410,103 @@ class GameTable {
         return 0;
     }
 
+    tableLocal(rect) {
+        const table = document.getElementById('gameTable').getBoundingClientRect();
+        const scale = table.width / 700;
+        return { x: (rect.left + rect.width / 2 - table.left) / scale, y: (rect.top + rect.height / 2 - table.top) / scale };
+    }
+
+    flyIn(ele, pos) {
+        const source = document.getElementById(SOURCE_ELEMENT_IDS[pos]);
+        if (!source || typeof ele.animate !== 'function') return;
+        const from = this.tableLocal(source.getBoundingClientRect());
+        const cs = getComputedStyle(ele);
+        ele.animate(
+            [{ left: `${from.x}px`, top: `${from.y}px`, opacity: 0.5 }, { left: cs.left, top: cs.top, opacity: 1 }],
+            { duration: CARD_FLY_MS, easing: 'cubic-bezier(.2,.8,.2,1)' }
+        );
+    }
+
     endTrick() {
         const winner = trickWinner(this.playedCards, this.lastTrickWinner, store.state.trumpSuit);
         this.predictedTrickWinner = winner;
-        this.applyTrickWinner(winner);
+        this.resolveTrick(winner);
     }
 
-    applyTrickWinner(winner) {
+    resolveTrick(winner) {
+        this.resolving = true;
+        this.resolveTarget = winner;
+        this.setTurn(-1);
+        store.getters.getHand()?.markLegal(null);
+        setTimeout(() => this.sweepTrick(), TRICK_HOLD_MS);
+    }
+
+    sweepTrick() {
+        const winner = this.resolveTarget;
+        const stack = document.getElementById('wonTricks' + getPosName(winner));
+        const stackStyle = getComputedStyle(stack);
+        const cards = Array.from(document.getElementsByClassName("card-played")).filter(ele => ele.style.display !== "none");
+        const animations = cards.map((ele, i) => {
+            if (typeof ele.animate !== 'function') return Promise.resolve();
+            const cs = getComputedStyle(ele);
+            const anim = ele.animate(
+                [
+                    { left: cs.left, top: cs.top, transform: cs.transform, opacity: 1 },
+                    { left: stackStyle.left, top: stackStyle.top, transform: `${stackStyle.transform} scale(0.55)`, opacity: 0.2 },
+                ],
+                { duration: TRICK_SWEEP_MS, delay: i * 40, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'forwards' }
+            );
+            return anim.finished.catch(() => {});
+        });
+        Promise.all(animations).then(() => {
+            cards.forEach(ele => ele.getAnimations().forEach(a => a.cancel()));
+            this.finishTrick(winner);
+        });
+    }
+
+    finishTrick(winner) {
+        const trick = this.playedCards.slice();
+        const leader = this.lastTrickWinner;
         this.lastTrickWinner = winner;
         this.wonTricks[winner] += 1;
         store.commit('feedPush', `${names()[winner]} won the trick.`);
+        this.maybePartnerJoke(trick, leader, winner);
         this.playedCards = ['', '', '', ''];
         this.clearPlayedCards();
         this.renderStacks();
+        this.resolving = false;
+        this.resolveTarget = -1;
         if (this.isHandOver()) {
             this.endHand();
-        } else {
-            this.setTurn(winner);
-            this.updateLegalHighlights();
+            return;
         }
+        this.setTurn(winner);
+        this.updateLegalHighlights();
+        const pending = this.pendingCards;
+        this.pendingCards = [];
+        pending.forEach(([pos, card, auto]) => this.incomingTrickCard(pos, card, auto));
+    }
+
+    maybePartnerJoke(trick, leader, winner) {
+        if (winner !== 2 || !trick[0]) return;
+        const withoutPartner = trickWinnerWithout(trick, leader, store.state.trumpSuit, 2);
+        if (withoutPartner !== 1 && withoutPartner !== 3) return;
+        const joke = PARTNER_JOKES[Math.floor(Math.random() * PARTNER_JOKES.length)];
+        store.commit('notify', joke);
+        store.commit('feedPush', joke);
     }
 
     reconcileTrickWinner(winner) {
+        if (this.resolving) {
+            if (winner !== this.resolveTarget) {
+                console.warn("reconcileTrickWinner -- client predicted", this.resolveTarget, "server says", winner, ". Believing server.");
+                this.resolveTarget = winner;
+            }
+            this.predictedTrickWinner = -1;
+            return;
+        }
         if (this.predictedTrickWinner === -1) {
-            this.applyTrickWinner(winner);
+            this.resolveTrick(winner);
             return;
         }
         if (winner === this.predictedTrickWinner) {
@@ -408,6 +519,7 @@ class GameTable {
         this.lastTrickWinner = winner;
         this.predictedTrickWinner = -1;
         this.renderStacks();
+        this.setTurn(winner);
         this.updateLegalHighlights();
     }
 
@@ -436,7 +548,7 @@ class GameTable {
     renderStacks() {
         this.wonTricks.forEach((count, pos) => {
             const ele = document.getElementById('wonTricks' + getPosName(pos));
-            ele.style.display = count > 0 ? "flex" : "none";
+            ele.style.visibility = count > 0 ? "visible" : "hidden";
             ele.textContent = count;
         });
     }
@@ -473,6 +585,7 @@ class GameTable {
         store.commit('addHandScore', deltas);
         store.commit('feedPush', `${bidTeam === 0 ? 'We' : 'They'} ${made ? 'made' : 'missed'} ${bid}. Score ${store.state.scores[0]} to ${store.state.scores[1]}.`);
 
+        store.commit('setCardCount', { pos: 0, n: 10 });
         const winnerTeam = gameOutcome(store.state.scores, bidTeam, made);
         if (winnerTeam !== -1) {
             this.endGame(winnerTeam);
@@ -485,6 +598,7 @@ class GameTable {
 
     endGame(winnerTeam) {
         store.commit('setGameState', 6);
+        store.commit('setGameWinner', winnerTeam);
         this.setTurn(-1);
         store.getters.getHand()?.markLegal(null);
         this.sortableSubmitCards.option("disabled", true);
@@ -521,7 +635,8 @@ onMounted(() => {
     font-weight: bold;
     font-size: 28px;
     position: absolute;
-    display: none;
+    display: flex;
+    visibility: hidden;
 }
 
 .won-tricks-left {
@@ -551,6 +666,8 @@ onMounted(() => {
 .discard-blind {
     background-color: #2c3e50;
     opacity: 0.85;
+    display: none;
+    visibility: visible;
 }
 .discard-blind-bottom {
     top: 90%;
@@ -658,5 +775,58 @@ onMounted(() => {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+}
+
+.shuffle {
+    position: absolute;
+    top: 42%;
+    left: 50%;
+    width: 0;
+    height: 0;
+}
+.shuffle-card {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    animation: shuffleSlide 1.6s ease-in-out infinite;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+@keyframes shuffleSlide {
+    0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+    25% { transform: translate(-130%, -50%) rotate(-8deg); }
+    50% { transform: translate(-50%, -50%) rotate(0deg); }
+    75% { transform: translate(30%, -50%) rotate(8deg); }
+}
+.deal-caption {
+    position: absolute;
+    top: 62%;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #ecf0f1;
+    font-family: Arial, sans-serif;
+    font-size: 20px;
+    letter-spacing: 1px;
+}
+.deal-button {
+    position: absolute;
+    top: 70%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 40px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #2c3e50;
+    background: linear-gradient(45deg, #f1c40f, #f39c12);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    animation: dealPulse 1.2s ease-in-out infinite;
+}
+.deal-button:hover {
+    filter: brightness(1.1);
+}
+@keyframes dealPulse {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.06); }
 }
 </style>

@@ -118,4 +118,26 @@ export function gameOutcome(scores, bidTeam, made) {
     return -1;
 }
 
+const SUIT_ORDER = ['s', 'h', 'c', 'd'];
+export function sortHand(hand, trump) {
+    const order = trump && trump !== NO_TRUMP ? [trump, ...SUIT_ORDER.filter(s => s !== trump)] : SUIT_ORDER.slice();
+    const t = trump || NO_TRUMP;
+    const rank = (card) => {
+        if (card === JOKER) return [-1, -100];
+        const suit = effectiveSuit(card, t);
+        return [order.indexOf(suit), -cardStrength(card, t)];
+    };
+    return hand.slice().sort((a, b) => {
+        const [sa, va] = rank(a), [sb, vb] = rank(b);
+        return sa - sb || va - vb;
+    });
+}
+
+export function trickWinnerWithout(playedCards, leader, trump, excludedPos) {
+    const copy = playedCards.slice();
+    copy[excludedPos] = '';
+    if (excludedPos === leader) return -1;
+    return trickWinner(copy, leader, trump);
+}
+
 export { teamOf };

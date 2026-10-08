@@ -6,6 +6,9 @@ export const TURN_TIMEOUT_MS = 1000 * Number(import.meta.env.VITE_TURN_TIMEOUT ?
 export const DEAL_TIMEOUT_MS = 1000 * Number(import.meta.env.VITE_DEAL_TIMEOUT ?? 15);
 export const AUTOPLAY_MARGIN_MS = 1000;
 export const BOT_DELAY_MS = 900;
+export const TRICK_HOLD_MS = 1100;
+export const CARD_FLY_MS = 350;
+export const TRICK_SWEEP_MS = 500;
 
 export const STAGE_WIDTH = 1600;
 export const STAGE_HEIGHT = 1000;

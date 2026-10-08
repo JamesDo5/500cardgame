@@ -3,6 +3,7 @@ export const SUITS = ['s', 'c', 'd', 'h'];
 export const VALUES = ['4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 export const JOKER = 'j';
 export const POS_NAMES = ['Bottom', 'Left', 'Top', 'Right'];
+export const SUIT_SYMBOLS = { s: '♠', c: '♣', d: '♦', h: '♥', n: 'NT' };
 
 const SUIT_CLASS = { h: 'hearts', d: 'diamonds', c: 'clubs', s: 'spades', j: 'joker' };
 

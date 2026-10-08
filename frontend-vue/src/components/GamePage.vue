@@ -10,6 +10,7 @@
     <ActivityFeed />
     <NotifBox />
     <Scoreboard />
+    <WinnerScreen />
 </template>
 
 <script setup>
@@ -21,6 +22,7 @@ import NameBox from './NameBox.vue'
 import ActivityFeed from './ActivityFeed.vue'
 import NotifBox from './NotifBox.vue'
 import Scoreboard from './Scoreboard.vue'
+import WinnerScreen from './WinnerScreen.vue'
 
 import { computed, onMounted } from 'vue';
 import { useStore } from 'vuex'

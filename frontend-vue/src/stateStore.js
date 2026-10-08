@@ -15,7 +15,10 @@ export default new Vuex.Store({
         playerNames: ['Me', 'Left', 'Top', 'Right'],
         scores: [0, 0],
         handScores: [],
-        turn: { pos: -1, deadlineMs: 0 },
+        turn: { pos: -1, deadlineMs: 0, startedMs: 0 },
+        cardCounts: [10, 10, 10, 10],
+        firstCardPlayed: false,
+        gameWinner: -1,
         connection: 'standalone',
         autoBots: true,
         notice: '',
@@ -56,9 +59,14 @@ export default new Vuex.Store({
             state.handScores = [];
             state.winningBid = -1;
             state.trumpSuit = '';
-            state.turn = { pos: -1, deadlineMs: 0 };
+            state.turn = { pos: -1, deadlineMs: 0, startedMs: 0 };
+            state.gameWinner = -1;
         },
-        setTurn(state, turn) { state.turn = turn; },
+        setTurn(state, turn) { state.turn = { startedMs: Date.now(), ...turn }; },
+        setCardCount(state, { pos, n }) { state.cardCounts[pos] = Math.max(0, n); },
+        resetCardCounts(state) { state.cardCounts = [10, 10, 10, 10]; },
+        setFirstCardPlayed(state, b) { state.firstCardPlayed = b; },
+        setGameWinner(state, t) { state.gameWinner = t; },
         setConnection(state, s) { state.connection = s; },
         setAutoBots(state, b) { state.autoBots = b; },
         notify(state, msg) { state.notice = msg; },

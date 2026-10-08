@@ -1,5 +1,5 @@
 <template>
-    <div class="standing-bid-display" id="finalBidDisplay">Standing Bid: {{ standingLabel }}</div>
+    <div class="standing-bid-display" id="finalBidDisplay" :class="{ contract: hasContract }">{{ standingLabel }}</div>
     <div class="bidbox" id="bidbox">
         <div class="bottom-bid my-bid bid-display" id="bottomBid">My Bid: ---</div>
         <div class="left-bid other-bid bid-display" id="leftBid">Bid:<br />---</div>
@@ -31,8 +31,8 @@ import { useStore } from 'vuex'
 import { STANDALONE } from '../config.js';
 import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
-import { teamOf } from '../game/cards.js';
-import { PASS, MIN_BID, MAX_BID, isValidBid, trumpSuitForBid, nextToBid, isBiddingOver, highestBid, winningBidder } from '../game/rules.js';
+import { teamOf, SUIT_SYMBOLS } from '../game/cards.js';
+import { PASS, MIN_BID, MAX_BID, isValidBid, trumpSuitForBid, neededTricks, nextToBid, isBiddingOver, highestBid, winningBidder } from '../game/rules.js';
 
 const store = useStore()
 
@@ -49,7 +49,19 @@ const bidAt = (row, col) => 40 + row * 100 + col * 20;
 const selected = ref(-1);
 const highest = ref(PASS);
 const myTurn = ref(false);
-const standingLabel = computed(() => highest.value > PASS ? highest.value : '---');
+const highestBy = ref(-1);
+const hasContract = computed(() => store.state.gameState >= 3 && store.state.gameState <= 5 && store.state.winningBid > 0);
+const standingLabel = computed(() => {
+    const who = (pos) => `${store.state.playerNames[pos]} (${teamOf(pos) === 0 ? 'us' : 'them'})`;
+    if (hasContract.value) {
+        const bid = store.state.winningBid;
+        return `Contract: ${neededTricks(bid)}${SUIT_SYMBOLS[store.state.trumpSuit] ?? ''} for ${bid} by ${who(bidderPos.value)}`;
+    }
+    if (store.state.gameState <= 0 || store.state.gameState === 6) return 'Standing bid: ---';
+    if (highest.value > PASS) return `Standing bid: ${highest.value} by ${who(highestBy.value)}`;
+    return 'Standing bid: ---';
+});
+const bidderPos = computed(() => store.getters.getBidBox()?.winningBidder ?? -1);
 
 const names = () => store.state.playerNames;
 
@@ -97,6 +109,7 @@ class BidBox {
             ele.style.color = bid === -1 ? "white" : "lightgreen";
         });
         highest.value = Math.max(this.getHighestBid(), PASS);
+        highestBy.value = winningBidder(this.bids);
         myTurn.value = !isBiddingOver(this.bids) && nextToBid(this.bids, store.state.dealer) === 0 && store.state.gameState === 1;
         return 0;
     }
@@ -208,6 +221,7 @@ class BidBox {
         }
         this.winningBidder = winner;
         this.winningBidTeam = teamOf(winner);
+        highestBy.value = winner;
         store.commit('setTrumpSuit', trump);
         store.commit('setWinningBid', bid);
         store.commit('setGameState', 3);
@@ -257,8 +271,13 @@ onMounted(() => {
     position: absolute;
     top: 75px;
     right: 25px;
-    font-size: 32px;
+    font-size: 24px;
     color: white;
+    font-family: Arial, sans-serif;
+    text-align: right;
+}
+.standing-bid-display.contract {
+    color: #f1c40f;
 }
 
 .bid-display {
