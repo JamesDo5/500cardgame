@@ -2,29 +2,29 @@
 import { computed } from 'vue';
 import { useStore } from 'vuex'
 import NameBox from './NameBox.vue'
-import { CARD_BACK_URL } from '../game/cards.js'
+import { CARD_BACK_URL, hiddenHand } from '../game/cards.js'
 
 const props = defineProps(['playerpos']);
 const store = useStore();
 const nameplate_pos = "namebox" + props.playerpos[0].toUpperCase() + props.playerpos.slice(1);
 const posIndex = { leftCards: 1, topCards: 2, rightCards: 3 }[props.playerpos];
 const isTop = props.playerpos === "topCards";
-const count = computed(() => store.state.cardCounts[posIndex]);
-const firstRow = computed(() => Math.min(5, count.value));
-const secondRow = computed(() => Math.max(0, count.value - 5));
+const cards = computed(() => hiddenHand(store.state.cardCounts[posIndex]));
+const firstRow = computed(() => cards.value.slice(0, 5));
+const secondRow = computed(() => cards.value.slice(5));
 </script>
 
 <template>
     <div :class="isTop ? 'card-row' : 'card-halfrow'" :id="playerpos">
         <template v-if="isTop">
-            <img v-for="n in count" :key="n" class="fake-card card-back" :src="CARD_BACK_URL">
+            <img v-for="(c, n) in cards" :key="n" class="fake-card card-back" :data-card="c" :src="CARD_BACK_URL">
         </template>
         <template v-else>
             <div class="section">
-                <img v-for="n in firstRow" :key="n" class="fake-card card-back section-member" :src="CARD_BACK_URL">
+                <img v-for="(c, n) in firstRow" :key="n" class="fake-card card-back section-member" :data-card="c" :src="CARD_BACK_URL">
             </div>
             <div class="section">
-                <img v-for="n in secondRow" :key="n" class="fake-card card-back section-member" :src="CARD_BACK_URL">
+                <img v-for="(c, n) in secondRow" :key="n" class="fake-card card-back section-member" :data-card="c" :src="CARD_BACK_URL">
             </div>
         </template>
     </div>

@@ -38,6 +38,7 @@
 - [x] Little game winner animation or page
 - [x] Little trick animation for trick stack addition
 - [ ] Hand sort: dealt order is preserved, Sort button sorts trump first then alternating colors and hides after the first card is played. Consider auto-sort preference in a settings menu.
+- [ ] Visually impaired mode setting: each player's most recent card fills their whole side of the table and overlaps their hand area.
 - [ ] Won-trick stacks are just a number on a blue block. Make them fun: fanned card backs, a little bounce when one lands, maybe a cat paw dragging them in.
 - [x] Make text show for user when they play a card
 

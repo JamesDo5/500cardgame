@@ -2,6 +2,7 @@
 export const SUITS = ['s', 'c', 'd', 'h'];
 export const VALUES = ['4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 export const JOKER = 'j';
+export const HIDDEN_CARD = '?';
 export const POS_NAMES = ['Bottom', 'Left', 'Top', 'Right'];
 export const SUIT_SYMBOLS = { s: '♠', c: '♣', d: '♦', h: '♥', n: 'NT' };
 
@@ -21,6 +22,14 @@ export function isValidCardStr(cardStr) {
     if (cardStr === JOKER) return true;
     const { v, s } = cardStr2CardObj(cardStr);
     return SUITS.includes(s) && VALUES.includes(v);
+}
+
+export function isHiddenCard(cardStr) {
+    return cardStr === HIDDEN_CARD;
+}
+
+export function hiddenHand(n) {
+    return Array.from({ length: Math.max(0, n) }, () => HIDDEN_CARD);
 }
 
 export function getSuitClass(suit) {

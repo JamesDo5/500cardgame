@@ -55,11 +55,11 @@ const standingLabel = computed(() => {
     const who = (pos) => `${store.state.playerNames[pos]} (${teamOf(pos) === 0 ? 'us' : 'them'})`;
     if (hasContract.value) {
         const bid = store.state.winningBid;
-        return `Contract: ${neededTricks(bid)}${SUIT_SYMBOLS[store.state.trumpSuit] ?? ''} for ${bid} by ${who(bidderPos.value)}`;
+        return `Bid: ${neededTricks(bid)}${SUIT_SYMBOLS[store.state.trumpSuit] ?? ''} for ${bid} by ${who(bidderPos.value)}`;
     }
-    if (store.state.gameState <= 0 || store.state.gameState === 6) return 'Standing bid: ---';
-    if (highest.value > PASS) return `Standing bid: ${highest.value} by ${who(highestBy.value)}`;
-    return 'Standing bid: ---';
+    if (store.state.gameState <= 0 || store.state.gameState === 6) return 'Highest bid: ---';
+    if (highest.value > PASS) return `Highest bid: ${highest.value} by ${who(highestBy.value)}`;
+    return 'Highest bid: ---';
 });
 const bidderPos = computed(() => store.getters.getBidBox()?.winningBidder ?? -1);
 
@@ -177,8 +177,10 @@ class BidBox {
 
     autoBid() {
         if (this.bids[0] !== -1) return 1;
-        selected.value = PASS;
-        store.commit('notify', "Time's up, passed for you.");
+        const highlighted = selected.value;
+        const usable = isValidBid(highlighted) && (highlighted === PASS || highlighted > this.getHighestBid());
+        selected.value = usable ? highlighted : PASS;
+        store.commit('notify', usable && highlighted !== PASS ? `Time's up, bid ${highlighted} for you.` : "Time's up, passed for you.");
         return this.submitBid();
     }
 

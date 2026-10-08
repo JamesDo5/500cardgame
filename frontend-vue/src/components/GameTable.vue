@@ -6,6 +6,8 @@
             <img class="fake-card card-played card-played-right" id="playedCardRight" :src="CARD_BACK_URL">
             <img class="fake-card card-played card-played-bottom" id="playedCardBottom" :src="CARD_BACK_URL">
             <div class="card-row" id="submitCards"></div>
+            <button v-if="showPlayButton" class="table-button play-button" type="button" @click="playNow">Play card</button>
+            <button v-if="showBlindButton" class="table-button blind-button" type="button" @click="submitBlindNow">Submit blind</button>
             <div class="card-stack won-tricks-bottom" id="wonTricksBottom"></div>
             <div class="card-stack won-tricks-left" id="wonTricksLeft"></div>
             <div class="card-stack won-tricks-top" id="wonTricksTop"></div>
@@ -37,6 +39,14 @@ const names = () => store.state.playerNames;
 const dealing = computed(() => store.state.gameState === 0);
 const iAmDealer = computed(() => store.state.dealer === 0);
 const dealCaption = computed(() => iAmDealer.value ? 'Your deal' : `${store.state.playerNames[store.state.dealer]} is dealing`);
+const showPlayButton = computed(() => store.state.gameState === 5);
+const showBlindButton = computed(() => store.state.gameState === 3 && store.getters.getBidBox()?.winningBidder === 0 && store.state.turn.pos === 0);
+function playNow() {
+    store.getters.getGameTable().submitTrick();
+}
+function submitBlindNow() {
+    store.getters.getGameTable().submitBlind();
+}
 function dealNow() {
     const gt = store.getters.getGameTable();
     if (STANDALONE) gt.dealStandalone(); else socket.send(C2S.DEAL);
@@ -90,11 +100,15 @@ class GameTable {
             onRemove: (evt) => this.trackRemove(this.blindCards, evt.item, 'blind'),
             onChange: handOrNot,
         });
+        blindCardsElem.addEventListener("click", () => {
+            const first = blindCardsElem.firstElementChild;
+            if (first && first.classList.contains('card-back') && store.state.gameState === 3) this.flipBlind();
+        });
         this.sortableSubmitCards = new Sortable(submitCardsElem, {
             disabled: true,
             group: 'shared',
             animation: 100,
-            onAdd: (evt) => this.trackAdd(this.submitCards, evt.item, 'submit'),
+            onAdd: (evt) => { this.trackAdd(this.submitCards, evt.item, 'submit'); this.keepSingleStaged(evt.item); },
             onRemove: (evt) => this.trackRemove(this.submitCards, evt.item, 'submit'),
             onChange: handOrNot,
         });
@@ -120,6 +134,21 @@ class GameTable {
         arr.splice(ind, 1);
     }
 
+    keepSingleStaged(newItem) {
+        const submitBox = document.getElementById('submitCards');
+        const handBox = document.getElementById('bottomCards');
+        Array.from(submitBox.children).filter(ele => ele !== newItem).forEach(ele => {
+            const card = elem2CardStr(ele);
+            const ind = this.submitCards.indexOf(card);
+            if (ind !== -1) this.submitCards.splice(ind, 1);
+            handBox.appendChild(ele);
+            store.getters.getHand().handifyCard(ele);
+            const hcs = store.getters.getSharedHandCards();
+            if (!hcs.includes(card)) store.commit('setSharedHandCards', hcs.concat(card));
+        });
+        this.updateLegalHighlights();
+    }
+
     unHandify(item) {
         item.classList.add("real-card");
         item.classList.remove("bouncy", "hand-card", "spun", "illegal");
@@ -143,7 +172,7 @@ class GameTable {
         if (pos === 0 && now >= deadlineMs - AUTOPLAY_MARGIN_MS) {
             this.handledDeadline = deadlineMs;
             this.autoAct(0);
-        } else if (pos !== 0 && STANDALONE && now >= deadlineMs) {
+        } else if (pos !== 0 && STANDALONE && store.state.autoBots && now >= deadlineMs) {
             this.handledDeadline = deadlineMs;
             this.autoAct(pos);
         }
@@ -693,17 +722,19 @@ onMounted(() => {
 .card-played {
     position: absolute;
     display: none;
+    width: 105px;
+    height: 150px;
 }
 
 .card-played-left {
     top: 50%;
-    left: 40%;
+    left: 30%;
     transform: translate(-50%, -50%) rotate(90deg);
     z-index: 3;
 }
 
 .card-played-top {
-    top: 40%;
+    top: 32%;
     left: 50%;
     transform: translate(-50%, -50%) rotate(180deg);
     z-index: 2;
@@ -711,13 +742,13 @@ onMounted(() => {
 
 .card-played-right {
     top: 50%;
-    left: 60%;
+    left: 70%;
     transform: translate(-50%, -50%) rotate(270deg);
     z-index: 1;
 }
 
 .card-played-bottom {
-    top: 60%;
+    top: 66%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 4;
@@ -727,6 +758,7 @@ onMounted(() => {
     bottom: -40px;
     left: 50%;
     transform: translate(-50%, -50%);
+    z-index: 5;
     border: 2px dashed #7f8c8d;
     padding: 10px;
     min-width: 70px;
@@ -775,6 +807,33 @@ onMounted(() => {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+}
+
+.table-button {
+    position: absolute;
+    padding: 8px 22px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #2c3e50;
+    background: #ecf0f1;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+    z-index: 6;
+}
+.table-button:hover {
+    background: #f1c40f;
+}
+.play-button {
+    bottom: -62px;
+    left: 50%;
+    transform: translateX(calc(-50% + 120px));
+}
+.blind-button {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, 90px);
 }
 
 .shuffle {

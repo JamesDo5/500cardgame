@@ -5,7 +5,8 @@ monotonic counter. On a gap the client sends `requestSync` and applies the resul
 
 All positions in payloads are relative to the receiving client: 0 me, 1 left, 2 top, 3 right.
 The server knows each socket's seat and rotates before sending. Teams are `pos % 2`.
-Cards are strings: `Jd`, `10s`, `j` (joker). Scores are full scale (6 spades is 40, each
+Cards are strings: `Jd`, `10s`, `j` (joker). A card the receiving client is not allowed to see is sent as `?`
+(`HIDDEN_CARD` in `game/cards.js`), for example opponents' hands in `syncState` or the discards in `blindDone`. Scores are full scale (6 spades is 40, each
 opponent trick is 10). Bids are 0 for pass or a multiple of 20 from 40 to 520.
 
 ## Client to server
@@ -45,7 +46,8 @@ opponent trick is 10). Bids are 0 for pass or a multiple of 20 from 40 to 520.
 ```
 {
   gameState, dealer, playerNames, scores, handScores,
-  hand, bids, trump, winningBid, bidWinner,
+  hand, hands,          // hands is 4 arrays, mine real and the others all '?'
+  bids, trump, winningBid, bidWinner,
   blind,            // null unless this client holds it
   blindDone,        // bool
   playedCards,      // 4 slots, '' when empty
