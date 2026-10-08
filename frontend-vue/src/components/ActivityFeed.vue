@@ -22,7 +22,7 @@ watch(() => feed.value.length, async () => {
 .activity-feed {
     position: absolute;
     right: 20px;
-    bottom: 220px;
+    bottom: 236px;
     width: 260px;
     max-height: 180px;
     overflow-y: auto;

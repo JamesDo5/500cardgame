@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { useStore } from 'vuex'
 import { now } from '../game/clock.js';
+import { AUTOPLAY_MARGIN_MS } from '../config.js';
 
 const props = defineProps(['namepos']);
 const store = useStore();
@@ -16,15 +17,16 @@ const pos = namepos2playerindex[props.namepos] ?? 0;
 const name = computed(() => store.state.playerNames[pos]);
 const isDealer = computed(() => store.state.dealer === pos);
 const isTurn = computed(() => store.state.turn.pos === pos);
+const effectiveDeadline = computed(() => store.state.turn.deadlineMs - (pos === 0 ? AUTOPLAY_MARGIN_MS : 0));
 const secondsLeft = computed(() => {
     if (!isTurn.value || !store.state.turn.deadlineMs) return null;
-    return Math.max(0, Math.ceil((store.state.turn.deadlineMs - now.value) / 1000));
+    return Math.max(0, Math.ceil((effectiveDeadline.value - now.value) / 1000));
 });
 const fraction = computed(() => {
     const { deadlineMs, startedMs } = store.state.turn;
     if (!isTurn.value || !deadlineMs) return 0;
-    const total = Math.max(1, deadlineMs - startedMs);
-    return Math.min(1, Math.max(0, (deadlineMs - now.value) / total));
+    const total = Math.max(1, effectiveDeadline.value - startedMs);
+    return Math.min(1, Math.max(0, (effectiveDeadline.value - now.value) / total));
 });
 const RING = 2 * Math.PI * 11;
 const dashOffset = computed(() => RING * (1 - fraction.value));

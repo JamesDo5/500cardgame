@@ -24,7 +24,7 @@
 </template>
 
 <script setup>
-import { onMounted, computed } from 'vue';
+import { onMounted, onBeforeUnmount, computed, toRaw } from 'vue';
 import { useStore } from 'vuex'
 import Sortable from 'sortablejs';
 import { STANDALONE, TURN_TIMEOUT_MS, BID_TIMEOUT_MS, BLIND_TIMEOUT_MS, DEAL_TIMEOUT_MS, TABLE_WIDTH, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS, TRICK_HOLD_MS, CARD_FLY_MS, TRICK_SWEEP_MS } from '../config.js';
@@ -82,7 +82,7 @@ class GameTable {
         this.heldPlayCard = '';
         this.dropHeld = false;
         this.initializeSortables();
-        setInterval(() => this.tickTurn(), 200);
+        this.ticker = setInterval(() => this.tickTurn(), 200);
     }
 
     initializeSortables() {
@@ -100,8 +100,11 @@ class GameTable {
             group: 'shared',
             animation: 0,
             forceFallback: true,
+        fallbackOnBody: true,
+            fallbackOnBody: true,
             fallbackTolerance: 3,
             emptyInsertThreshold: 60,
+            onStart: (evt) => evt.item.classList.remove('spun'),
             onAdd: (evt) => this.trackAdd(this.blindCards, evt.item, 'blind'),
             onRemove: (evt) => this.trackRemove(this.blindCards, evt.item, 'blind'),
             onChange: handOrNot,
@@ -116,8 +119,11 @@ class GameTable {
             group: 'shared',
             animation: 0,
             forceFallback: true,
+        fallbackOnBody: true,
+            fallbackOnBody: true,
             fallbackTolerance: 3,
-            emptyInsertThreshold: 80,
+            emptyInsertThreshold: 5,
+            onStart: (evt) => evt.item.classList.remove('spun'),
             onAdd: (evt) => { this.trackAdd(this.submitCards, evt.item, 'submit'); this.syncStaged(); },
             onEnd: (evt) => { this.keepSingleStaged(evt.item); this.afterDragEnd(evt.item); },
             onRemove: (evt) => { this.trackRemove(this.submitCards, evt.item, 'submit'); this.syncStaged(); },
@@ -211,9 +217,36 @@ class GameTable {
         store.commit('setTurn', { pos, deadlineMs: Date.now() + ms });
     }
 
+    expectedActor() {
+        const gs = store.state.gameState;
+        const bb = store.getters.getBidBox();
+        if (gs === 0) return store.state.dealer;
+        if (gs === 1 || gs === 2) return bb ? nextToBid(bb.bids, store.state.dealer) : -1;
+        if (gs === 3 || gs === 4) return bb ? bb.winningBidder : -1;
+        if (gs === 5) return this.resolving ? -1 : nextToPlay(this.playedCards, this.lastTrickWinner);
+        return -1;
+    }
+
+    dispose() {
+        clearInterval(this.ticker);
+        this.sortableBlindCards?.destroy();
+        this.sortableSubmitCards?.destroy();
+    }
+
     tickTurn() {
+        if (toRaw(store.state.gameTable) !== toRaw(this)) {
+            this.dispose();
+            return;
+        }
         const { pos, deadlineMs } = store.state.turn;
-        if (pos === -1 || deadlineMs === 0 || deadlineMs === this.handledDeadline) return;
+        if (pos === -1) return;
+        const expected = this.expectedActor();
+        if (expected !== -1 && expected !== pos) {
+            console.warn("tickTurn -- turn pointed at", getPosName(pos), "but", getPosName(expected), "must act. Correcting.");
+            this.setTurn(expected);
+            return;
+        }
+        if (deadlineMs === 0 || deadlineMs === this.handledDeadline) return;
         const now = Date.now();
         if (pos === 0 && now >= deadlineMs - AUTOPLAY_MARGIN_MS) {
             this.handledDeadline = deadlineMs;
@@ -454,7 +487,7 @@ class GameTable {
         const hand = store.getters.getSharedHandCards();
         const all = Array.from(new Set(hand.concat(boxed, draggedCard ? [draggedCard] : [])));
         const legal = legalPlays(all, this.playedCards, this.lastTrickWinner, store.state.trumpSuit);
-        const card = boxed.find(c => legal.includes(c)) ?? (legal.includes(draggedCard) ? draggedCard : legal[0]);
+        const card = boxed.find(c => legal.includes(c)) ?? (legal.includes(draggedCard) ? draggedCard : lowestCards(legal, 1)[0]);
         if (!card) {
             this.setTurn(-1);
             return 1;
@@ -724,9 +757,13 @@ class GameTable {
     }
 }
 
+let instance = null;
 onMounted(() => {
-    const gt = new GameTable();
-    store.commit('setSharedGameTable', gt);
+    instance = new GameTable();
+    store.commit('setSharedGameTable', instance);
+})
+onBeforeUnmount(() => {
+    instance?.dispose();
 })
 </script>
 
@@ -803,8 +840,8 @@ onMounted(() => {
 .card-played {
     position: absolute;
     display: none;
-    width: 119px;
-    height: 170px;
+    width: 140px;
+    height: 200px;
 }
 
 .card-played-left {
@@ -838,31 +875,31 @@ onMounted(() => {
 #submitCards {
     top: 100%;
     left: 50%;
-    transform: translate(-50%, -40%);
-    z-index: 5;
+    transform: translate(-50%, -62%);
+    z-index: 2;
     border: 3px dashed #95a5a6;
     border-radius: 14px;
     padding: 16px;
-    min-width: 133px;
-    min-height: 190px;
+    min-width: 150px;
+    min-height: 214px;
     justify-content: center;
     align-items: center;
     background-color: rgba(32, 50, 67, 0.92);
 }
+#submitCards:empty {
+    background-color: rgba(32, 50, 67, 0.25);
+}
 #submitCards.parked {
     display: none;
 }
-#submitCards :deep(.real-card > *) {
-    width: 133px;
-    height: 190px;
+#submitCards :deep(.real-card > *), #submitCards :deep(.hand-card > *) {
+    width: 150px;
+    height: 214px;
 }
 
-#submitCards :deep(.sortable-fallback > *), #blindCards :deep(.sortable-fallback > *) {
-    opacity: 0.95;
-}
-#blindCards :deep(.real-card > *) {
-    width: 70px;
-    height: 100px;
+#blindCards :deep(.real-card > *), #blindCards :deep(.hand-card > *) {
+    width: 150px;
+    height: 214px;
     background-color: white;
     border-radius: 8px;
     display: flex;
@@ -941,7 +978,7 @@ onMounted(() => {
 .blind-button {
     top: 50%;
     left: 50%;
-    transform: translate(-50%, 90px);
+    transform: translate(-50%, 135px);
 }
 .won-tricks-bottom {
     top: 88%;

@@ -1,7 +1,7 @@
 <template>
     <div class="bid-banner" id="finalBidDisplay" :class="{ contract: hasContract }">
         <div class="bid-caption">{{ caption }}</div>
-        <div v-if="bigBid" class="bid-big" :class="bigBid.colorClass">{{ bigBid.tricks }}<span class="bid-suit">{{ bigBid.symbol }}</span></div>
+        <div v-if="bigBid" class="bid-big" :class="bigBid.colorClass">{{ bigBid.tricks }}<span class="bid-suit">{{ bigBid.symbol }}</span><span class="bid-points-big">({{ bigBid.points }})</span></div>
         <div v-if="bigBid" class="bid-sub">{{ bigBid.sub }}</div>
     </div>
     <button v-if="showToggle" class="bidtable-toggle" type="button" @click="toggle">Bid table</button>
@@ -70,7 +70,7 @@ const bigBid = computed(() => {
     const pos = hasContract.value ? bidderPos.value : highestBy.value;
     if (idle || bid <= PASS) return null;
     const suit = trumpSuitForBid(bid);
-    return { tricks: neededTricks(bid), symbol: SUIT_SYMBOLS[suit], colorClass: suitColorClass(suit), sub: `${bid} · ${who(pos)}` };
+    return { tricks: neededTricks(bid), symbol: SUIT_SYMBOLS[suit], colorClass: suitColorClass(suit), points: bid, sub: who(pos) };
 });
 const bidderPos = computed(() => store.getters.getBidBox()?.winningBidder ?? -1);
 
@@ -120,6 +120,7 @@ class BidBox {
         highest.value = Math.max(this.getHighestBid(), PASS);
         highestBy.value = winningBidder(this.bids);
         myTurn.value = !isBiddingOver(this.bids) && nextToBid(this.bids, store.state.dealer) === 0 && store.state.gameState === 1;
+        if (myTurn.value && document.getElementById("bidbox")?.style.display !== "inline") this.show();
         return 0;
     }
 
@@ -238,7 +239,7 @@ class BidBox {
         store.commit('setGameState', 3);
         gt.lastTrickWinner = winner;
         store.commit('feedPush', `${names()[winner]} won the bid at ${bid} (${trump === 'n' ? 'no trump' : trump}).`);
-        setTimeout(() => this.hide(), 1200);
+        setTimeout(() => this.hide(), 300);
         gt.setTurn(winner);
         if (STANDALONE && winner === 0) gt.incomingBlind(gt.mockBlind, true);
     }
@@ -260,7 +261,7 @@ onMounted(() => {
 .bidbox {
     display: none;
     position: absolute;
-    top: 50%;
+    top: 44%;
     left: 50%;
     transform: translate(-50%, -50%);
     background-color: white;
@@ -305,6 +306,13 @@ onMounted(() => {
 }
 .bid-big .bid-suit {
     font-size: 100px;
+}
+.bid-points-big {
+    font-size: 20px;
+    font-weight: normal;
+    color: #ecf0f1;
+    margin-left: 10px;
+    vertical-align: middle;
 }
 .bid-sub {
     font-size: 20px;
@@ -380,8 +388,9 @@ onMounted(() => {
     left: 50%;
 }
 .right-bid {
-    right: -240px;
+    right: -120px;
     bottom: 50%;
+    transform: translate(50%, 50%);
 }
 
 table {

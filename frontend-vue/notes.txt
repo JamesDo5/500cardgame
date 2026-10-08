@@ -1,0 +1,7 @@
+1. When I drag a card, the ghost it creates is down and to the right of the cursor equivalent to some offset from where I originally clicked the card, it should be constant.
+2. Obviously we need to support mobile and different screen sizes
+3. Different resolution assets for different connection speeds?
+4. Should the vertical column bar be red for the score table
+5. What happens when score table gets really large? Need to prevent going off page and maybe implement a scrollable or cutoff
+6. Pulling up the bidding table is a bit gnarly when cards are on the table, just for the extra scores that are supposed to be on the table during bidding. Put the scores a bit off the table in a convenient spot when bidding table is turned on mid game
+7. Need to turn off the live feed to prevent cheaters

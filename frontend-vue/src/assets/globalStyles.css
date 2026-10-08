@@ -55,3 +55,18 @@ body {
 }
 
 
+
+.sortable-fallback {
+  transition: none !important;
+  animation: none !important;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.95 !important;
+}
+.sortable-fallback > img {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  display: block;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+}

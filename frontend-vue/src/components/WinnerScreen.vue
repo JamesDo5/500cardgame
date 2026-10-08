@@ -89,7 +89,8 @@ function newGame() {
     padding: 2px 24px;
 }
 .winner-scores th {
-    border-bottom: 2px solid gainsboro;
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 .winner-scores td + td, .winner-scores th + th {
     border-left: 2px solid tomato;

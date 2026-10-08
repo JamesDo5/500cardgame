@@ -33,7 +33,8 @@ table td + td, table th + th {
 
 th {
     color: white;
-    border-bottom: 2px solid gainsboro;
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 th, tr {

@@ -37,6 +37,7 @@ function initSortable() {
         group: 'shared',
         animation: 0,
         forceFallback: true,
+        fallbackOnBody: true,
         fallbackTolerance: 3,
         emptyInsertThreshold: 60,
         filter: '.illegal',
@@ -62,6 +63,7 @@ function initSortable() {
             }
             store.commit('setSharedHandCards', hcs.filter((_, i) => i !== ind));
         },
+        onStart: (evt) => evt.item.classList.remove('spun'),
         onChange: (evt) => {
             if (evt.to.id === "bottomCards") {
                 handifyCard(evt.item);
@@ -157,20 +159,14 @@ onMounted(() => {
 
 #bottomCards {
     bottom: 5px;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
+    width: 1600px;
+    z-index: 4;
+    gap: 7px;
     perspective: 1000px;
     transform-style: preserve-3d;
-    min-width: 320px;
-    min-height: 200px;
+    min-height: 214px;
     justify-content: center;
-}
-#bottomCards:empty {
-    border: 2px dashed rgba(236, 240, 241, 0.25);
-    border-radius: 12px;
-}
-#bottomCards :deep(.sortable-fallback) {
-    opacity: 0.95;
 }
 
 #bottomCards :deep(.hand-card) {
@@ -178,8 +174,8 @@ onMounted(() => {
 }
 
 #bottomCards :deep(.hand-card > *) {
-    width: 140px;
-    height: 200px;
+    width: 150px;
+    height: 214px;
     background-color: white;
     border-radius: 8px;
     display: flex;
@@ -193,14 +189,10 @@ onMounted(() => {
 #bottomCards :deep(.spun) {
     transform: rotate(0.5turn);
 }
-#bottomCards :deep(.sortable-fallback > *) {
-    width: 133px;
-    height: 190px;
-}
 
 .sort-button {
     position: absolute;
-    bottom: 215px;
+    bottom: 232px;
     right: 300px;
     padding: 8px 18px;
     font-size: 15px;

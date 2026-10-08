@@ -125,7 +125,9 @@ export function sortHand(hand, trump) {
     const rank = (card) => {
         if (card === JOKER) return [-1, -100];
         const suit = effectiveSuit(card, t);
-        return [order.indexOf(suit), -cardStrength(card, t)];
+        const strength = cardStrength(card, t);
+        const jackBoost = cardStr2CardObj(card).v === 'J' && strength === 11 ? 14.5 : strength;
+        return [order.indexOf(suit), -jackBoost];
     };
     return hand.slice().sort((a, b) => {
         const [sa, va] = rank(a), [sb, vb] = rank(b);
