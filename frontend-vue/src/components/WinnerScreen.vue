@@ -88,6 +88,9 @@ function newGame() {
 .winner-scores th, .winner-scores td {
     padding: 2px 24px;
 }
+.winner-scores th {
+    border-bottom: 2px solid gainsboro;
+}
 .winner-scores td + td, .winner-scores th + th {
     border-left: 2px solid tomato;
 }

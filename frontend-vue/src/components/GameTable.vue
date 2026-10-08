@@ -5,7 +5,7 @@
             <img class="fake-card card-played card-played-top" id="playedCardTop" :src="CARD_BACK_URL">
             <img class="fake-card card-played card-played-right" id="playedCardRight" :src="CARD_BACK_URL">
             <img class="fake-card card-played card-played-bottom" id="playedCardBottom" :src="CARD_BACK_URL">
-            <div class="card-row" id="submitCards"></div>
+            <div class="card-row" id="submitCards" :class="{ parked: !showPlayButton }"></div>
             <button v-if="showPlayButton" class="table-button play-button" :class="{ armed: playArmed }" type="button" @click="playNow">Play card</button>
             <button v-if="showBlindButton" class="table-button blind-button" type="button" @click="submitBlindNow">Submit blind</button>
             <div class="card-stack won-tricks-bottom" id="wonTricksBottom"></div>
@@ -27,11 +27,11 @@
 import { onMounted, computed } from 'vue';
 import { useStore } from 'vuex'
 import Sortable from 'sortablejs';
-import { STANDALONE, TURN_TIMEOUT_MS, BID_TIMEOUT_MS, DEAL_TIMEOUT_MS, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS, TRICK_HOLD_MS, CARD_FLY_MS, TRICK_SWEEP_MS } from '../config.js';
+import { STANDALONE, TURN_TIMEOUT_MS, BID_TIMEOUT_MS, BLIND_TIMEOUT_MS, DEAL_TIMEOUT_MS, TABLE_WIDTH, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS, TRICK_HOLD_MS, CARD_FLY_MS, TRICK_SWEEP_MS } from '../config.js';
 import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
 import { CARD_BACK_URL, cardImageUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, dealMock, teamOf } from '../game/cards.js';
-import { trickWinner, trickWinnerWithout, legalPlays, nextToPlay, nextToBid, scoreHand, gameOutcome } from '../game/rules.js';
+import { trickWinner, trickWinnerWithout, legalPlays, lowestCards, nextToPlay, nextToBid, scoreHand, gameOutcome } from '../game/rules.js';
 
 const store = useStore()
 
@@ -80,6 +80,7 @@ class GameTable {
         this.resolveTarget = -1;
         this.pendingCards = [];
         this.heldPlayCard = '';
+        this.dropHeld = false;
         this.initializeSortables();
         setInterval(() => this.tickTurn(), 200);
     }
@@ -117,16 +118,17 @@ class GameTable {
             forceFallback: true,
             fallbackTolerance: 3,
             emptyInsertThreshold: 80,
-            onAdd: (evt) => { this.trackAdd(this.submitCards, evt.item, 'submit'); this.keepSingleStaged(evt.item); this.syncStaged(); },
+            onAdd: (evt) => { this.trackAdd(this.submitCards, evt.item, 'submit'); this.syncStaged(); },
+            onEnd: (evt) => { this.keepSingleStaged(evt.item); this.afterDragEnd(evt.item); },
             onRemove: (evt) => { this.trackRemove(this.submitCards, evt.item, 'submit'); this.syncStaged(); },
             onChange: handOrNot,
-            onEnd: (evt) => this.afterDragEnd(evt.item),
         });
-        store.getters.getHand()?.onDragEnd?.((item) => this.afterDragEnd(item));
+        store.getters.getHand()?.onDragEnd?.((item) => { this.keepSingleStaged(item); this.afterDragEnd(item); });
         return 0;
     }
 
     trackAdd(arr, item, label) {
+        if (this.dropHeld) return;
         const card = elem2CardStr(item);
         if (arr.includes(card)) {
             console.error(`onAdd ${label} -- card already present:`, card, arr);
@@ -137,6 +139,7 @@ class GameTable {
     }
 
     trackRemove(arr, item, label) {
+        if (this.dropHeld) return;
         const ind = arr.indexOf(elem2CardStr(item));
         if (ind === -1) {
             console.error(`onRemove ${label} -- card not tracked:`, elem2CardStr(item), arr);
@@ -150,6 +153,13 @@ class GameTable {
     }
 
     afterDragEnd(item) {
+        if (this.dropHeld) {
+            this.dropHeld = false;
+            item.remove();
+            this.syncStaged();
+            this.updateLegalHighlights();
+            return;
+        }
         if (!this.heldPlayCard || elem2CardStr(item) !== this.heldPlayCard) return;
         const card = this.heldPlayCard;
         this.heldPlayCard = '';
@@ -163,6 +173,7 @@ class GameTable {
 
     keepSingleStaged(newItem) {
         const submitBox = document.getElementById('submitCards');
+        if (newItem.parentElement !== submitBox || submitBox.children.length < 2) return;
         const handBox = document.getElementById('bottomCards');
         Array.from(submitBox.children).filter(ele => ele !== newItem).forEach(ele => {
             const card = elem2CardStr(ele);
@@ -196,7 +207,7 @@ class GameTable {
             store.commit('setTurn', { pos, deadlineMs: 0 });
             return;
         }
-        const ms = gs === 0 ? DEAL_TIMEOUT_MS : gs === 1 || gs === 2 ? BID_TIMEOUT_MS : TURN_TIMEOUT_MS;
+        const ms = gs === 0 ? DEAL_TIMEOUT_MS : gs === 1 || gs === 2 ? BID_TIMEOUT_MS : gs === 3 || gs === 4 ? BLIND_TIMEOUT_MS : TURN_TIMEOUT_MS;
         store.commit('setTurn', { pos, deadlineMs: Date.now() + ms });
     }
 
@@ -332,20 +343,22 @@ class GameTable {
     }
 
     autoBlind() {
-        if (Sortable.dragged) {
-            this.handledDeadline = 0;
-            return 1;
-        }
-        const all = store.getters.getSharedHandCards().concat(this.blindCards);
-        if (all.length !== 15) {
-            console.error("autoBlind -- expected 15 cards between hand and blind, got", all.length);
+        const inBox = this.blindCards.slice(0, 5);
+        const overflow = this.blindCards.slice(5);
+        const hand = store.getters.getSharedHandCards().concat(overflow);
+        const fill = lowestCards(hand, 5 - inBox.length);
+        const discards = inBox.concat(fill);
+        const newHand = hand.filter(c => !fill.includes(c));
+        if (discards.length !== 5 || newHand.length !== 10) {
+            console.error("autoBlind -- could not form a 5 card discard and 10 card hand:", discards, newHand);
             this.setTurn(-1);
             return 1;
         }
-        store.getters.getHand().replaceHand(all.slice(0, 10));
-        this.blindCards = all.slice(10);
+        if (Sortable.dragged) this.dropHeld = true;
+        store.getters.getHand().replaceHand(newHand);
+        this.blindCards = discards;
         this.renderBlind(false);
-        store.commit('notify', "Time's up, blind submitted for you.");
+        store.commit('notify', fill.length ? `Time's up, discarded ${discards.join(' ')} for you.` : "Time's up, blind submitted for you.");
         return this.submitBlind();
     }
 
@@ -388,13 +401,30 @@ class GameTable {
             reenable();
             return 1;
         }
-        if (submitBoxElement.children.length !== 1) {
-            store.commit('notify', "Put exactly one card in the play box.");
+        if (nextToPlay(this.playedCards, this.lastTrickWinner) !== 0) {
+            store.commit('notify', "It's not your turn.");
             reenable();
             return 1;
         }
-        if (nextToPlay(this.playedCards, this.lastTrickWinner) !== 0) {
-            store.commit('notify', "It's not your turn.");
+        if (submitBoxElement.children.length === 0) {
+            const hand = store.getters.getSharedHandCards();
+            const legalInHand = legalPlays(hand, this.playedCards, this.lastTrickWinner, store.state.trumpSuit);
+            if (legalInHand.length !== 1) {
+                store.commit('notify', hand.length ? "Drag a card to the play box first." : "No cards left.");
+                reenable();
+                return 1;
+            }
+            const only = legalInHand[0];
+            document.querySelectorAll(`#bottomCards [data-card="${only}"]`).forEach(ele => ele.remove());
+            store.commit('setSharedHandCards', hand.filter(c => c !== only));
+            store.commit('setFirstCardPlayed', true);
+            this.incomingTrickCard(0, only, false);
+            if (!STANDALONE) socket.send(C2S.PLAY_CARD, { card: only });
+            reenable();
+            return 0;
+        }
+        if (submitBoxElement.children.length !== 1) {
+            store.commit('notify', "Put exactly one card in the play box.");
             reenable();
             return 1;
         }
@@ -491,7 +521,7 @@ class GameTable {
 
     tableLocal(rect) {
         const table = document.getElementById('gameTable').getBoundingClientRect();
-        const scale = table.width / 700;
+        const scale = table.width / TABLE_WIDTH;
         return { x: (rect.left + rect.width / 2 - table.left) / scale, y: (rect.top + rect.height / 2 - table.top) / scale };
     }
 
@@ -500,8 +530,9 @@ class GameTable {
         if (!source || typeof ele.animate !== 'function') return;
         const from = this.tableLocal(source.getBoundingClientRect());
         const cs = getComputedStyle(ele);
+        const startScale = pos === 0 ? 1.2 : 0.7;
         ele.animate(
-            [{ left: `${from.x}px`, top: `${from.y}px`, opacity: 0.5 }, { left: cs.left, top: cs.top, opacity: 1 }],
+            [{ left: `${from.x}px`, top: `${from.y}px`, transform: `${cs.transform} scale(${startScale})`, opacity: 0.6 }, { left: cs.left, top: cs.top, transform: cs.transform, opacity: 1 }],
             { duration: CARD_FLY_MS, easing: 'cubic-bezier(.2,.8,.2,1)' }
         );
     }
@@ -772,57 +803,64 @@ onMounted(() => {
 .card-played {
     position: absolute;
     display: none;
-    width: 105px;
-    height: 150px;
+    width: 119px;
+    height: 170px;
 }
 
 .card-played-left {
-    top: 44%;
-    left: 30%;
+    top: 42%;
+    left: 28%;
     transform: translate(-50%, -50%) rotate(90deg);
     z-index: 3;
 }
 
 .card-played-top {
-    top: 24%;
+    top: 22%;
     left: 50%;
     transform: translate(-50%, -50%) rotate(180deg);
     z-index: 2;
 }
 
 .card-played-right {
-    top: 44%;
-    left: 70%;
+    top: 42%;
+    left: 72%;
     transform: translate(-50%, -50%) rotate(270deg);
     z-index: 1;
 }
 
 .card-played-bottom {
-    top: 60%;
+    top: 62%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 4;
 }
 
 #submitCards {
-    bottom: -60px;
+    top: 100%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -40%);
     z-index: 5;
     border: 3px dashed #95a5a6;
-    border-radius: 12px;
-    padding: 22px;
-    min-width: 90px;
-    min-height: 120px;
+    border-radius: 14px;
+    padding: 16px;
+    min-width: 133px;
+    min-height: 190px;
     justify-content: center;
     align-items: center;
-    background-color: rgba(0, 0, 0, 0.12);
+    background-color: rgba(32, 50, 67, 0.92);
+}
+#submitCards.parked {
+    display: none;
+}
+#submitCards :deep(.real-card > *) {
+    width: 133px;
+    height: 190px;
 }
 
 #submitCards :deep(.sortable-fallback > *), #blindCards :deep(.sortable-fallback > *) {
     opacity: 0.95;
 }
-#submitCards :deep(.real-card > *), #blindCards :deep(.real-card > *) {
+#blindCards :deep(.real-card > *) {
     width: 70px;
     height: 100px;
     background-color: white;
@@ -837,20 +875,22 @@ onMounted(() => {
 }
 
 #gameTableContainer {
-    position: relative;
+    position: absolute;
+    top: 130px;
+    left: 50%;
+    transform: translateX(-50%);
     width: 1000px;
-    height: 500px;
-    bottom: 40px;
+    height: 560px;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
 #gameTable {
-    width: 700px;
-    height: 500px;
+    width: 800px;
+    height: 560px;
     background-color: #34495e;
-    border-radius: 20px;
+    border-radius: 24px;
     position: absolute;
 }
 
@@ -883,9 +923,9 @@ onMounted(() => {
     background: #f1c40f;
 }
 .play-button {
-    bottom: -78px;
+    top: 100%;
     left: 50%;
-    transform: translateX(90px);
+    transform: translateX(110px) translateY(30px);
     font-size: 24px;
     padding: 16px 44px;
     border-radius: 14px;
@@ -895,13 +935,21 @@ onMounted(() => {
     animation: armedGlow 1.1s ease-in-out infinite;
 }
 @keyframes armedGlow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(90px) scale(1); }
-    50% { box-shadow: 0 0 0 14px rgba(241, 196, 15, 0), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(90px) scale(1.05); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(110px) translateY(30px) scale(1); }
+    50% { box-shadow: 0 0 0 14px rgba(241, 196, 15, 0), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(110px) translateY(30px) scale(1.05); }
 }
 .blind-button {
     top: 50%;
     left: 50%;
     transform: translate(-50%, 90px);
+}
+.won-tricks-bottom {
+    top: 88%;
+    left: 78%;
+}
+.discard-blind-bottom {
+    top: 88%;
+    left: 22%;
 }
 
 .shuffle {

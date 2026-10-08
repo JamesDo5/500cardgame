@@ -1,10 +1,17 @@
 <template>
-    <div class="standing-bid-display" id="finalBidDisplay" :class="{ contract: hasContract }">{{ standingLabel }}</div>
+    <div class="bid-banner" id="finalBidDisplay" :class="{ contract: hasContract }">
+        <div class="bid-caption">{{ caption }}</div>
+        <div v-if="bigBid" class="bid-big" :class="bigBid.colorClass">{{ bigBid.tricks }}<span class="bid-suit">{{ bigBid.symbol }}</span></div>
+        <div v-if="bigBid" class="bid-sub">{{ bigBid.sub }}</div>
+    </div>
+    <button v-if="showToggle" class="bidtable-toggle" type="button" @click="toggle">Bid table</button>
     <div class="bidbox" id="bidbox">
-        <div class="bottom-bid my-bid bid-display" id="bottomBid">My Bid: ---</div>
-        <div class="left-bid other-bid bid-display" id="leftBid">Bid:<br />---</div>
-        <div class="top-bid other-bid bid-display" id="topBid">Bid: ---</div>
-        <div class="right-bid other-bid bid-display" id="rightBid">Bid:<br />---</div>
+        <div v-for="(d, i) in displayBids" :key="i" class="bid-display" :class="[POS_CLASSES[i], { placed: d.placed }]" :id="POS_IDS[i]">
+            <span class="bid-prefix">{{ i === 0 ? 'My bid:' : 'Bid:' }}</span>
+            <span v-if="d.pass" class="bid-pass">Pass</span>
+            <span v-else-if="d.tricks" class="bid-value" :class="d.colorClass">{{ d.tricks }}<span class="bid-suit">{{ d.symbol }}</span><small class="bid-points">({{ d.points }})</small></span>
+            <span v-else class="bid-none">---</span>
+        </div>
         <span class="close-bidbox" id="closeBidBox" @click="hide">&times;</span>
         <table>
             <tbody>
@@ -31,7 +38,7 @@ import { useStore } from 'vuex'
 import { STANDALONE } from '../config.js';
 import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
-import { teamOf, SUIT_SYMBOLS } from '../game/cards.js';
+import { teamOf, SUIT_SYMBOLS, suitColorClass } from '../game/cards.js';
 import { PASS, MIN_BID, MAX_BID, isValidBid, trumpSuitForBid, neededTricks, nextToBid, isBiddingOver, highestBid, winningBidder } from '../game/rules.js';
 
 const store = useStore()
@@ -50,18 +57,29 @@ const selected = ref(-1);
 const highest = ref(PASS);
 const myTurn = ref(false);
 const highestBy = ref(-1);
+const displayBids = ref([-1, -1, -1, -1].map(formatBid));
+const POS_CLASSES = ['bottom-bid', 'left-bid', 'top-bid', 'right-bid'];
+const POS_IDS = ['bottomBid', 'leftBid', 'topBid', 'rightBid'];
 const hasContract = computed(() => store.state.gameState >= 3 && store.state.gameState <= 5 && store.state.winningBid > 0);
-const standingLabel = computed(() => {
-    const who = (pos) => `${store.state.playerNames[pos]} (${teamOf(pos) === 0 ? 'us' : 'them'})`;
-    if (hasContract.value) {
-        const bid = store.state.winningBid;
-        return `Bid: ${neededTricks(bid)}${SUIT_SYMBOLS[store.state.trumpSuit] ?? ''} for ${bid} by ${who(bidderPos.value)}`;
-    }
-    if (store.state.gameState <= 0 || store.state.gameState === 6) return 'Highest bid: ---';
-    if (highest.value > PASS) return `Highest bid: ${highest.value} by ${who(highestBy.value)}`;
-    return 'Highest bid: ---';
+const showToggle = computed(() => store.state.gameState >= 1 && store.state.gameState <= 5);
+const who = (pos) => pos < 0 ? '' : `${store.state.playerNames[pos]} (${teamOf(pos) === 0 ? 'us' : 'them'})`;
+const caption = computed(() => hasContract.value ? 'Bid' : 'Highest bid');
+const bigBid = computed(() => {
+    const idle = store.state.gameState <= 0 || store.state.gameState === 6;
+    const bid = hasContract.value ? store.state.winningBid : highest.value;
+    const pos = hasContract.value ? bidderPos.value : highestBy.value;
+    if (idle || bid <= PASS) return null;
+    const suit = trumpSuitForBid(bid);
+    return { tricks: neededTricks(bid), symbol: SUIT_SYMBOLS[suit], colorClass: suitColorClass(suit), sub: `${bid} · ${who(pos)}` };
 });
 const bidderPos = computed(() => store.getters.getBidBox()?.winningBidder ?? -1);
+
+function formatBid(bid) {
+    if (bid === -1) return { placed: false };
+    if (bid === PASS) return { placed: true, pass: true };
+    const suit = trumpSuitForBid(bid);
+    return { placed: true, tricks: neededTricks(bid), symbol: SUIT_SYMBOLS[suit], colorClass: suitColorClass(suit), points: bid };
+}
 
 const names = () => store.state.playerNames;
 
@@ -82,13 +100,11 @@ class BidBox {
 
     show() {
         document.getElementById("bidbox").style.display = "inline";
-        document.getElementById("submitCards").style.display = "none";
         this.updateBidDisplays();
     }
 
     hide() {
         document.getElementById("bidbox").style.display = "none";
-        document.getElementById("submitCards").style.display = "flex";
     }
 
     toggle() {
@@ -100,14 +116,7 @@ class BidBox {
     }
 
     updateBidDisplays() {
-        const index2PosName = ["bottom", "left", "top", "right"];
-        const prefixes = ["My Bid: ", "Bid:<br />", "Bid: ", "Bid:<br />"];
-        this.bids.forEach((bid, pos) => {
-            const label = bid === -1 ? '---' : bid === PASS ? 'Pass' : bid;
-            const ele = document.getElementById(index2PosName[pos] + "Bid");
-            ele.innerHTML = prefixes[pos] + label;
-            ele.style.color = bid === -1 ? "white" : "lightgreen";
-        });
+        displayBids.value = this.bids.map(formatBid);
         highest.value = Math.max(this.getHighestBid(), PASS);
         highestBy.value = winningBidder(this.bids);
         myTurn.value = !isBiddingOver(this.bids) && nextToBid(this.bids, store.state.dealer) === 0 && store.state.gameState === 1;
@@ -239,6 +248,7 @@ const bidbox = new BidBox();
 const select = (bid) => { selected.value = bid; };
 const submit = () => bidbox.submitBid();
 const hide = () => bidbox.hide();
+const toggle = () => bidbox.toggle();
 
 onMounted(() => {
     store.commit('setSharedBidBox', bidbox);
@@ -269,39 +279,108 @@ onMounted(() => {
     cursor: pointer;
 }
 
-.standing-bid-display {
+.bid-banner {
     position: absolute;
-    top: 75px;
+    top: 72px;
     right: 25px;
-    font-size: 24px;
     color: white;
     font-family: Arial, sans-serif;
     text-align: right;
+    line-height: 1;
 }
-.standing-bid-display.contract {
+.bid-caption {
+    font-size: 18px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #bdc3c7;
+}
+.bid-banner.contract .bid-caption {
     color: #f1c40f;
+}
+.bid-big {
+    font-size: 110px;
+    font-weight: 800;
+    margin-top: 4px;
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+.bid-big .bid-suit {
+    font-size: 100px;
+}
+.bid-sub {
+    font-size: 20px;
+    margin-top: 8px;
+    color: #ecf0f1;
+}
+.suit-red {
+    color: #ff5a5a;
+}
+.suit-black {
+    color: #ecf0f1;
+}
+.bidbox .suit-black {
+    color: #ecf0f1;
+}
+.bid-display .bid-value {
+    font-weight: 800;
+}
+.bid-display .bid-suit {
+    font-size: 0.9em;
+}
+.bid-display .bid-points {
+    font-size: 0.45em;
+    margin-left: 6px;
+    color: #bdc3c7;
+    font-weight: normal;
+}
+.bid-display.placed .bid-prefix, .bid-display.placed .bid-pass {
+    color: lightgreen;
+}
+.bid-prefix {
+    font-size: 0.6em;
+    display: block;
+}
+.bidtable-toggle {
+    position: absolute;
+    top: 80px;
+    left: 300px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #2c3e50;
+    background: #ecf0f1;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+    z-index: 6;
+}
+.bidtable-toggle:hover {
+    background: #f1c40f;
 }
 
 .bid-display {
     position: absolute;
     transform: translate(-50%, 50%);
-    font-size: 32px;
+    font-size: 40px;
     color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    white-space: nowrap;
 }
 .bottom-bid {
     bottom: -60px;
     left: 50%;
 }
 .left-bid {
-    left: -100px;
+    left: -120px;
     bottom: 50%;
 }
 .top-bid {
-    top: -90px;
+    top: -125px;
     left: 50%;
 }
 .right-bid {
-    right: -160px;
+    right: -240px;
     bottom: 50%;
 }
 

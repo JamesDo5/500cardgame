@@ -130,7 +130,26 @@ export function sortHand(hand, trump) {
     return hand.slice().sort((a, b) => {
         const [sa, va] = rank(a), [sb, vb] = rank(b);
         return sa - sb || va - vb;
-    });
+    }).reverse();
+}
+
+const NAIVE_SUIT_ORDER = ['s', 'c', 'd', 'h'];
+export function lowestCards(hand, n) {
+    const rank = (card) => {
+        if (card === JOKER) return [99, 99];
+        const { v, s } = cardStr2CardObj(card);
+        return [FACE_VALUES[v] ?? Number(v), NAIVE_SUIT_ORDER.indexOf(s)];
+    };
+    return hand.slice().sort((a, b) => {
+        const [va, sa] = rank(a), [vb, sb] = rank(b);
+        return va - vb || sa - sb;
+    }).slice(0, Math.max(0, n));
+}
+
+export function bidLabel(bid) {
+    if (bid === PASS) return 'Pass';
+    if (!isValidBid(bid)) return '';
+    return { tricks: neededTricks(bid), suit: trumpSuitForBid(bid) };
 }
 
 export function trickWinnerWithout(playedCards, leader, trump, excludedPos) {

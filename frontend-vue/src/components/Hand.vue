@@ -35,12 +35,13 @@ function initSortable() {
     sortableHandCards = new Sortable(bottomCardsElem, {
         disabled: false,
         group: 'shared',
-        animation: 80,
+        animation: 0,
         forceFallback: true,
         fallbackTolerance: 3,
         emptyInsertThreshold: 60,
         filter: '.illegal',
         onAdd: (evt) => {
+            if (store.getters.getGameTable()?.dropHeld) return;
             const card = elem2CardStr(evt.item);
             const hcs = store.getters.getSharedHandCards();
             if (hcs.includes(card)) {
@@ -51,6 +52,7 @@ function initSortable() {
             store.commit('setSharedHandCards', hcs.concat(card));
         },
         onRemove: (evt) => {
+            if (store.getters.getGameTable()?.dropHeld) return;
             const card = elem2CardStr(evt.item);
             const hcs = store.getters.getSharedHandCards();
             const ind = hcs.indexOf(card);
@@ -172,7 +174,7 @@ onMounted(() => {
 }
 
 #bottomCards :deep(.hand-card) {
-    transition: transform 0.3s, opacity 0.3s, filter 0.3s;
+    transition: transform 0.15s, opacity 0.2s, filter 0.2s;
 }
 
 #bottomCards :deep(.hand-card > *) {
@@ -190,6 +192,10 @@ onMounted(() => {
 
 #bottomCards :deep(.spun) {
     transform: rotate(0.5turn);
+}
+#bottomCards :deep(.sortable-fallback > *) {
+    width: 133px;
+    height: 190px;
 }
 
 .sort-button {

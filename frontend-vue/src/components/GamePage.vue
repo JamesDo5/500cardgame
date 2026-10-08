@@ -10,6 +10,7 @@
     <ActivityFeed />
     <NotifBox />
     <Scoreboard />
+    <BigCountdown />
     <WinnerScreen />
 </template>
 
@@ -23,6 +24,7 @@ import ActivityFeed from './ActivityFeed.vue'
 import NotifBox from './NotifBox.vue'
 import Scoreboard from './Scoreboard.vue'
 import WinnerScreen from './WinnerScreen.vue'
+import BigCountdown from './BigCountdown.vue'
 
 import { computed, onMounted } from 'vue';
 import { useStore } from 'vuex'

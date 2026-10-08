@@ -66,6 +66,7 @@
 - `net/` websocket client, message type constants, server frame handlers. Protocol in `net/PROTOCOL.md`.
 - `config.js` standalone flag (`VITE_STANDALONE`), websocket URL (`VITE_WS_URL`).
 - Timers: `VITE_TURN_TIMEOUT` and `VITE_DEAL_TIMEOUT` seconds (default 15). Client auto-acts 1s before the deadline, server auto-acts at the deadline. Standalone bots act after 0.9s when Auto bots is on.
+- Table is 800x560 anchored 130px from the stage top. Hand cards 140x200, staging card 133x190, table cards 119x170: the card shrinks as it travels from hand to staging to table.
 - Stage is 1600x1000 and scales to fit the window. Position new elements relative to the stage.
 - Standalone mode shows dev buttons and plays against random legal bots. Set `VITE_STANDALONE=false` once a server drives the clients.
 

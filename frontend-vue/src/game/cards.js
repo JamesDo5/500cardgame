@@ -5,6 +5,10 @@ export const JOKER = 'j';
 export const HIDDEN_CARD = '?';
 export const POS_NAMES = ['Bottom', 'Left', 'Top', 'Right'];
 export const SUIT_SYMBOLS = { s: '♠', c: '♣', d: '♦', h: '♥', n: 'NT' };
+export const RED_SUITS = new Set(['d', 'h']);
+export function suitColorClass(suit) {
+    return RED_SUITS.has(suit) ? 'suit-red' : 'suit-black';
+}
 
 const SUIT_CLASS = { h: 'hearts', d: 'diamonds', c: 'clubs', s: 'spades', j: 'joker' };
 
