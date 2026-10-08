@@ -13,7 +13,7 @@
                     <th v-for="col in COLUMNS" :key="col.suit" :style="col.style">{{ col.label }}</th>
                 </tr>
                 <tr v-for="(tricks, row) in TRICK_ROWS" :key="tricks">
-                    <td style="font-size:1.5vw">{{ tricks }}</td>
+                    <td style="font-size:24px">{{ tricks }}</td>
                     <td v-for="(col, c) in COLUMNS" :key="col.suit">
                         <button class="bid-amount-button" :value="bidAt(row, c)" :disabled="bidAt(row, c) <= highest || !myTurn" :class="{ selected: selected === bidAt(row, c) }" @click="select(bidAt(row, c))">{{ bidAt(row, c) }}</button>
                     </td>
@@ -32,16 +32,16 @@ import { STANDALONE } from '../config.js';
 import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
 import { teamOf } from '../game/cards.js';
-import { PASS, isValidBid, trumpSuitForBid, nextToBid, isBiddingOver, highestBid, winningBidder } from '../game/rules.js';
+import { PASS, MIN_BID, MAX_BID, isValidBid, trumpSuitForBid, nextToBid, isBiddingOver, highestBid, winningBidder } from '../game/rules.js';
 
 const store = useStore()
 
 const COLUMNS = [
-    { suit: 's', label: '♠', style: 'font-size:2vw' },
-    { suit: 'c', label: '♣', style: 'font-size:2vw' },
-    { suit: 'd', label: '♦', style: 'color:red;font-size:2vw' },
-    { suit: 'h', label: '♥', style: 'color:red;font-size:2vw' },
-    { suit: 'n', label: 'NoTrmp', style: 'font-size:1vw' },
+    { suit: 's', label: '♠', style: 'font-size:32px' },
+    { suit: 'c', label: '♣', style: 'font-size:32px' },
+    { suit: 'd', label: '♦', style: 'color:red;font-size:32px' },
+    { suit: 'h', label: '♥', style: 'color:red;font-size:32px' },
+    { suit: 'n', label: 'NoTrmp', style: 'font-size:16px' },
 ];
 const TRICK_ROWS = [6, 7, 8, 9, 10];
 const bidAt = (row, col) => 40 + row * 100 + col * 20;
@@ -154,8 +154,27 @@ class BidBox {
         this.bids[pos] = bid;
         store.commit('feedPush', `${names()[pos]} ${bid === PASS ? 'passed' : 'bid ' + bid}.`);
         this.updateBidDisplays();
-        if (isBiddingOver(this.bids)) this.endBidding();
+        if (isBiddingOver(this.bids)) {
+            this.endBidding();
+        } else {
+            store.getters.getGameTable().setTurn(nextToBid(this.bids, store.state.dealer));
+        }
         return 0;
+    }
+
+    autoBid() {
+        if (this.bids[0] !== -1) return 1;
+        selected.value = PASS;
+        store.commit('notify', "Time's up, passed for you.");
+        return this.submitBid();
+    }
+
+    botBid(pos) {
+        if (!STANDALONE || pos === 0 || this.bids[pos] !== -1) return 1;
+        const floor = Math.max(this.getHighestBid(), MIN_BID - 20);
+        if (floor === MAX_BID || Math.random() < 0.5) return this.incomingBid(pos, PASS);
+        const options = Array.from({ length: Math.min(4, (MAX_BID - floor) / 20) }, (_, i) => floor + 20 * (i + 1));
+        return this.incomingBid(pos, options[Math.floor(Math.random() * options.length)]);
     }
 
     endBidding() {
@@ -184,7 +203,7 @@ class BidBox {
             store.commit('feedPush', "Everyone passed. Same dealer redeals.");
             store.commit('setGameState', 0);
             this.hide();
-            if (STANDALONE) setTimeout(() => gt.dealStandalone(), 800);
+            gt.setTurn(store.state.dealer);
             return;
         }
         this.winningBidder = winner;
@@ -195,10 +214,8 @@ class BidBox {
         gt.lastTrickWinner = winner;
         store.commit('feedPush', `${names()[winner]} won the bid at ${bid} (${trump === 'n' ? 'no trump' : trump}).`);
         setTimeout(() => this.hide(), 1200);
-        if (STANDALONE) {
-            if (winner === 0) gt.incomingBlind(gt.mockBlind, true);
-            else setTimeout(() => gt.botBlind(winner), 1500);
-        }
+        gt.setTurn(winner);
+        if (STANDALONE && winner === 0) gt.incomingBlind(gt.mockBlind, true);
     }
 }
 
@@ -240,14 +257,14 @@ onMounted(() => {
     position: absolute;
     top: 75px;
     right: 25px;
-    font-size: 2vw;
+    font-size: 32px;
     color: white;
 }
 
 .bid-display {
     position: absolute;
     transform: translate(-50%, 50%);
-    font-size: 2vw;
+    font-size: 32px;
     color: white;
 }
 .bottom-bid {
@@ -275,7 +292,7 @@ table {
 button.bid-amount-button {
     width: 70px;
     height: 50px;
-    font-size: 2vw;
+    font-size: 32px;
     min-width: fit-content;
 }
 button.bid-amount-button.selected {

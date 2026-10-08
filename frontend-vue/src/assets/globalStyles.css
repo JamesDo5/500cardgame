@@ -1,11 +1,18 @@
 body {
+  height: 100vh;
+  margin: 0;
+  overflow: hidden;
+  background-color: #203243;
+  user-select: none;
+}
+
+#stage {
+  position: absolute;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  margin: 0;
-  background-color: #203243;
-  user-select: none;
+  transform-origin: top left;
+  overflow: hidden;
 }
 
 /* Cards that are never moved manually by player. Also considered naming 'passive' */
@@ -31,7 +38,7 @@ body {
 .card-front {
   background-color: white;
   border: 1px solid #7f8c8d;
-  font-size: 1.8vw;
+  font-size: 29px;
   cursor: grab;
 }
 .sortable-chosen {

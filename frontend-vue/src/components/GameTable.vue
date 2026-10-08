@@ -20,11 +20,11 @@
 import { onMounted } from 'vue';
 import { useStore } from 'vuex'
 import Sortable from 'sortablejs';
-import { STANDALONE } from '../config.js';
+import { STANDALONE, TURN_TIMEOUT_MS, DEAL_TIMEOUT_MS, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS } from '../config.js';
 import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
 import { CARD_BACK_URL, cardImageUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, dealMock, teamOf } from '../game/cards.js';
-import { trickWinner, legalPlays, nextToPlay, scoreHand, gameOutcome } from '../game/rules.js';
+import { trickWinner, legalPlays, nextToPlay, nextToBid, scoreHand, gameOutcome } from '../game/rules.js';
 
 const store = useStore()
 
@@ -42,7 +42,9 @@ class GameTable {
         this.mockBlind = null;
         this.sortableBlindCards = null;
         this.sortableSubmitCards = null;
+        this.handledDeadline = 0;
         this.initializeSortables();
+        setInterval(() => this.tickTurn(), 200);
     }
 
     initializeSortables() {
@@ -98,6 +100,46 @@ class GameTable {
         item.classList.remove("bouncy", "hand-card", "spun", "illegal");
     }
 
+    setTurn(pos) {
+        if (pos === -1) {
+            store.commit('setTurn', { pos: -1, deadlineMs: 0 });
+            return;
+        }
+        const dealing = store.state.gameState === 0;
+        const bot = STANDALONE && pos !== 0;
+        const ms = bot && store.state.autoBots ? BOT_DELAY_MS : dealing ? DEAL_TIMEOUT_MS : TURN_TIMEOUT_MS;
+        store.commit('setTurn', { pos, deadlineMs: Date.now() + ms });
+    }
+
+    tickTurn() {
+        const { pos, deadlineMs } = store.state.turn;
+        if (pos === -1 || deadlineMs === 0 || deadlineMs === this.handledDeadline) return;
+        const now = Date.now();
+        if (pos === 0 && now >= deadlineMs - AUTOPLAY_MARGIN_MS) {
+            this.handledDeadline = deadlineMs;
+            this.autoAct(0);
+        } else if (pos !== 0 && STANDALONE && now >= deadlineMs) {
+            this.handledDeadline = deadlineMs;
+            this.autoAct(pos);
+        }
+    }
+
+    autoAct(pos) {
+        const gs = store.state.gameState;
+        const bb = store.getters.getBidBox();
+        if (gs === 0) {
+            if (STANDALONE) this.dealStandalone(); else this.setTurn(-1);
+        } else if (gs === 1 || gs === 2) {
+            if (pos === 0) bb.autoBid(); else bb.botBid(pos);
+        } else if (gs === 3 || gs === 4) {
+            if (pos === 0) this.autoBlind(); else this.botBlind(pos);
+        } else if (gs === 5) {
+            if (pos === 0) this.autoPlay(); else this.botPlay(pos);
+        } else {
+            this.setTurn(-1);
+        }
+    }
+
     newHand() {
         this.blindCards = [];
         this.submitCards = [];
@@ -120,16 +162,23 @@ class GameTable {
         store.getters.getHand()?.markLegal(null);
     }
 
+    startBidding() {
+        store.commit('setGameState', 1);
+        store.getters.getBidBox().show();
+        this.setTurn(nextToBid(store.getters.getBidBox().bids, store.state.dealer));
+    }
+
     dealStandalone() {
+        if (!STANDALONE) return 1;
         const { hands, blind } = dealMock();
         this.newHand();
         this.mockHands = hands;
         this.mockBlind = blind;
         store.getters.getBidBox().reset();
         store.getters.getHand().incomingHandCards(hands[0]);
-        store.commit('setGameState', 1);
         store.commit('feedPush', `${names()[store.state.dealer]} dealt.`);
-        store.getters.getBidBox().show();
+        this.startBidding();
+        return 0;
     }
 
     incomingBlind(cards, faceDown) {
@@ -186,6 +235,20 @@ class GameTable {
         return 0;
     }
 
+    autoBlind() {
+        const all = store.getters.getSharedHandCards().concat(this.blindCards);
+        if (all.length !== 15) {
+            console.error("autoBlind -- expected 15 cards between hand and blind, got", all.length);
+            this.setTurn(-1);
+            return 1;
+        }
+        store.getters.getHand().replaceHand(all.slice(0, 10));
+        this.blindCards = all.slice(10);
+        this.renderBlind(false);
+        store.commit('notify', "Time's up, blind submitted for you.");
+        return this.submitBlind();
+    }
+
     incomingBlindDiscard(pos) {
         const bb = store.getters.getBidBox();
         if (pos !== bb.winningBidder) {
@@ -195,11 +258,14 @@ class GameTable {
         }
         document.getElementById('blindCards').style.display = "none";
         document.getElementById('blindCards').innerHTML = "";
-        document.getElementById('blindDiscard').style.display = "inline";
+        const discard = document.getElementById('blindDiscard');
+        discard.className = `card-stack discard-blind discard-blind-${getPosName(pos).toLowerCase()}`;
+        discard.style.display = "flex";
         this.lastTrickWinner = pos;
         this.sortableSubmitCards.option("disabled", false);
         store.commit('setGameState', 5);
         store.commit('feedPush', `${names()[pos]} took the blind and leads.`);
+        this.setTurn(pos);
         this.updateLegalHighlights();
         return 0;
     }
@@ -248,6 +314,25 @@ class GameTable {
         return 0;
     }
 
+    autoPlay() {
+        if (store.state.gameState !== 5 || nextToPlay(this.playedCards, this.lastTrickWinner) !== 0) return 1;
+        const boxed = this.submitCards.slice();
+        const all = store.getters.getSharedHandCards().concat(boxed);
+        const legal = legalPlays(all, this.playedCards, this.lastTrickWinner, store.state.trumpSuit);
+        const card = boxed.find(c => legal.includes(c)) ?? legal[0];
+        if (!card) {
+            this.setTurn(-1);
+            return 1;
+        }
+        document.getElementById('submitCards').innerHTML = "";
+        this.submitCards = [];
+        store.getters.getHand().replaceHand(all.filter(c => c !== card));
+        store.commit('notify', `Time's up, played ${card} for you.`);
+        this.incomingTrickCard(0, card, true);
+        if (!STANDALONE) socket.send(C2S.PLAY_CARD, { card });
+        return 0;
+    }
+
     incomingTrickCard(pos, card, auto = false) {
         if (!isValidCardStr(card)) {
             console.error("incomingTrickCard -- invalid card:", card);
@@ -277,9 +362,11 @@ class GameTable {
         ele.style.display = "inline";
         store.commit('feedPush', `${names()[pos]} played ${card}${auto ? ' (auto)' : ''}.`);
 
-        if (nextToPlay(this.playedCards, this.lastTrickWinner) === -1) {
+        const next = nextToPlay(this.playedCards, this.lastTrickWinner);
+        if (next === -1) {
             this.endTrick();
         } else {
+            this.setTurn(next);
             this.updateLegalHighlights();
         }
         return 0;
@@ -301,6 +388,7 @@ class GameTable {
         if (this.isHandOver()) {
             this.endHand();
         } else {
+            this.setTurn(winner);
             this.updateLegalHighlights();
         }
     }
@@ -392,15 +480,23 @@ class GameTable {
         }
         store.commit('advanceDealer');
         store.commit('setGameState', 0);
-        if (STANDALONE) setTimeout(() => this.dealStandalone(), 800);
+        this.setTurn(store.state.dealer);
     }
 
     endGame(winnerTeam) {
         store.commit('setGameState', 6);
+        this.setTurn(-1);
         store.getters.getHand()?.markLegal(null);
         this.sortableSubmitCards.option("disabled", true);
         store.commit('notify', winnerTeam === 0 ? "We win!" : "They win.");
         store.commit('feedPush', `Game over. ${winnerTeam === 0 ? 'We' : 'They'} win ${store.state.scores[0]} to ${store.state.scores[1]}.`);
+    }
+
+    newGame() {
+        store.commit('resetGame');
+        store.commit('setGameState', 0);
+        this.newHand();
+        if (STANDALONE) this.dealStandalone();
     }
 }
 
@@ -453,9 +549,28 @@ onMounted(() => {
 }
 
 .discard-blind {
+    background-color: #2c3e50;
+    opacity: 0.85;
+}
+.discard-blind-bottom {
     top: 90%;
     left: 25%;
-    transform: translate(-50%, -50%) rotate(0deg);
+    transform: translate(-50%, -50%);
+}
+.discard-blind-left {
+    top: 35%;
+    left: 8%;
+    transform: translate(-50%, -50%) rotate(90deg);
+}
+.discard-blind-top {
+    top: 10%;
+    left: 65%;
+    transform: translate(-50%, -50%) rotate(180deg);
+}
+.discard-blind-right {
+    top: 65%;
+    left: 92%;
+    transform: translate(-50%, -50%) rotate(270deg);
 }
 
 .card-played {

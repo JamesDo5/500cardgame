@@ -17,6 +17,7 @@ export default new Vuex.Store({
         handScores: [],
         turn: { pos: -1, deadlineMs: 0 },
         connection: 'standalone',
+        autoBots: true,
         notice: '',
         feed: [],
     },
@@ -59,6 +60,7 @@ export default new Vuex.Store({
         },
         setTurn(state, turn) { state.turn = turn; },
         setConnection(state, s) { state.connection = s; },
+        setAutoBots(state, b) { state.autoBots = b; },
         notify(state, msg) { state.notice = msg; },
         clearNotice(state) { state.notice = ''; },
         feedPush(state, msg) {

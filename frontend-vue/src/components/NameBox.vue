@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useStore } from 'vuex'
+import { now } from '../game/clock.js';
 
 const props = defineProps(['namepos']);
 const store = useStore();
@@ -15,42 +16,46 @@ const pos = namepos2playerindex[props.namepos] ?? 0;
 const name = computed(() => store.state.playerNames[pos]);
 const isDealer = computed(() => store.state.dealer === pos);
 const isTurn = computed(() => store.state.turn.pos === pos);
+const secondsLeft = computed(() => {
+    if (!isTurn.value || !store.state.turn.deadlineMs) return null;
+    return Math.max(0, Math.ceil((store.state.turn.deadlineMs - now.value) / 1000));
+});
 </script>
 
 <template>
     <div class="namecard-wrapper" :class="{ dealer: isDealer, turn: isTurn }" :id="namepos">
         <div class="namecard-bg"></div>
         <div class="namecard"></div>
-        <div class="player-name">{{ name }}<span v-if="isDealer" class="dealer-chip">D</span></div>
+        <div class="player-name">{{ name }}<span v-if="isDealer" class="dealer-chip">D</span><span v-if="secondsLeft !== null" class="turn-timer" :class="{ urgent: secondsLeft <= 5 }">{{ secondsLeft }}s</span></div>
     </div>
 </template>
 
 <style scoped>
 .namecard-wrapper {
-    position: relative;
+    position: absolute;
     display: inline-block;
     z-index: 5;
     transition: all 0.3s ease;
+    transform: translate(-50%, -50%);
 }
 .namecard-wrapper:hover {
-    transform: scale(1.05);
+    transform: translate(-50%, -50%) scale(1.05);
 }
 #nameboxLeftCards {
-    top: -320px;
-    left: 5%;
+    top: 440px;
+    left: 200px;
 }
 #nameboxTopCards {
-    top: -565px;
-    left: 30.5%;
+    top: 125px;
+    left: 800px;
 }
 #nameboxRightCards {
-    top: -320px;
-    right: -57%;
+    top: 440px;
+    left: 1400px;
 }
 #nameboxMe {
-    position: absolute;
-    top: 10px;
-    right: 100px;
+    top: 32px;
+    left: 1420px;
 }
 #nameboxMe .player-name::before {
     content: '👤';
@@ -97,6 +102,21 @@ const isTurn = computed(() => store.state.turn.pos === pos);
     font-weight: 600;
     font-family: Arial, sans-serif;
     z-index: 2;
+}
+.turn-timer {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 0 6px;
+    border-radius: 6px;
+    background-color: #f1c40f;
+    color: #2c3e50;
+    font-size: 12px;
+    min-width: 24px;
+    text-align: center;
+}
+.turn-timer.urgent {
+    background-color: #e74c3c;
+    color: white;
 }
 .dealer-chip {
     display: inline-block;

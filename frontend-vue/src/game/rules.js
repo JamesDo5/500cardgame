@@ -4,6 +4,7 @@ export const NO_TRUMP = 'n';
 export const PASS = 0;
 export const MIN_BID = 40;
 export const MAX_BID = 520;
+export const SLAM_BONUS = 250;
 
 const BID_SUIT_CYCLE = ['h', NO_TRUMP, 's', 'c', 'd'];
 export function trumpSuitForBid(bid) {
@@ -99,7 +100,8 @@ export function winningBidder(bids) {
 export function scoreHand(bid, bidTeam, teamTricks) {
     const deltas = [0, 0];
     const made = teamTricks[bidTeam] >= neededTricks(bid);
-    deltas[bidTeam] = made ? bid : -bid;
+    const slam = made && teamTricks[bidTeam] === 10 && bid < SLAM_BONUS;
+    deltas[bidTeam] = slam ? SLAM_BONUS : made ? bid : -bid;
     deltas[otherTeam(bidTeam)] = 10 * teamTricks[otherTeam(bidTeam)];
     return { deltas, made };
 }

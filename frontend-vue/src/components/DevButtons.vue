@@ -7,18 +7,21 @@
         <button class="dev-button" type="button" @click="submitBlind">Submit blind</button>
         <button class="dev-button" type="button" @click="submitTrick">Submit card</button>
         <button class="dev-button" type="button" @click="botPlay">Bot plays</button>
-        <button class="dev-button" type="button" @click="botAll">Bots play out</button>
+        <button class="dev-button" type="button" :class="{ on: autoBots }" @click="toggleAutoBots">Auto bots: {{ autoBots ? 'on' : 'off' }}</button>
         <button class="dev-button" type="button" @click="nearGameOver">Near game over</button>
+        <button class="dev-button" type="button" @click="newGame">New game</button>
     </div>
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { useStore } from 'vuex'
-import { PASS, nextToBid, nextToPlay, isBiddingOver } from '../game/rules.js';
+import { nextToBid, nextToPlay, isBiddingOver } from '../game/rules.js';
 
 const store = useStore();
 const gt = () => store.getters.getGameTable();
 const bb = () => store.getters.getBidBox();
+const autoBots = computed(() => store.state.autoBots);
 
 function startDevButtons() {
     store.commit('setPlayerName', { pos: 0, name: 'Me' });
@@ -47,14 +50,7 @@ function botBid() {
         store.commit('notify', "It's your bid.");
         return;
     }
-    const highest = Math.max(box.getHighestBid(), PASS);
-    if (highest === 520 || Math.random() < 0.5) {
-        box.incomingBid(nextBidder, PASS);
-        return;
-    }
-    const options = Array.from({ length: (520 - highest) / 20 }, (_, i) => highest + 20 * (i + 1));
-    const weighted = options.slice(0, Math.min(options.length, 4));
-    box.incomingBid(nextBidder, weighted[Math.floor(Math.random() * weighted.length)]);
+    box.botBid(nextBidder);
 }
 
 function flipBlind() {
@@ -83,13 +79,12 @@ function botPlay() {
     table.botPlay(next);
 }
 
-function botAll() {
-    const table = gt();
-    if (store.state.gameState !== 5) return;
-    const next = nextToPlay(table.playedCards, table.lastTrickWinner);
-    if (next === 0 || next === -1) return;
-    table.botPlay(next);
-    setTimeout(botAll, 250);
+function toggleAutoBots() {
+    store.commit('setAutoBots', !store.state.autoBots);
+}
+
+function newGame() {
+    gt().newGame();
 }
 
 function nearGameOver() {
@@ -107,6 +102,9 @@ defineExpose({ startDevButtons })
     z-index: 100;
 }
 
+.dev-button.on {
+    background-color: #2ecc71;
+}
 .dev-button {
     position: relative;
     width: 80px;

@@ -5,7 +5,7 @@
 ### Priority 0: Critical for MVP client
 - [x] Implement dealer and dealing.
 - [x] Implement dealing player and dealing visually.
-- [ ] Maybe there should be 15 seconds where someone can press deal during their deal and after that it auto-deals.
+- [x] Maybe there should be 15 seconds where someone can press deal during their deal and after that it auto-deals.
 - [x] Fix the props I broke for OtherPlayer component
 - [x] Player names visually displayed and tracked locally.
 - [x] Player names receivable from server.
@@ -24,10 +24,10 @@
 ### Priority 2p: Important before releasing to public
 - [x] Card when dragged is the actual card and not weird globe image-not-found placeholder -- I think this will be done with a div containing each img
 - [ ] Need to make a recovery mechanism where if page reloads it asks server to set us back up + our state
-- [ ] Blind auto-play functionality after timer
-- [ ] ^Incoming blind should also enforce and detect auto-blind submit
-- [ ] Incoming trick function should also enforce and detect when we got auto-played.
-- [ ] Auto-play should play from the client's submit card box first, maybe 10 seconds locally it tries to submit and then at 15 the server auto-plays
+- [x] Blind auto-play functionality after timer
+- [x] ^Incoming blind should also enforce and detect auto-blind submit
+- [x] Incoming trick function should also enforce and detect when we got auto-played.
+- [x] Auto-play should play from the client's submit card box first, maybe 10 seconds locally it tries to submit and then at 15 the server auto-plays
 
 ### Priority 2a: First order aesthetic concerns
 - [ ] Shuffle animation between games
@@ -62,6 +62,8 @@
 - `game/rules.js` pure rules: bid to trump, trick winner, legal plays, scoring, game outcome. No DOM, no store.
 - `net/` websocket client, message type constants, server frame handlers. Protocol in `net/PROTOCOL.md`.
 - `config.js` standalone flag (`VITE_STANDALONE`), websocket URL (`VITE_WS_URL`).
+- Timers: `VITE_TURN_TIMEOUT` and `VITE_DEAL_TIMEOUT` seconds (default 15). Client auto-acts 1s before the deadline, server auto-acts at the deadline. Standalone bots act after 0.9s when Auto bots is on.
+- Stage is 1600x1000 and scales to fit the window. Position new elements relative to the stage.
 - Standalone mode shows dev buttons and plays against random legal bots. Set `VITE_STANDALONE=false` once a server drives the clients.
 
 ## Notes

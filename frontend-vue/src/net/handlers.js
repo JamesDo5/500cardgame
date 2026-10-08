@@ -23,8 +23,7 @@ export function installHandlers(socket, store) {
             gt().newHand();
             bb().reset();
             hand().incomingHandCards(cards);
-            store.commit('setGameState', 1);
-            bb().show();
+            gt().startBidding();
         })
         .on(S2C.BID, ({ pos, bid }) => bb().incomingBid(pos, bid))
         .on(S2C.BIDDING_RESULT, (p) => bb().incomingBiddingResult(p))

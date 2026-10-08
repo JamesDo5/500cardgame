@@ -73,6 +73,16 @@ function incomingHandCards(cards) {
     return 0;
 }
 
+function replaceHand(cards) {
+    if (!Array.isArray(cards) || !cards.every(isValidCardStr)) {
+        console.error("replaceHand() -- invalid cards:", cards);
+        return 1;
+    }
+    store.commit('setSharedHandCards', cards.slice());
+    renderHand(cards);
+    return 0;
+}
+
 function unHandifyCard(ele) {
     ele.classList.add("real-card");
     ele.classList.remove("bouncy", "hand-card", "spun", "illegal");
@@ -117,7 +127,7 @@ defineExpose({ renderHand, incomingHandCards, unHandifyCard, handifyCard, markLe
 
 onMounted(() => {
     initSortable();
-    store.commit('setSharedHand', { renderHand, incomingHandCards, markLegal, setEnabled, handifyCard, unHandifyCard });
+    store.commit('setSharedHand', { renderHand, incomingHandCards, replaceHand, markLegal, setEnabled, handifyCard, unHandifyCard });
 });
 </script>
 
