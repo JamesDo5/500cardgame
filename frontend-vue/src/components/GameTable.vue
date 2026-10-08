@@ -6,7 +6,7 @@
             <img class="fake-card card-played card-played-right" id="playedCardRight" :src="CARD_BACK_URL">
             <img class="fake-card card-played card-played-bottom" id="playedCardBottom" :src="CARD_BACK_URL">
             <div class="card-row" id="submitCards"></div>
-            <button v-if="showPlayButton" class="table-button play-button" type="button" @click="playNow">Play card</button>
+            <button v-if="showPlayButton" class="table-button play-button" :class="{ armed: playArmed }" type="button" @click="playNow">Play card</button>
             <button v-if="showBlindButton" class="table-button blind-button" type="button" @click="submitBlindNow">Submit blind</button>
             <div class="card-stack won-tricks-bottom" id="wonTricksBottom"></div>
             <div class="card-stack won-tricks-left" id="wonTricksLeft"></div>
@@ -27,7 +27,7 @@
 import { onMounted, computed } from 'vue';
 import { useStore } from 'vuex'
 import Sortable from 'sortablejs';
-import { STANDALONE, TURN_TIMEOUT_MS, DEAL_TIMEOUT_MS, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS, TRICK_HOLD_MS, CARD_FLY_MS, TRICK_SWEEP_MS } from '../config.js';
+import { STANDALONE, TURN_TIMEOUT_MS, BID_TIMEOUT_MS, DEAL_TIMEOUT_MS, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS, TRICK_HOLD_MS, CARD_FLY_MS, TRICK_SWEEP_MS } from '../config.js';
 import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
 import { CARD_BACK_URL, cardImageUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, dealMock, teamOf } from '../game/cards.js';
@@ -40,6 +40,7 @@ const dealing = computed(() => store.state.gameState === 0);
 const iAmDealer = computed(() => store.state.dealer === 0);
 const dealCaption = computed(() => iAmDealer.value ? 'Your deal' : `${store.state.playerNames[store.state.dealer]} is dealing`);
 const showPlayButton = computed(() => store.state.gameState === 5);
+const playArmed = computed(() => store.state.stagedCount > 0 && store.state.turn.pos === 0);
 const showBlindButton = computed(() => store.state.gameState === 3 && store.getters.getBidBox()?.winningBidder === 0 && store.state.turn.pos === 0);
 function playNow() {
     store.getters.getGameTable().submitTrick();
@@ -78,6 +79,7 @@ class GameTable {
         this.resolving = false;
         this.resolveTarget = -1;
         this.pendingCards = [];
+        this.heldPlayCard = '';
         this.initializeSortables();
         setInterval(() => this.tickTurn(), 200);
     }
@@ -95,10 +97,14 @@ class GameTable {
         this.sortableBlindCards = new Sortable(blindCardsElem, {
             disabled: true,
             group: 'shared',
-            animation: 100,
+            animation: 0,
+            forceFallback: true,
+            fallbackTolerance: 3,
+            emptyInsertThreshold: 60,
             onAdd: (evt) => this.trackAdd(this.blindCards, evt.item, 'blind'),
             onRemove: (evt) => this.trackRemove(this.blindCards, evt.item, 'blind'),
             onChange: handOrNot,
+            onEnd: (evt) => this.afterDragEnd(evt.item),
         });
         blindCardsElem.addEventListener("click", () => {
             const first = blindCardsElem.firstElementChild;
@@ -107,11 +113,16 @@ class GameTable {
         this.sortableSubmitCards = new Sortable(submitCardsElem, {
             disabled: true,
             group: 'shared',
-            animation: 100,
-            onAdd: (evt) => { this.trackAdd(this.submitCards, evt.item, 'submit'); this.keepSingleStaged(evt.item); },
-            onRemove: (evt) => this.trackRemove(this.submitCards, evt.item, 'submit'),
+            animation: 0,
+            forceFallback: true,
+            fallbackTolerance: 3,
+            emptyInsertThreshold: 80,
+            onAdd: (evt) => { this.trackAdd(this.submitCards, evt.item, 'submit'); this.keepSingleStaged(evt.item); this.syncStaged(); },
+            onRemove: (evt) => { this.trackRemove(this.submitCards, evt.item, 'submit'); this.syncStaged(); },
             onChange: handOrNot,
+            onEnd: (evt) => this.afterDragEnd(evt.item),
         });
+        store.getters.getHand()?.onDragEnd?.((item) => this.afterDragEnd(item));
         return 0;
     }
 
@@ -132,6 +143,22 @@ class GameTable {
             return;
         }
         arr.splice(ind, 1);
+    }
+
+    syncStaged() {
+        store.commit('setStagedCount', this.submitCards.length);
+    }
+
+    afterDragEnd(item) {
+        if (!this.heldPlayCard || elem2CardStr(item) !== this.heldPlayCard) return;
+        const card = this.heldPlayCard;
+        this.heldPlayCard = '';
+        item.remove();
+        store.commit('setSharedHandCards', store.getters.getSharedHandCards().filter(c => c !== card));
+        this.submitCards = this.submitCards.filter(c => c !== card);
+        this.blindCards = this.blindCards.filter(c => c !== card);
+        this.syncStaged();
+        this.updateLegalHighlights();
     }
 
     keepSingleStaged(newItem) {
@@ -159,9 +186,17 @@ class GameTable {
             store.commit('setTurn', { pos: -1, deadlineMs: 0 });
             return;
         }
-        const dealing = store.state.gameState === 0;
+        const gs = store.state.gameState;
         const bot = STANDALONE && pos !== 0;
-        const ms = bot && store.state.autoBots ? BOT_DELAY_MS : dealing ? DEAL_TIMEOUT_MS : TURN_TIMEOUT_MS;
+        if (bot && store.state.autoBots) {
+            store.commit('setTurn', { pos, deadlineMs: Date.now() + BOT_DELAY_MS });
+            return;
+        }
+        if (!store.state.timersEnabled) {
+            store.commit('setTurn', { pos, deadlineMs: 0 });
+            return;
+        }
+        const ms = gs === 0 ? DEAL_TIMEOUT_MS : gs === 1 || gs === 2 ? BID_TIMEOUT_MS : TURN_TIMEOUT_MS;
         store.commit('setTurn', { pos, deadlineMs: Date.now() + ms });
     }
 
@@ -208,7 +243,9 @@ class GameTable {
         this.pendingCards = [];
         store.commit('resetCardCounts');
         store.commit('setFirstCardPlayed', false);
+        this.heldPlayCard = '';
         document.getElementById('submitCards').innerHTML = "";
+        this.syncStaged();
         document.getElementById('blindCards').innerHTML = "";
         document.getElementById('blindCards').style.display = "flex";
         document.getElementById('blindDiscard').style.display = "none";
@@ -295,6 +332,10 @@ class GameTable {
     }
 
     autoBlind() {
+        if (Sortable.dragged) {
+            this.handledDeadline = 0;
+            return 1;
+        }
         const all = store.getters.getSharedHandCards().concat(this.blindCards);
         if (all.length !== 15) {
             console.error("autoBlind -- expected 15 cards between hand and blind, got", all.length);
@@ -367,6 +408,7 @@ class GameTable {
 
         submitBoxElement.innerHTML = "";
         this.submitCards = [];
+        this.syncStaged();
         store.commit('setFirstCardPlayed', true);
         this.incomingTrickCard(0, card, false);
         if (!STANDALONE) socket.send(C2S.PLAY_CARD, { card });
@@ -376,18 +418,26 @@ class GameTable {
 
     autoPlay() {
         if (store.state.gameState !== 5 || nextToPlay(this.playedCards, this.lastTrickWinner) !== 0) return 1;
+        const dragged = Sortable.dragged;
+        const draggedCard = dragged ? elem2CardStr(dragged) : '';
         const boxed = this.submitCards.slice();
-        const all = store.getters.getSharedHandCards().concat(boxed);
+        const hand = store.getters.getSharedHandCards();
+        const all = Array.from(new Set(hand.concat(boxed, draggedCard ? [draggedCard] : [])));
         const legal = legalPlays(all, this.playedCards, this.lastTrickWinner, store.state.trumpSuit);
-        const card = boxed.find(c => legal.includes(c)) ?? legal[0];
+        const card = boxed.find(c => legal.includes(c)) ?? (legal.includes(draggedCard) ? draggedCard : legal[0]);
         if (!card) {
             this.setTurn(-1);
             return 1;
         }
-        document.getElementById('submitCards').innerHTML = "";
-        this.submitCards = [];
-        store.getters.getHand().replaceHand(all.filter(c => c !== card));
-        store.commit('notify', `Time's up, played ${card} for you.`);
+        if (card === draggedCard) {
+            this.heldPlayCard = card;
+        } else {
+            document.querySelectorAll(`#submitCards [data-card="${card}"], #bottomCards [data-card="${card}"]`).forEach(ele => ele.remove());
+        }
+        store.commit('setSharedHandCards', hand.filter(c => c !== card));
+        this.submitCards = boxed.filter(c => c !== card);
+        this.syncStaged();
+        store.commit('notify', card === draggedCard ? `Time's up, played the ${card} you were holding.` : `Time's up, played ${card} for you.`);
         store.commit('setFirstCardPlayed', true);
         this.incomingTrickCard(0, card, true);
         if (!STANDALONE) socket.send(C2S.PLAY_CARD, { card });
@@ -727,44 +777,51 @@ onMounted(() => {
 }
 
 .card-played-left {
-    top: 50%;
+    top: 44%;
     left: 30%;
     transform: translate(-50%, -50%) rotate(90deg);
     z-index: 3;
 }
 
 .card-played-top {
-    top: 32%;
+    top: 24%;
     left: 50%;
     transform: translate(-50%, -50%) rotate(180deg);
     z-index: 2;
 }
 
 .card-played-right {
-    top: 50%;
+    top: 44%;
     left: 70%;
     transform: translate(-50%, -50%) rotate(270deg);
     z-index: 1;
 }
 
 .card-played-bottom {
-    top: 66%;
+    top: 60%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 4;
 }
 
 #submitCards {
-    bottom: -40px;
+    bottom: -60px;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 5;
-    border: 2px dashed #7f8c8d;
-    padding: 10px;
-    min-width: 70px;
-    min-height: 100px;
+    border: 3px dashed #95a5a6;
+    border-radius: 12px;
+    padding: 22px;
+    min-width: 90px;
+    min-height: 120px;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.12);
 }
 
+#submitCards :deep(.sortable-fallback > *), #blindCards :deep(.sortable-fallback > *) {
+    opacity: 0.95;
+}
 #submitCards :deep(.real-card > *), #blindCards :deep(.real-card > *) {
     width: 70px;
     height: 100px;
@@ -826,9 +883,20 @@ onMounted(() => {
     background: #f1c40f;
 }
 .play-button {
-    bottom: -62px;
+    bottom: -78px;
     left: 50%;
-    transform: translateX(calc(-50% + 120px));
+    transform: translateX(90px);
+    font-size: 24px;
+    padding: 16px 44px;
+    border-radius: 14px;
+}
+.play-button.armed {
+    background: linear-gradient(45deg, #f1c40f, #f39c12);
+    animation: armedGlow 1.1s ease-in-out infinite;
+}
+@keyframes armedGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(90px) scale(1); }
+    50% { box-shadow: 0 0 0 14px rgba(241, 196, 15, 0), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(90px) scale(1.05); }
 }
 .blind-button {
     top: 50%;

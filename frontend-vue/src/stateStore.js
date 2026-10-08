@@ -21,6 +21,8 @@ export default new Vuex.Store({
         gameWinner: -1,
         connection: 'standalone',
         autoBots: true,
+        timersEnabled: true,
+        stagedCount: 0,
         notice: '',
         feed: [],
     },
@@ -69,6 +71,8 @@ export default new Vuex.Store({
         setGameWinner(state, t) { state.gameWinner = t; },
         setConnection(state, s) { state.connection = s; },
         setAutoBots(state, b) { state.autoBots = b; },
+        setTimersEnabled(state, b) { state.timersEnabled = b; },
+        setStagedCount(state, n) { state.stagedCount = n; },
         notify(state, msg) { state.notice = msg; },
         clearNotice(state) { state.notice = ''; },
         feedPush(state, msg) {

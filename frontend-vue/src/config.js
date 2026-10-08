@@ -2,8 +2,9 @@ export const STANDALONE = import.meta.env.DEV && import.meta.env.VITE_STANDALONE
 
 export const WS_URL = import.meta.env.VITE_WS_URL ?? 'ws://localhost:3000';
 
-export const TURN_TIMEOUT_MS = 1000 * Number(import.meta.env.VITE_TURN_TIMEOUT ?? 15);
-export const DEAL_TIMEOUT_MS = 1000 * Number(import.meta.env.VITE_DEAL_TIMEOUT ?? 15);
+export const TURN_TIMEOUT_MS = 30000;
+export const BID_TIMEOUT_MS = 45000;
+export const DEAL_TIMEOUT_MS = 15000;
 export const AUTOPLAY_MARGIN_MS = 1000;
 export const BOT_DELAY_MS = 900;
 export const TRICK_HOLD_MS = 1100;

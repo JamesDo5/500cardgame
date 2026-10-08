@@ -16,6 +16,10 @@ const emit = defineEmits(['hand-rendered'])
 const store = useStore()
 
 let sortableHandCards;
+const dragEndHandlers = [];
+function onDragEnd(fn) {
+    dragEndHandlers.push(fn);
+}
 const canSort = computed(() => store.state.gameState >= 1 && store.state.gameState <= 5 && !store.state.firstCardPlayed && store.state.handCards.length > 1);
 
 function sortNow() {
@@ -31,14 +35,17 @@ function initSortable() {
     sortableHandCards = new Sortable(bottomCardsElem, {
         disabled: false,
         group: 'shared',
-        animation: 100,
-        easing: 'easeOutCirc',
+        animation: 80,
+        forceFallback: true,
+        fallbackTolerance: 3,
+        emptyInsertThreshold: 60,
         filter: '.illegal',
         onAdd: (evt) => {
             const card = elem2CardStr(evt.item);
             const hcs = store.getters.getSharedHandCards();
             if (hcs.includes(card)) {
-                console.error("Hand onAdd -- card already in hand:", card, hcs);
+                console.error("Hand onAdd -- card already in hand, dropping duplicate element:", card, hcs);
+                evt.item.remove();
                 return;
             }
             store.commit('setSharedHandCards', hcs.concat(card));
@@ -60,6 +67,7 @@ function initSortable() {
                 unHandifyCard(evt.item);
             }
         },
+        onEnd: (evt) => dragEndHandlers.forEach(fn => fn(evt.item)),
     });
 
     bottomCardsElem.addEventListener("click", (evt) => {
@@ -134,7 +142,7 @@ defineExpose({ renderHand, incomingHandCards, unHandifyCard, handifyCard, markLe
 
 onMounted(() => {
     initSortable();
-    store.commit('setSharedHand', { renderHand, incomingHandCards, replaceHand, markLegal, setEnabled, handifyCard, unHandifyCard });
+    store.commit('setSharedHand', { renderHand, incomingHandCards, replaceHand, markLegal, setEnabled, handifyCard, unHandifyCard, onDragEnd });
 });
 </script>
 
@@ -151,6 +159,16 @@ onMounted(() => {
     transform: translateX(-50%);
     perspective: 1000px;
     transform-style: preserve-3d;
+    min-width: 320px;
+    min-height: 200px;
+    justify-content: center;
+}
+#bottomCards:empty {
+    border: 2px dashed rgba(236, 240, 241, 0.25);
+    border-radius: 12px;
+}
+#bottomCards :deep(.sortable-fallback) {
+    opacity: 0.95;
 }
 
 #bottomCards :deep(.hand-card) {

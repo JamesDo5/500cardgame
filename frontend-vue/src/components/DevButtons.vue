@@ -8,6 +8,7 @@
         <button class="dev-button" type="button" @click="submitTrick">Submit card</button>
         <button class="dev-button" type="button" @click="botPlay">Bot plays</button>
         <button class="dev-button" type="button" :class="{ on: autoBots }" @click="toggleAutoBots">Auto bots: {{ autoBots ? 'on' : 'off' }}</button>
+        <button class="dev-button" type="button" :class="{ on: timersEnabled }" @click="toggleTimers">Timers: {{ timersEnabled ? 'on' : 'off' }}</button>
         <button class="dev-button" type="button" @click="nearGameOver">Near game over</button>
         <button class="dev-button" type="button" @click="newGame">New game</button>
     </div>
@@ -22,6 +23,7 @@ const store = useStore();
 const gt = () => store.getters.getGameTable();
 const bb = () => store.getters.getBidBox();
 const autoBots = computed(() => store.state.autoBots);
+const timersEnabled = computed(() => store.state.timersEnabled);
 
 function startDevButtons() {
     store.commit('setPlayerName', { pos: 0, name: 'Me' });
@@ -81,6 +83,11 @@ function botPlay() {
 
 function toggleAutoBots() {
     store.commit('setAutoBots', !store.state.autoBots);
+}
+
+function toggleTimers() {
+    store.commit('setTimersEnabled', !store.state.timersEnabled);
+    if (!store.state.timersEnabled && store.state.turn.pos === 0) store.commit('setTurn', { pos: 0, deadlineMs: 0 });
 }
 
 function newGame() {
