@@ -1,8 +1,10 @@
 body {
-  height: 100vh;
   margin: 0;
-  overflow: hidden;
   background-color: #203243;
+}
+body.in-game {
+  height: 100vh;
+  overflow: hidden;
   user-select: none;
 }
 
@@ -20,7 +22,7 @@ body {
   width: 70px;
   height: 100px;
   background-color: white;
-  border-radius: 8px;
+  border-radius: 0;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -66,7 +68,41 @@ body {
 .sortable-fallback > img {
   width: 100%;
   height: 100%;
-  border-radius: 8px;
+  border-radius: 0;
   display: block;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
 }
+
+.ui-button {
+  display: inline-block;
+  padding: 10px 22px;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: Arial, sans-serif;
+  color: #2c3e50;
+  background: #ecf0f1;
+  border: 2px solid #ecf0f1;
+  cursor: pointer;
+  text-decoration: none;
+  line-height: 1.2;
+  letter-spacing: 0.5px;
+}
+.ui-button:hover { background: #f1c40f; border-color: #f1c40f; }
+.ui-button:disabled { opacity: 0.4; cursor: default; background: #ecf0f1; border-color: #ecf0f1; }
+.ui-button.primary { background: #f1c40f; border-color: #f1c40f; }
+.ui-button.primary:hover { background: #f39c12; border-color: #f39c12; }
+.ui-button.danger { background: transparent; color: #ecf0f1; border-color: #e74c3c; }
+.ui-button.danger:hover { background: #e74c3c; border-color: #e74c3c; color: white; }
+.ui-button.small { padding: 6px 14px; font-size: 13px; }
+.ui-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  font-size: 18px;
+  font-family: Arial, sans-serif;
+  color: #2c3e50;
+  background: #ecf0f1;
+  border: 2px solid #ecf0f1;
+  outline: none;
+}
+.ui-input:focus { border-color: #f1c40f; }

@@ -30,7 +30,7 @@ watch(() => feed.value.length, async () => {
     font-family: Arial, sans-serif;
     font-size: 13px;
     background-color: rgba(0, 0, 0, 0.25);
-    border-radius: 8px;
+    border-radius: 0;
     padding: 8px;
 }
 .feed-line {

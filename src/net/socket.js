@@ -17,6 +17,11 @@ export class GameSocket {
         this.reconnectTimer = null;
         this.heartbeatTimer = null;
         this.onStatus = () => {};
+        this.joinPayload = null;
+    }
+
+    setJoin(payload) {
+        this.joinPayload = payload;
     }
 
     connect(url) {
@@ -36,6 +41,7 @@ export class GameSocket {
         }
         this.ws.onopen = () => {
             this.attempt = 0;
+            if (this.joinPayload) this.ws.send(JSON.stringify({ type: C2S.JOIN, payload: this.joinPayload, seq: this.seq++ }));
             this.onStatus('open');
             this.flush();
             this.startHeartbeat();
@@ -61,6 +67,12 @@ export class GameSocket {
         clearTimeout(this.reconnectTimer);
         this.stopHeartbeat();
         this.ws?.close();
+        this.ws = null;
+        this.queue = [];
+        this.joinPayload = null;
+        this.seq = 0;
+        this.lastSeqIn = -1;
+        this.attempt = 0;
     }
 
     on(type, handler) {

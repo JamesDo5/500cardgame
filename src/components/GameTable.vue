@@ -27,7 +27,7 @@
 import { onMounted, onBeforeUnmount, computed, toRaw } from 'vue';
 import { useStore } from 'vuex'
 import Sortable from 'sortablejs';
-import { STANDALONE, TURN_TIMEOUT_MS, BID_TIMEOUT_MS, BLIND_TIMEOUT_MS, DEAL_TIMEOUT_MS, TABLE_WIDTH, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS, TRICK_HOLD_MS, CARD_FLY_MS, TRICK_SWEEP_MS } from '../config.js';
+import { mode, TURN_TIMEOUT_MS, BID_TIMEOUT_MS, BLIND_TIMEOUT_MS, DEAL_TIMEOUT_MS, TABLE_WIDTH, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS, TRICK_HOLD_MS, CARD_FLY_MS, TRICK_SWEEP_MS } from '../config.js';
 import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
 import { CARD_BACK_URL, cardImageUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, dealMock, teamOf } from '../game/cards.js';
@@ -50,7 +50,7 @@ function submitBlindNow() {
 }
 function dealNow() {
     const gt = store.getters.getGameTable();
-    if (STANDALONE) gt.dealStandalone(); else socket.send(C2S.DEAL);
+    if (mode.standalone) gt.dealStandalone(); else socket.send(C2S.DEAL);
 }
 
 const PARTNER_JOKES = [
@@ -204,7 +204,7 @@ class GameTable {
             return;
         }
         const gs = store.state.gameState;
-        const bot = STANDALONE && pos !== 0;
+        const bot = mode.standalone && pos !== 0;
         if (bot && store.state.autoBots) {
             store.commit('setTurn', { pos, deadlineMs: Date.now() + BOT_DELAY_MS });
             return;
@@ -251,7 +251,7 @@ class GameTable {
         if (pos === 0 && now >= deadlineMs - AUTOPLAY_MARGIN_MS) {
             this.handledDeadline = deadlineMs;
             this.autoAct(0);
-        } else if (pos !== 0 && STANDALONE && store.state.autoBots && now >= deadlineMs) {
+        } else if (pos !== 0 && mode.standalone && store.state.autoBots && now >= deadlineMs) {
             this.handledDeadline = deadlineMs;
             this.autoAct(pos);
         }
@@ -261,7 +261,7 @@ class GameTable {
         const gs = store.state.gameState;
         const bb = store.getters.getBidBox();
         if (gs === 0) {
-            if (STANDALONE) this.dealStandalone(); else this.setTurn(-1);
+            if (mode.standalone) this.dealStandalone(); else this.setTurn(-1);
         } else if (gs === 1 || gs === 2) {
             if (pos === 0) bb.autoBid(); else bb.botBid(pos);
         } else if (gs === 3 || gs === 4) {
@@ -309,7 +309,7 @@ class GameTable {
     }
 
     dealStandalone() {
-        if (!STANDALONE) return 1;
+        if (!mode.standalone) return 1;
         const { hands, blind } = dealMock();
         this.newHand();
         this.mockHands = hands;
@@ -367,7 +367,7 @@ class GameTable {
         }
         this.blindCards = discards;
         store.commit('setGameState', 4);
-        if (STANDALONE) {
+        if (mode.standalone) {
             this.incomingBlindDiscard(0);
         } else {
             socket.send(C2S.SUBMIT_BLIND, { discards });
@@ -417,7 +417,7 @@ class GameTable {
     }
 
     botBlind(pos) {
-        if (!STANDALONE || !this.mockHands) return 1;
+        if (!mode.standalone || !this.mockHands) return 1;
         const all = this.mockHands[pos].concat(this.mockBlind);
         for (let i = 0; i < 5; i++) all.splice(Math.floor(Math.random() * all.length), 1);
         this.mockHands[pos] = all;
@@ -452,7 +452,7 @@ class GameTable {
             store.commit('setSharedHandCards', hand.filter(c => c !== only));
             store.commit('setFirstCardPlayed', true);
             this.incomingTrickCard(0, only, false);
-            if (!STANDALONE) socket.send(C2S.PLAY_CARD, { card: only });
+            if (!mode.standalone) socket.send(C2S.PLAY_CARD, { card: only });
             reenable();
             return 0;
         }
@@ -474,7 +474,7 @@ class GameTable {
         this.syncStaged();
         store.commit('setFirstCardPlayed', true);
         this.incomingTrickCard(0, card, false);
-        if (!STANDALONE) socket.send(C2S.PLAY_CARD, { card });
+        if (!mode.standalone) socket.send(C2S.PLAY_CARD, { card });
         reenable();
         return 0;
     }
@@ -503,7 +503,7 @@ class GameTable {
         store.commit('notify', card === draggedCard ? `Time's up, played the ${card} you were holding.` : `Time's up, played ${card} for you.`);
         store.commit('setFirstCardPlayed', true);
         this.incomingTrickCard(0, card, true);
-        if (!STANDALONE) socket.send(C2S.PLAY_CARD, { card });
+        if (!mode.standalone) socket.send(C2S.PLAY_CARD, { card });
         return 0;
     }
 
@@ -523,13 +523,13 @@ class GameTable {
         if (this.playedCards[pos] === card) return 0;
         if (this.playedCards[pos] !== '') {
             console.error("incomingTrickCard --", getPosName(pos), "already played", this.playedCards[pos], "this trick, got", card);
-            if (!STANDALONE) socket.send(C2S.REQUEST_SYNC);
+            if (!mode.standalone) socket.send(C2S.REQUEST_SYNC);
             return 1;
         }
         const expected = nextToPlay(this.playedCards, this.lastTrickWinner);
         if (expected !== pos) {
             console.error("incomingTrickCard -- expected", getPosName(expected), "to play, got", getPosName(pos));
-            if (!STANDALONE) socket.send(C2S.REQUEST_SYNC);
+            if (!mode.standalone) socket.send(C2S.REQUEST_SYNC);
             return 1;
         }
 
@@ -704,7 +704,7 @@ class GameTable {
     }
 
     botPlay(pos) {
-        if (!STANDALONE || !this.mockHands) return 1;
+        if (!mode.standalone || !this.mockHands) return 1;
         const legal = legalPlays(this.mockHands[pos], this.playedCards, this.lastTrickWinner, store.state.trumpSuit);
         const card = legal[Math.floor(Math.random() * legal.length)];
         this.mockHands[pos].splice(this.mockHands[pos].indexOf(card), 1);
@@ -753,7 +753,7 @@ class GameTable {
         store.commit('resetGame');
         store.commit('setGameState', 0);
         this.newHand();
-        if (STANDALONE) this.dealStandalone();
+        if (mode.standalone) this.dealStandalone();
     }
 }
 
@@ -771,7 +771,7 @@ onBeforeUnmount(() => {
 .card-stack {
     width: 70px;
     height: 100px;
-    border-radius: 8px;
+    border-radius: 0;
     align-items: center;
     justify-content: center;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -878,7 +878,7 @@ onBeforeUnmount(() => {
     transform: translate(-50%, -62%);
     z-index: 2;
     border: 3px dashed #95a5a6;
-    border-radius: 14px;
+    border-radius: 0;
     padding: 16px;
     min-width: 150px;
     min-height: 214px;
@@ -901,7 +901,7 @@ onBeforeUnmount(() => {
     width: 150px;
     height: 214px;
     background-color: white;
-    border-radius: 8px;
+    border-radius: 0;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -927,7 +927,7 @@ onBeforeUnmount(() => {
     width: 800px;
     height: 560px;
     background-color: #34495e;
-    border-radius: 24px;
+    border-radius: 0;
     position: absolute;
 }
 
@@ -951,7 +951,7 @@ onBeforeUnmount(() => {
     color: #2c3e50;
     background: #ecf0f1;
     border: none;
-    border-radius: 10px;
+    border-radius: 0;
     cursor: pointer;
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
     z-index: 6;
@@ -965,7 +965,7 @@ onBeforeUnmount(() => {
     transform: translateX(110px) translateY(30px);
     font-size: 24px;
     padding: 16px 44px;
-    border-radius: 14px;
+    border-radius: 0;
 }
 .play-button.armed {
     background: linear-gradient(45deg, #f1c40f, #f39c12);
@@ -1029,7 +1029,7 @@ onBeforeUnmount(() => {
     color: #2c3e50;
     background: linear-gradient(45deg, #f1c40f, #f39c12);
     border: none;
-    border-radius: 12px;
+    border-radius: 0;
     cursor: pointer;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     animation: dealPulse 1.2s ease-in-out infinite;

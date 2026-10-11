@@ -5,3 +5,4 @@
 5. What happens when score table gets really large? Need to prevent going off page and maybe implement a scrollable or cutoff
 6. Pulling up the bidding table is a bit gnarly when cards are on the table, just for the extra scores that are supposed to be on the table during bidding. Put the scores a bit off the table in a convenient spot when bidding table is turned on mid game
 7. Need to turn off the live feed to prevent cheaters
+8. Hand sort should be in suit order

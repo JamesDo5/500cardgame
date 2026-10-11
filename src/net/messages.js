@@ -7,6 +7,10 @@ export const C2S = Object.freeze({
     PLAY_CARD:      'playCard',
     DEAL:           'deal',
     PING:           'ping',
+    REMATCH:        'rematch',
+    START_GAME:     'startGame',
+    CHANGE_SEAT:    'changeSeat',
+    LEAVE:          'leave',
 });
 
 export const S2C = Object.freeze({
@@ -25,4 +29,9 @@ export const S2C = Object.freeze({
     SYNC_STATE:     'syncState',
     ERROR:          'error',
     PONG:           'pong',
+    REMATCH_COUNTDOWN: 'rematchCountdown',
+    LOBBY_STATE:    'lobbyState',
+    PLAYER_LEFT:    'playerLeft',
 });
+
+export const JOIN_ERROR_CODES = new Set(['NAME_TAKEN', 'UNKNOWN_GAME', 'ROOM_FULL', 'BAD_NAME', 'ROOM_CLOSED', 'NOT_JOINED']);

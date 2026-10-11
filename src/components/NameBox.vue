@@ -90,7 +90,7 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
     left: -4px;
     right: -4px;
     bottom: -4px;
-    border-radius: 10px;
+    border-radius: 0;
     opacity: 0.6;
     transition: opacity 0.3s ease;
     z-index: 0;
@@ -126,7 +126,7 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
     right: 0;
     bottom: 0;
     background-color: #2c3e50;
-    border-radius: 8px;
+    border-radius: 0;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     z-index: 1;
 }
@@ -147,7 +147,7 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
 .dealer-chip {
     display: inline-block;
     padding: 0 7px;
-    border-radius: 50%;
+    border-radius: 0;
     background-color: #f1c40f;
     color: #2c3e50;
     font-size: 12px;
@@ -197,7 +197,7 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
     bottom: -6px;
     right: -8px;
     background: #2c3e50;
-    border-radius: 8px;
+    border-radius: 0;
     padding: 0 4px;
     font-size: 10px;
     line-height: 12px;

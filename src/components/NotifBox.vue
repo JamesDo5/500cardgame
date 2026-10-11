@@ -27,7 +27,7 @@ watch(notice, (msg) => {
     background-color: rgba(44, 62, 80, 0.95);
     color: #ecf0f1;
     padding: 12px 24px;
-    border-radius: 10px;
+    border-radius: 0;
     font-family: Arial, sans-serif;
     font-size: 20px;
     z-index: 50;

@@ -1,4 +1,5 @@
-import { S2C, C2S } from './messages.js';
+import { S2C, C2S, JOIN_ERROR_CODES } from './messages.js';
+import { saveToken } from '../session.js';
 import { isValidCardStr } from '../game/cards.js';
 
 export function installHandlers(socket, store) {
@@ -8,11 +9,24 @@ export function installHandlers(socket, store) {
 
     socket.onStatus = (status) => {
         store.commit('setConnection', status);
-        if (status === 'open') socket.send(C2S.REQUEST_SYNC);
     };
 
     socket
-        .on(S2C.WELCOME, ({ playerNames }) => setNames(store, playerNames))
+        .on(S2C.WELCOME, ({ seat, playerNames, gameId, playerToken }) => {
+            setNames(store, playerNames);
+            store.commit('setSession', { gameId, seat, token: playerToken });
+            store.commit('setJoinError', '');
+            if (gameId && playerToken) saveToken(gameId, playerToken);
+        })
+        .on(S2C.LOBBY_STATE, (lobby) => {
+            store.commit('setLobby', lobby);
+            if (Array.isArray(lobby.seats)) setNames(store, lobby.seats.map(seat => seat.name));
+        })
+        .on(S2C.REMATCH_COUNTDOWN, ({ startsAtMs }) => store.commit('setRematchAt', startsAtMs))
+        .on(S2C.PLAYER_LEFT, ({ pos, name, abandoned }) => {
+            store.commit('feedPush', `${name ?? store.state.playerNames[pos]} left${abandoned ? ' and the game was abandoned' : ''}.`);
+            store.commit('notify', abandoned ? `${name} left. Back to the lobby.` : `${name} left.`);
+        })
         .on(S2C.PLAYER_NAMES, ({ playerNames }) => setNames(store, playerNames))
         .on(S2C.DEAL, ({ dealer, hand: cards }) => {
             if (!Array.isArray(cards) || cards.length !== 10 || !cards.every(isValidCardStr)) {
@@ -40,6 +54,11 @@ export function installHandlers(socket, store) {
         .on(S2C.SYNC_STATE, (snap) => applySnapshot(store, snap))
         .on(S2C.ERROR, ({ code, message }) => {
             console.error('server error', code, message);
+            if (JOIN_ERROR_CODES.has(code)) {
+                store.commit('setJoinError', message ?? code);
+                socket.close();
+                return;
+            }
             store.commit('notify', message ?? code);
         });
 }
@@ -58,7 +77,7 @@ function applySnapshot(store, snap) {
     store.commit('setScores', { scores: snap.scores ?? [0, 0], handScores: snap.handScores ?? [] });
     bb.reset();
     gt.newHand();
-    if (Array.isArray(snap.hand)) hand.incomingHandCards(snap.hand);
+    if (Array.isArray(snap.hand)) hand.replaceHand(snap.hand);
     if (Array.isArray(snap.bids)) bb.bids = snap.bids.slice();
     if (snap.trump) store.commit('setTrumpSuit', snap.trump);
     if (Number.isInteger(snap.winningBid)) store.commit('setWinningBid', snap.winningBid);
@@ -69,5 +88,6 @@ function applySnapshot(store, snap) {
     if (Array.isArray(snap.playedCards)) gt.restoreTrick(snap.playedCards, snap.leader, snap.wonTricks);
     if (snap.turn) store.commit('setTurn', snap.turn);
     store.commit('setGameState', snap.gameState ?? -1);
+    if (store.state.gameState === 6) store.commit('setGameWinner', snap.winnerTeam ?? -1);
     if (store.state.gameState === 1 || store.state.gameState === 2) bb.show(); else bb.hide();
 }

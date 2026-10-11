@@ -19,7 +19,11 @@ export default new Vuex.Store({
         cardCounts: [10, 10, 10, 10],
         firstCardPlayed: false,
         gameWinner: -1,
-        connection: 'standalone',
+        connection: 'idle',
+        session: { gameId: '', seat: -1, token: '', name: '' },
+        lobby: { seats: [], hostPos: -1, canStart: false },
+        joinError: '',
+        rematchAtMs: 0,
         autoBots: true,
         timersEnabled: true,
         stagedCount: 0,
@@ -63,6 +67,9 @@ export default new Vuex.Store({
             state.trumpSuit = '';
             state.turn = { pos: -1, deadlineMs: 0, startedMs: 0 };
             state.gameWinner = -1;
+            state.rematchAtMs = 0;
+            state.handCards = [];
+            state.feed = [];
         },
         setTurn(state, turn) { state.turn = { startedMs: Date.now(), ...turn }; },
         setCardCount(state, { pos, n }) { state.cardCounts[pos] = Math.max(0, n); },
@@ -70,6 +77,10 @@ export default new Vuex.Store({
         setFirstCardPlayed(state, b) { state.firstCardPlayed = b; },
         setGameWinner(state, t) { state.gameWinner = t; },
         setConnection(state, s) { state.connection = s; },
+        setSession(state, patch) { state.session = { ...state.session, ...patch }; },
+        setLobby(state, lobby) { state.lobby = lobby; },
+        setJoinError(state, msg) { state.joinError = msg; },
+        setRematchAt(state, ms) { state.rematchAtMs = ms; },
         setAutoBots(state, b) { state.autoBots = b; },
         setTimersEnabled(state, b) { state.timersEnabled = b; },
         setStagedCount(state, n) { state.stagedCount = n; },

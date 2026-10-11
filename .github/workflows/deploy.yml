@@ -1,0 +1,38 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: us-east-1
+  BUCKET: jamesdouthit-com-site
+  DISTRIBUTION_ID: CHANGEME
+  VITE_WS_URL: wss://api.jamesdouthit.com/ws
+  VITE_STANDALONE: "false"
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build -- --base=/500cardgame/
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::931745839902:role/github-500-client-deploy
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Upload hashed assets with long cache
+        run: aws s3 sync dist/ "s3://$BUCKET/500cardgame/" --delete --exclude index.html --cache-control "public,max-age=31536000,immutable"
+      - name: Upload index.html with no cache
+        run: aws s3 cp dist/index.html "s3://$BUCKET/500cardgame/index.html" --cache-control "no-cache"
+      - run: aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths "/500cardgame/*"

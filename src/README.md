@@ -61,6 +61,20 @@
 - [ ] Clients can override server if all of them have different state or card than server
 - [x] More strongly define what goes in vuex and what goes in the gameController (winning bid, bidder, etc as key example)
 
+## Pages and routes
+
+Vue Router in history mode with base `/500cardgame/` in production (`--base` from the deploy workflow).
+
+- `/` home: name, New game, Join by id, rules book, Wikipedia link.
+- `/new` creates a room; the URL is replaced with `/g/<ID>` once the server answers.
+- `/g/<ID>` joins a room. Prompts for a name if none is stored. Shows the lobby overlay while `gameState` is -1 and the table otherwise.
+- `/g/local` dev only: standalone mode against local bots, with the dev button bar.
+
+`session.js` keeps the player name and per-game tokens in localStorage. `net/socket.js` sends `join` first on every
+socket open, before flushing queued frames. Join failures land in `store.state.joinError` and show a gate with a way back.
+
+Server messages the lobby expects are specified in `../server-contract.md` sections 10 and 11.
+
 ## Layout
 
 - `game/cards.js` card representation, image URLs, mock deal.
