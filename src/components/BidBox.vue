@@ -35,7 +35,7 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue';
 import { useStore } from 'vuex'
-import { STANDALONE } from '../config.js';
+import { mode } from '../config.js';
 import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
 import { teamOf, SUIT_SYMBOLS, suitColorClass } from '../game/cards.js';
@@ -144,7 +144,7 @@ class BidBox {
         }
         store.commit('setGameState', 2);
         this.incomingBid(0, myBid);
-        if (!STANDALONE) socket.send(C2S.BID, { bid: myBid });
+        if (!mode.standalone) socket.send(C2S.BID, { bid: myBid });
         return 0;
     }
 
@@ -160,13 +160,13 @@ class BidBox {
         if (this.bids[pos] === bid) return 0;
         if (this.bids[pos] !== -1) {
             console.error("incomingBid -- position", pos, "already bid", this.bids[pos], "got", bid);
-            if (!STANDALONE) socket.send(C2S.REQUEST_SYNC);
+            if (!mode.standalone) socket.send(C2S.REQUEST_SYNC);
             return 1;
         }
         const expected = nextToBid(this.bids, store.state.dealer);
         if (expected !== pos) {
             console.error("incomingBid -- expected position", expected, "to bid, got", pos);
-            if (!STANDALONE) socket.send(C2S.REQUEST_SYNC);
+            if (!mode.standalone) socket.send(C2S.REQUEST_SYNC);
             return 1;
         }
         if (bid !== PASS && bid <= this.getHighestBid()) {
@@ -195,7 +195,7 @@ class BidBox {
     }
 
     botBid(pos) {
-        if (!STANDALONE || pos === 0 || this.bids[pos] !== -1) return 1;
+        if (!mode.standalone || pos === 0 || this.bids[pos] !== -1) return 1;
         const floor = Math.max(this.getHighestBid(), MIN_BID - 20);
         if (floor === MAX_BID || Math.random() < 0.5) return this.incomingBid(pos, PASS);
         const options = Array.from({ length: Math.min(4, (MAX_BID - floor) / 20) }, (_, i) => floor + 20 * (i + 1));
@@ -241,7 +241,7 @@ class BidBox {
         store.commit('feedPush', `${names()[winner]} won the bid at ${bid} (${trump === 'n' ? 'no trump' : trump}).`);
         setTimeout(() => this.hide(), 300);
         gt.setTurn(winner);
-        if (STANDALONE && winner === 0) gt.incomingBlind(gt.mockBlind, true);
+        if (mode.standalone && winner === 0) gt.incomingBlind(gt.mockBlind, true);
     }
 }
 
@@ -266,7 +266,7 @@ onMounted(() => {
     transform: translate(-50%, -50%);
     background-color: white;
     padding: 20px;
-    border-radius: 5px;
+    border-radius: 0;
     text-align: center;
     z-index: 9;
 }
@@ -357,7 +357,7 @@ onMounted(() => {
     color: #2c3e50;
     background: #ecf0f1;
     border: none;
-    border-radius: 10px;
+    border-radius: 0;
     cursor: pointer;
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
     z-index: 6;

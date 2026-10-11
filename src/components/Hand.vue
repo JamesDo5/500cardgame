@@ -177,7 +177,7 @@ onMounted(() => {
     width: 150px;
     height: 214px;
     background-color: white;
-    border-radius: 8px;
+    border-radius: 0;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -200,7 +200,7 @@ onMounted(() => {
     color: #2c3e50;
     background: #ecf0f1;
     border: none;
-    border-radius: 10px;
+    border-radius: 0;
     cursor: pointer;
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
     z-index: 6;

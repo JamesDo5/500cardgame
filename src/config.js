@@ -1,6 +1,10 @@
-export const STANDALONE = import.meta.env.DEV && import.meta.env.VITE_STANDALONE !== 'false';
+export const DEV = import.meta.env.DEV;
+export const mode = { standalone: false };
+export const LOCAL_GAME_ID = 'local';
 
-export const WS_URL = import.meta.env.VITE_WS_URL ?? 'ws://localhost:3000';
+export const WS_URL = import.meta.env.VITE_WS_URL ?? 'ws://localhost:3000/ws';
+export const WIKIPEDIA_URL = 'https://en.wikipedia.org/wiki/500_(card_game)';
+export const SITE_URL = 'https://jamesdouthit.com/';
 
 export const TURN_TIMEOUT_MS = 30000;
 export const BID_TIMEOUT_MS = 45000;

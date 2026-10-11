@@ -1,7 +1,11 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useStore } from 'vuex'
-import { STANDALONE } from '../config.js';
+import { mode } from '../config.js';
+import { socket } from '../net/socket.js';
+import { C2S } from '../net/messages.js';
+import { now } from '../game/clock.js';
+import { useRouter } from 'vue-router';
 
 const store = useStore();
 const visible = computed(() => store.state.gameState === 6 && store.state.gameWinner !== -1);
@@ -18,8 +22,24 @@ const confetti = Array.from({ length: 40 }, (_, i) => ({
     rotate: `${(i * 53) % 360}deg`,
 }));
 
+const router = useRouter();
+const rematchSeconds = computed(() => {
+    const at = store.state.rematchAtMs;
+    if (!at) return null;
+    return Math.max(0, Math.ceil((at - now.value) / 1000));
+});
+const rematchRequested = ref(false);
 function newGame() {
     store.getters.getGameTable().newGame();
+}
+function rematch() {
+    rematchRequested.value = true;
+    socket.send(C2S.REMATCH);
+}
+function leave() {
+    socket.send(C2S.LEAVE);
+    setTimeout(() => socket.close(), 150);
+    router.push({ name: 'home' });
 }
 </script>
 
@@ -41,8 +61,14 @@ function newGame() {
                         <tr class="winner-total"><td>{{ scores[0] }}</td><td>{{ scores[1] }}</td></tr>
                     </tbody>
                 </table>
-                <button v-if="STANDALONE" class="winner-button" type="button" @click="newGame">New game</button>
-                <div v-else class="winner-wait">Waiting for the table to start a new game</div>
+                <button v-if="mode.standalone" class="winner-button" type="button" @click="newGame">New game</button>
+                <template v-else>
+                    <div v-if="rematchSeconds !== null" class="winner-wait">Rematch starts in {{ rematchSeconds }}s</div>
+                    <div class="winner-actions">
+                        <button class="ui-button danger" type="button" @click="leave">Leave table</button>
+                        <button class="winner-button" type="button" :disabled="rematchRequested || rematchSeconds !== null" @click="rematch">{{ rematchSeconds !== null ? 'Rematch queued' : 'Rematch' }}</button>
+                    </div>
+                </template>
             </div>
         </div>
     </Transition>
@@ -62,7 +88,7 @@ function newGame() {
 .winner-card {
     position: relative;
     background: #2c3e50;
-    border-radius: 16px;
+    border-radius: 0;
     padding: 32px 48px;
     color: #ecf0f1;
     font-family: Arial, sans-serif;
@@ -107,14 +133,22 @@ function newGame() {
     color: #2c3e50;
     background: linear-gradient(45deg, #f1c40f, #f39c12);
     border: none;
-    border-radius: 12px;
+    border-radius: 0;
     cursor: pointer;
 }
 .winner-wait {
     margin-top: 24px;
-    color: #bdc3c7;
-    font-style: italic;
+    color: #f1c40f;
+    font-weight: bold;
 }
+.winner-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 24px;
+}
+.winner-actions .winner-button { margin-top: 0; }
+.winner-button:disabled { opacity: 0.5; cursor: default; }
 .confetti-layer {
     position: absolute;
     inset: 0;
@@ -125,7 +159,7 @@ function newGame() {
     top: -20px;
     width: 10px;
     height: 16px;
-    border-radius: 2px;
+    border-radius: 0;
     animation-name: confettiFall;
     animation-timing-function: linear;
     animation-iteration-count: infinite;

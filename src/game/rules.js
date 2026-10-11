@@ -118,7 +118,7 @@ export function gameOutcome(scores, bidTeam, made) {
     return -1;
 }
 
-const SUIT_ORDER = ['s', 'h', 'c', 'd'];
+const SUIT_ORDER = ['s', 'c', 'd', 'h'];
 export function sortHand(hand, trump) {
     const order = trump && trump !== NO_TRUMP ? [trump, ...SUIT_ORDER.filter(s => s !== trump)] : SUIT_ORDER.slice();
     const t = trump || NO_TRUMP;
