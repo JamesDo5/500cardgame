@@ -18,7 +18,7 @@ const bidAt = (r, c) => 40 + r * 100 + c * 20;
 const TRUMP_ORDER = ['4', '5', '6', '7', '8', '9', '10', 'Q', 'K', 'A', 'J<sub>L</sub>', 'J<sub>R</sub>', 'Joker'];
 
 const PAGES = [
-    { label: 'Deck', collapsible: false, sections: [
+    { label: 'Deck', sections: [
         { heading: 'Deck', bullets: true, lines: [
             '45-card deck',
             'All 2s and 3s removed',
@@ -30,7 +30,7 @@ const PAGES = [
             'Deal goes left after a hand completes.',
         ]},
     ]},
-    { label: 'Bidding', collapsible: true, sections: [
+    { label: 'Bidding', sections: [
         { heading: 'Bidding', lines: [
             'Player to the left of the dealer will bid first, and it continues clockwise (left).',
             "You're bidding on the number of tricks you and your partner can win together this hand, and in which suit you'll accomplish this.",
@@ -44,7 +44,7 @@ const PAGES = [
             'First team to 500 wins! -500 also instantly loses.',
         ]},
     ]},
-    { label: 'Gameplay', collapsible: false, sections: [
+    { label: 'Gameplay', sections: [
         { heading: 'Gameplay — The Blind', lines: [
             "The winning bidder (if there is one) will pick up the 5-card blind and strategically exchange with their hand until they're holding the 10 they think they can win with.",
             "When they're ready, they'll discard the 5 they're trashing.",
@@ -58,7 +58,7 @@ const PAGES = [
             "We'll go around the table 10 times until everyone has played all 10 of their cards! Good luck!",
         ]},
     ]},
-    { label: 'FYIs', collapsible: true, sections: [
+    { label: 'FYIs', sections: [
         { heading: 'FYIs — Bowers', lines: [
             `ONLY for hands when the trump suit is ${red('RED')} — e.g. ${shinyRed('Diamonds')} + ${shinyRed('Hearts')} — both ${red('RED')} jacks get promoted.`,
             `ONLY for hands when the trump suit is ${black('BLACK')} — e.g. ${shinyBlack('Spades')} + ${shinyBlack('Clubs')} — the ${black('BLACK')} jacks are promoted.`,
@@ -81,11 +81,10 @@ const PAGES = [
 const current = computed(() => PAGES[page.value]);
 const key = (i) => `${page.value}:${i}`;
 function toggle(i) {
-    if (!current.value.collapsible) return;
     collapsed[key(i)] = !collapsed[key(i)];
 }
 function isCollapsed(i) { return !!collapsed[key(i)]; }
-function show() { page.value = 0; open.value = true; }
+function show() { page.value = 0; Object.keys(collapsed).forEach(k => delete collapsed[k]); open.value = true; }
 function hide() { open.value = false; }
 function prev() { if (page.value > 0) page.value--; }
 function next() { if (page.value < PAGES.length - 1) page.value++; }
@@ -105,10 +104,10 @@ defineExpose({ show });
                         <span class="book-kicker">How to play 500</span>
                         <button class="book-close" type="button" aria-label="Close" @click="hide">×</button>
                     </div>
-                    <section v-for="(sec, i) in current.sections" :key="i" class="book-section" :class="{ collapsed: isCollapsed(i), collapsible: current.collapsible }">
+                    <section v-for="(sec, i) in current.sections" :key="i" class="book-section" :class="{ collapsed: isCollapsed(i) }">
                         <h2 class="book-heading" @click="toggle(i)">
                             <span>{{ sec.heading }}</span>
-                            <span v-if="current.collapsible" class="chev">{{ isCollapsed(i) ? '+' : '−' }}</span>
+                            <span class="chev">{{ isCollapsed(i) ? '+' : '−' }}</span>
                         </h2>
                         <div v-show="!isCollapsed(i)" class="book-body">
                             <ul v-if="sec.bullets" class="book-list">
@@ -219,8 +218,8 @@ defineExpose({ show });
     border-bottom: 1px solid #c9bfa6;
     padding-bottom: 4px;
 }
-.book-section.collapsible .book-heading { cursor: pointer; }
-.book-section.collapsible .book-heading:hover { color: #7b241c; }
+.book-heading { cursor: pointer; }
+.book-heading:hover { color: #7b241c; }
 .chev { font-size: 22px; color: #7b241c; font-family: Arial, sans-serif; }
 .book-line {
     font-size: 17px;
