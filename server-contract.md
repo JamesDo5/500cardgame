@@ -177,18 +177,67 @@ so animation can start without a round trip. Server frames `trickResult`, `biddi
 to the prediction and only applied when they differ, with a console warning. For this to be invisible the server must
 implement section 7 exactly. The server is always authoritative; the client never argues.
 
-## 10. Lobby and identity
+## 10. Identity and joining
 
-Not designed yet on the client side. Current expectation is minimal:
+Matches the server as of October 2026.
 
-- Client connects, sends `join` with a game id from the URL or a lobby, server assigns a seat and replies `welcome`.
-- Reconnecting with the same identity resumes the same seat. How identity is carried (cookie, token in `join`,
-  query string on the socket URL) is the server's choice; the client will send whatever the server needs in `join`.
-- A seat that is empty should still have a name so the table renders. Use something like `Empty seat`.
+- On every socket open the client sends `join` before anything else, including queued frames:
+  `{ gameId, playerName, playerToken }`. Empty `gameId` creates a room. `playerName` is 1 to 24 characters.
+- Server replies `welcome { seat, playerNames, gameId, playerToken }` then `syncState`. The client stores the token in
+  localStorage keyed by game id and sends it on every reconnect to reclaim the same seat. Without a token, an exact
+  name match reclaims a seat that is currently disconnected.
+- Join failures come back as `error` with one of `NAME_TAKEN`, `UNKNOWN_GAME`, `ROOM_FULL`, `BAD_NAME`, `ROOM_CLOSED`.
+  The client shows the message and offers a way back to the start page.
+- Share links are `https://jamesdouthit.com/500cardgame/g/ABCD`. Opening one prompts for a name if none is stored,
+  then joins that game. Game ids are four letters from `ABCDEFGHJKLMNPQRSTUVWXYZ`.
+- The client's name is remembered on the device. The name is not an identity, the token is.
 
-## 11. Open questions for the server author
+## 11. Lobby
 
-- Whether the server echoes a player's own `bid` and `cardPlayed` back to them. The client handles both ways.
-- Whether `blind` should also go to spectators with `?` values. Client currently has no spectator mode.
-- Whether to send `turn` after every action or only when the actor changes. Client handles both.
-- Format of `error.code`. Client only displays `message`.
+`gameState` is -1 while the room is in the lobby. The game no longer starts by itself when four seats fill. The
+host presses Start.
+
+### Lobby frames
+
+| direction | type | payload | notes |
+|---|---|---|---|
+| S2C | `lobbyState` | `{ seats: [4 of { name, occupied, connected, bot, host }], hostPos, canStart }` | relative positions; sent to every player whenever any seat changes, someone connects or disconnects, or the host changes; also sent right after `welcome` |
+| C2S | `startGame` | `{}` | host only, lobby only, requires four occupied seats; errors `NOT_HOST`, `NOT_ENOUGH_PLAYERS`, `WRONG_PHASE` |
+| C2S | `changeSeat` | `{ seat }` | relative seat 1..3; lobby only; empty target moves the player there, occupied target swaps the two players; every player then gets `lobbyState` and `playerNames` because relative positions changed |
+| C2S | `leave` | `{}` | frees the seat immediately; see below |
+| S2C | `playerLeft` | `{ pos, name, abandoned }` | to the remaining players; `abandoned` true when a game in progress was thrown away |
+| C2S | `rematch` | `{}` | after `gameOver`; schedules a restart with the same seats |
+| S2C | `rematchCountdown` | `{ startsAtMs }` | broadcast after the first rematch request |
+
+### Host
+
+The room creator is the host and the first dealer. If the host leaves, the lowest occupied seat becomes host and
+`lobbyState` is re-sent. There is no kick.
+
+### Leaving
+
+- In the lobby, `leave` empties the seat and the others get `lobbyState` and `playerLeft`.
+- During a game, `leave` abandons the game: the engine resets to lobby, the leaver's seat is emptied, the remaining
+  players get `playerLeft { abandoned: true }`, `syncState` with `gameState: -1`, and `lobbyState`. The client asks for
+  confirmation before sending it.
+- Closing the tab without `leave` keeps the seat held for `HOLD_SEAT_MS` so the player can come back. `lobbyState`
+  shows them as `connected: false` meanwhile.
+
+### After a game
+
+`gameOver` leaves the table in state 6 with the winner screen. Any player may send `rematch`, the server broadcasts
+`rematchCountdown`, and starts a new game with the same seats and the next dealer when the countdown ends. The client
+shows the countdown and disables the button once it is queued. Leave from the winner screen sends `leave`.
+
+### Bots
+
+Not offered in production. The client keeps a dev-only standalone mode at `/g/local` that plays against local bots
+without a server.
+
+## 12. Open questions for the server author
+
+- `changeSeat` during a swap changes everyone's relative positions. Simplest is to re-send `syncState` to all four
+  after the swap as well as `lobbyState`; the client handles a snapshot in state -1 cleanly.
+- Whether `lobbyState.canStart` should also be true for non-hosts for display. Client only enables the button for
+  the host.
+- `syncState` could carry `winnerTeam` so a reconnect during state 6 can render the winner screen. Optional.
