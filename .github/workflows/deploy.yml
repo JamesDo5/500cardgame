@@ -11,7 +11,7 @@ permissions:
 env:
   AWS_REGION: us-east-1
   BUCKET: jamesdouthit-com-site
-  DISTRIBUTION_ID: CHANGEME
+  DISTRIBUTION_ID: E24MLQ27TF1W8W
   VITE_WS_URL: wss://api.jamesdouthit.com/ws
   VITE_STANDALONE: "false"
 
