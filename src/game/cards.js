@@ -52,10 +52,38 @@ export function otherTeam(team) {
     return (team + 1) % 2;
 }
 
+const ASSET_BASE = import.meta.env.BASE_URL ?? '/';
 export function cardImageUrl(cardStr) {
-    return `/cards/${cardStr}.jpeg`;
+    return `${ASSET_BASE}cards/${cardStr}.jpeg`;
 }
-export const CARD_BACK_URL = '/cards/cat_cardback.jpeg';
+export const CARD_BACK_URL = `${ASSET_BASE}cards/cat_cardback.jpeg`;
+
+export function cardPlaceholderSvg(cardStr) {
+    let svg;
+    if (!cardStr || cardStr === HIDDEN_CARD) {
+        svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 100"><rect width="70" height="100" fill="#1f4e8c"/><rect x="5" y="5" width="60" height="90" fill="none" stroke="#f1c40f" stroke-width="2"/></svg>';
+    } else {
+        const { v, s } = cardStr2CardObj(cardStr);
+        const joker = s === JOKER;
+        const label = joker ? 'JOKER' : v;
+        const sym = joker ? '★' : SUIT_SYMBOLS[s];
+        const color = RED_SUITS.has(s) ? '#c0392b' : '#111111';
+        const size = joker ? 9 : 16;
+        const corner = `<text x="5" y="18" font-size="${size}" font-weight="bold" font-family="Arial, sans-serif" fill="${color}">${label}</text><text x="5" y="36" font-size="17" font-family="Arial, sans-serif" fill="${color}">${sym}</text>`;
+        svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 100"><rect width="70" height="100" fill="#ffffff" stroke="#2c3e50" stroke-width="2"/>${corner}<g transform="rotate(180 35 50)">${corner}</g></svg>`;
+    }
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+
+export function installCardImageFallback() {
+    document.addEventListener('error', (evt) => {
+        const img = evt.target;
+        if (!(img instanceof HTMLImageElement) || img.src.startsWith('data:')) return;
+        const card = img.dataset.card ?? img.closest('[data-card]')?.dataset.card ?? (img.src.includes('cardback') ? HIDDEN_CARD : '');
+        if (!card) return;
+        img.src = cardPlaceholderSvg(card);
+    }, true);
+}
 
 export function elem2CardStr(elem) {
     const str = elem?.dataset?.card;

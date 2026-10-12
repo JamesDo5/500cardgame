@@ -30,7 +30,7 @@ import Sortable from 'sortablejs';
 import { mode, TURN_TIMEOUT_MS, BID_TIMEOUT_MS, BLIND_TIMEOUT_MS, DEAL_TIMEOUT_MS, TABLE_WIDTH, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS, TRICK_HOLD_MS, CARD_FLY_MS, TRICK_SWEEP_MS } from '../config.js';
 import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
-import { CARD_BACK_URL, cardImageUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, dealMock, teamOf } from '../game/cards.js';
+import { CARD_BACK_URL, HIDDEN_CARD, cardImageUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, dealMock, teamOf } from '../game/cards.js';
 import { trickWinner, trickWinnerWithout, legalPlays, lowestCards, nextToPlay, nextToBid, scoreHand, gameOutcome } from '../game/rules.js';
 
 const store = useStore()
@@ -536,6 +536,7 @@ class GameTable {
         this.playedCards[pos] = card;
         store.commit('setCardCount', { pos, n: store.state.cardCounts[pos] - 1 });
         const ele = document.getElementById('playedCard' + getPosName(pos));
+        ele.dataset.card = card;
         ele.src = cardImageUrl(card);
         ele.className = `fake-card card-played card-played-${getPosName(pos).toLowerCase()} ${getSuitClass(cardStr2CardObj(card).s)}`;
         ele.style.display = "inline";
@@ -674,6 +675,7 @@ class GameTable {
         playedCards.forEach((card, pos) => {
             if (!card) return;
             const ele = document.getElementById('playedCard' + getPosName(pos));
+            ele.dataset.card = card;
             ele.src = cardImageUrl(card);
             ele.style.display = "inline";
         });
@@ -683,6 +685,7 @@ class GameTable {
 
     clearPlayedCards() {
         Array.from(document.getElementsByClassName("card-played")).forEach((ele) => {
+            ele.dataset.card = HIDDEN_CARD;
             ele.src = CARD_BACK_URL;
             ele.style.display = "none";
         });
