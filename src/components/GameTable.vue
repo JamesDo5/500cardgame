@@ -7,7 +7,7 @@
             <img class="fake-card card-played card-played-bottom" id="playedCardBottom" :src="CARD_BACK_URL">
             <div class="card-row" id="submitCards" :class="{ parked: !showPlayButton }"></div>
             <button v-if="showPlayButton" class="table-button play-button" :class="{ armed: playArmed }" type="button" @click="playNow">Play card</button>
-            <button v-if="showBlindButton" class="table-button blind-button" type="button" @click="submitBlindNow">Submit blind</button>
+            <button v-if="showBlindButton" class="table-button blind-button" type="button" :disabled="blindFaceDown" :title="blindFaceDown ? 'Flip the blind first' : ''" @click="submitBlindNow">{{ blindFaceDown ? 'Flip the blind first' : 'Submit blind' }}</button>
             <div class="card-stack won-tricks-bottom" id="wonTricksBottom"></div>
             <div class="card-stack won-tricks-left" id="wonTricksLeft"></div>
             <div class="card-stack won-tricks-top" id="wonTricksTop"></div>
@@ -42,6 +42,7 @@ const dealCaption = computed(() => iAmDealer.value ? 'Your deal' : `${store.stat
 const showPlayButton = computed(() => store.state.gameState === 5);
 const playArmed = computed(() => store.state.stagedCount > 0 && store.state.turn.pos === 0);
 const showBlindButton = computed(() => store.state.gameState === 3 && store.getters.getBidBox()?.winningBidder === 0 && store.state.turn.pos === 0);
+const blindFaceDown = computed(() => store.state.blindFaceDown);
 function playNow() {
     store.getters.getGameTable().submitTrick();
 }
@@ -293,6 +294,7 @@ class GameTable {
         document.getElementById('blindCards').innerHTML = "";
         document.getElementById('blindCards').style.display = "flex";
         document.getElementById('blindDiscard').style.display = "none";
+        store.commit('setBlindFaceDown', false);
         this.sortableBlindCards.option("disabled", true);
         this.sortableSubmitCards.option("disabled", true);
         this.clearPlayedCards();
@@ -335,6 +337,11 @@ class GameTable {
         const cardsElement = document.getElementById('blindCards');
         cardsElement.style.display = "flex";
         cardsElement.innerHTML = this.blindCards.map(card => produceCardHtml(card, faceDown, 'real-card')).join('');
+        this.setBlindFaceDown(faceDown);
+    }
+
+    setBlindFaceDown(faceDown) {
+        store.commit('setBlindFaceDown', faceDown);
         this.sortableBlindCards.option("disabled", faceDown);
     }
 
@@ -347,15 +354,15 @@ class GameTable {
 
     submitBlind() {
         const blindElement = document.getElementById('blindCards');
-        this.sortableBlindCards.option("disabled", true);
         const items = Array.from(blindElement.children);
-        if (items.length !== 5) {
-            store.commit('notify', "Discard exactly 5 cards to the blind.");
-            this.sortableBlindCards.option("disabled", false);
+        if (store.state.blindFaceDown || items.some(ele => ele.classList.contains('card-back'))) {
+            store.commit('notify', "Flip the blind first.");
+            this.setBlindFaceDown(true);
             return 1;
         }
-        if (items.some(ele => ele.classList.contains('card-back'))) {
-            store.commit('notify', "Flip the blind over before submitting.");
+        this.sortableBlindCards.option("disabled", true);
+        if (items.length !== 5) {
+            store.commit('notify', "Discard exactly 5 cards to the blind.");
             this.sortableBlindCards.option("disabled", false);
             return 1;
         }
@@ -962,6 +969,12 @@ onBeforeUnmount(() => {
 }
 .table-button:hover {
     background: #f1c40f;
+}
+.table-button:disabled {
+    background: #bdc3c7;
+    color: #7f8c8d;
+    cursor: not-allowed;
+    box-shadow: none;
 }
 .play-button {
     top: 100%;

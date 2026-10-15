@@ -27,6 +27,7 @@ export default new Vuex.Store({
         autoBots: true,
         timersEnabled: true,
         stagedCount: 0,
+        blindFaceDown: false,
         notice: '',
         feed: [],
     },
@@ -84,6 +85,7 @@ export default new Vuex.Store({
         setAutoBots(state, b) { state.autoBots = b; },
         setTimersEnabled(state, b) { state.timersEnabled = b; },
         setStagedCount(state, n) { state.stagedCount = n; },
+        setBlindFaceDown(state, b) { state.blindFaceDown = b; },
         notify(state, msg) { state.notice = msg; },
         clearNotice(state) { state.notice = ''; },
         feedPush(state, msg) {
