@@ -88,15 +88,12 @@ function show() { page.value = 0; Object.keys(collapsed).forEach(k => delete col
 function hide() { open.value = false; }
 function prev() { if (page.value > 0) page.value--; }
 function next() { if (page.value < PAGES.length - 1) page.value++; }
-function sideClick(evt) {
-    if (evt.clientX < window.innerWidth / 2) prev(); else next();
-}
 defineExpose({ show });
 </script>
 
 <template>
     <Transition name="book">
-        <div v-if="open" class="book-overlay" @click.self="sideClick">
+        <div v-if="open" class="book-overlay" @click.self="hide">
             <div class="book">
                 <div class="book-spine"></div>
                 <div class="book-page">
