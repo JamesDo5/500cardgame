@@ -6,7 +6,7 @@ import GamePage from '../components/GamePage.vue'
 import DevButtons from '../components/DevButtons.vue'
 import LobbyOverlay from '../components/LobbyOverlay.vue'
 import RulesBook from '../components/RulesBook.vue'
-import { DEV, mode, WS_URL, STAGE_WIDTH, STAGE_HEIGHT, LOCAL_GAME_ID } from '../config.js'
+import { DEV, mode, WS_URL, STAGE_WIDTH, STAGE_HEIGHT, LOCAL_GAME_ID, DEFAULT_PACE } from '../config.js'
 import { socket } from '../net/socket.js'
 import { C2S } from '../net/messages.js'
 import { installHandlers } from '../net/handlers.js'
@@ -99,6 +99,7 @@ onMounted(() => {
     store.commit('setGameState', mode.standalone ? -1 : -1);
     store.commit('setJoinError', '');
     store.commit('setLobby', { seats: [], hostPos: -1, canStart: false });
+    store.commit('setPace', DEFAULT_PACE);
     store.commit('setConnection', mode.standalone ? 'standalone' : 'idle');
 });
 onBeforeUnmount(() => {

@@ -2,9 +2,9 @@
 import { computed, ref } from 'vue';
 import { useStore } from 'vuex'
 import { socket } from '../net/socket.js';
-import { C2S } from '../net/messages.js';
+import { C2S, PACE } from '../net/messages.js';
 import { gameLink } from '../session.js';
-import { mode, WIKIPEDIA_URL } from '../config.js';
+import { mode, WIKIPEDIA_URL, RELAXED_MULTIPLIER } from '../config.js';
 
 const props = defineProps(['gameId']);
 const emit = defineEmits(['leave', 'rules']);
@@ -26,6 +26,11 @@ const LAYOUT = [
     { pos: 0, label: 'You', cls: 'seat-bottom' },
 ];
 const connection = computed(() => store.state.connection);
+const pace = computed(() => store.state.lobby.pace ?? store.state.pace);
+const PACES = [
+    { value: PACE.COMPETITIVE, label: 'Competitive', hint: 'Standard time per turn' },
+    { value: PACE.RELAXED, label: 'Relaxed', hint: `${RELAXED_MULTIPLIER}x the time per turn` },
+];
 
 function seatClick(pos) {
     if (pos === 0 || mode.standalone) return;
@@ -34,6 +39,11 @@ function seatClick(pos) {
 function start() {
     if (!canStart.value) return;
     socket.send(C2S.START_GAME);
+}
+function setPace(value) {
+    if (value === pace.value) return;
+    if (mode.standalone) { store.commit('setPace', value); return; }
+    socket.send(C2S.SET_PACE, { pace: value });
 }
 async function share() {
     const link = gameLink(props.gameId);
@@ -52,7 +62,7 @@ async function share() {
         <div class="lobby">
             <div class="lobby-top">
                 <div>
-                    <div class="lobby-kicker">Game</div>
+                    <div class="lobby-kicker">Game <span class="pace-tag">{{ pace }} pace</span></div>
                     <div class="lobby-id">{{ gameId }}</div>
                 </div>
                 <div class="lobby-actions">
@@ -78,6 +88,16 @@ async function share() {
                     <span class="team0">You and {{ seats[2]?.occupied ? seats[2].name : 'your partner' }}</span>
                     <span class="vs">vs</span>
                     <span class="team1">{{ seats[1]?.occupied ? seats[1].name : 'left' }} and {{ seats[3]?.occupied ? seats[3].name : 'right' }}</span>
+                </div>
+            </div>
+
+            <div class="pace-row">
+                <div class="pace-label">Pace</div>
+                <div class="pace-toggle">
+                    <button v-for="p in PACES" :key="p.value" class="pace-option" :class="{ active: pace === p.value }" type="button" :aria-pressed="pace === p.value" @click="setPace(p.value)">
+                        <span class="pace-name">{{ p.label }}</span>
+                        <span class="pace-hint">{{ p.hint }}</span>
+                    </button>
                 </div>
             </div>
 
@@ -201,4 +221,47 @@ async function share() {
 .flag.away { border-color: #e74c3c; color: #e74c3c; }
 .flag.hint { border: none; padding: 0; text-transform: none; letter-spacing: 0; color: #7f8c8d; }
 .lobby-status { font-size: 16px; color: #bdc3c7; }
+.pace-tag {
+    margin-left: 10px;
+    padding: 1px 6px;
+    border: 1px solid #7f8c8d;
+    color: #95a5a6;
+    letter-spacing: 1px;
+}
+.pace-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+.pace-label {
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #bdc3c7;
+}
+.pace-toggle { display: flex; }
+.pace-option {
+    font-family: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 8px 14px;
+    background: #34495e;
+    border: 2px solid #95a5a6;
+    color: #bdc3c7;
+    cursor: pointer;
+    text-align: left;
+}
+.pace-option + .pace-option { border-left: none; }
+.pace-option:hover { background: #3d566e; }
+.pace-option.active {
+    background: #ecf0f1;
+    border-color: #ecf0f1;
+    color: #2c3e50;
+}
+.pace-name { font-size: 15px; font-weight: 700; }
+.pace-hint { font-size: 11px; }
+.pace-option.active .pace-hint { color: #34495e; }
 </style>

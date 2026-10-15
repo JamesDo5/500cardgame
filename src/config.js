@@ -1,4 +1,5 @@
 import timeouts from '@jamesdo5/500cardgame-contract/timeouts.json';
+import { PACE } from './net/messages.js';
 
 export const DEV = import.meta.env.DEV;
 export const mode = { standalone: false };
@@ -16,6 +17,7 @@ export const DEAL_TIMEOUT_MS = timeouts.competitive.deal;
 export const AUTOPLAY_MARGIN_MS = timeouts.clientAutoplayMarginMs;
 export const RELAXED_MULTIPLIER = timeouts.relaxedMultiplier;
 export const DEFAULT_PACE = timeouts.defaultPace;
+export const paceMultiplier = (pace) => pace === PACE.RELAXED ? RELAXED_MULTIPLIER : 1;
 export const BOT_DELAY_MS = 900;
 export const TRICK_HOLD_MS = timeouts.trickHoldMs;
 export const CARD_FLY_MS = 350;

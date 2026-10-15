@@ -27,7 +27,7 @@
 import { onMounted, onBeforeUnmount, computed, toRaw } from 'vue';
 import { useStore } from 'vuex'
 import Sortable from 'sortablejs';
-import { mode, TURN_TIMEOUT_MS, BID_TIMEOUT_MS, BLIND_TIMEOUT_MS, DEAL_TIMEOUT_MS, TABLE_WIDTH, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS, TRICK_HOLD_MS, CARD_FLY_MS, TRICK_SWEEP_MS } from '../config.js';
+import { mode, TURN_TIMEOUT_MS, BID_TIMEOUT_MS, BLIND_TIMEOUT_MS, DEAL_TIMEOUT_MS, TABLE_WIDTH, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS, TRICK_HOLD_MS, CARD_FLY_MS, TRICK_SWEEP_MS, paceMultiplier } from '../config.js';
 import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
 import { CARD_BACK_URL, HIDDEN_CARD, cardImageUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, dealMock, teamOf } from '../game/cards.js';
@@ -215,7 +215,7 @@ class GameTable {
             return;
         }
         const ms = gs === 0 ? DEAL_TIMEOUT_MS : gs === 1 || gs === 2 ? BID_TIMEOUT_MS : gs === 3 || gs === 4 ? BLIND_TIMEOUT_MS : TURN_TIMEOUT_MS;
-        store.commit('setTurn', { pos, deadlineMs: Date.now() + ms });
+        store.commit('setTurn', { pos, deadlineMs: Date.now() + ms * paceMultiplier(store.state.pace) });
     }
 
     expectedActor() {

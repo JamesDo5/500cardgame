@@ -1,4 +1,4 @@
-import { S2C, C2S, JOIN_ERROR_CODES } from './messages.js';
+import { S2C, JOIN_ERROR_CODES } from './messages.js';
 import { saveToken } from '../session.js';
 import { isValidCardStr } from '../game/cards.js';
 
@@ -20,7 +20,15 @@ export function installHandlers(socket, store) {
         })
         .on(S2C.LOBBY_STATE, (lobby) => {
             store.commit('setLobby', lobby);
+            if (lobby.pace) store.commit('setPace', lobby.pace);
             if (Array.isArray(lobby.seats)) setNames(store, lobby.seats.map(seat => seat.name));
+        })
+        .on(S2C.PACE_CHANGED, ({ pace, by }) => {
+            if (!pace) return;
+            store.commit('setPace', pace);
+            const who = by === 0 ? 'You' : store.state.playerNames[by] ?? 'Someone';
+            store.commit('notify', `${who} set ${pace} pace.`);
+            store.commit('feedPush', `${who} set ${pace} pace.`);
         })
         .on(S2C.REMATCH_COUNTDOWN, ({ startsAtMs }) => store.commit('setRematchAt', startsAtMs))
         .on(S2C.PLAYER_LEFT, ({ pos, name, abandoned }) => {
@@ -73,6 +81,7 @@ function applySnapshot(store, snap) {
     const bb = store.getters.getBidBox();
     const hand = store.getters.getHand();
     setNames(store, snap.playerNames);
+    if (snap.pace) store.commit('setPace', snap.pace);
     store.commit('setDealer', snap.dealer);
     store.commit('setScores', { scores: snap.scores ?? [0, 0], handScores: snap.handScores ?? [] });
     bb.reset();

@@ -1,4 +1,5 @@
 import Vuex from 'vuex'
+import { DEFAULT_PACE } from './config.js';
 
 const FEED_MAX = 30;
 
@@ -22,6 +23,7 @@ export default new Vuex.Store({
         connection: 'idle',
         session: { gameId: '', seat: -1, token: '', name: '' },
         lobby: { seats: [], hostPos: -1, canStart: false },
+        pace: DEFAULT_PACE,
         joinError: '',
         rematchAtMs: 0,
         autoBots: true,
@@ -80,6 +82,7 @@ export default new Vuex.Store({
         setConnection(state, s) { state.connection = s; },
         setSession(state, patch) { state.session = { ...state.session, ...patch }; },
         setLobby(state, lobby) { state.lobby = lobby; },
+        setPace(state, pace) { state.pace = pace; },
         setJoinError(state, msg) { state.joinError = msg; },
         setRematchAt(state, ms) { state.rematchAtMs = ms; },
         setAutoBots(state, b) { state.autoBots = b; },
