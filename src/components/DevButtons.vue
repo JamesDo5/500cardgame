@@ -119,4 +119,11 @@ defineExpose({ startDevButtons })
     padding: 6px 2px;
     font-size: 11px;
 }
+
+.portrait .dev-button {
+    width: 64px;
+    height: 30px;
+    font-size: 9px;
+    padding: 2px;
+}
 </style>

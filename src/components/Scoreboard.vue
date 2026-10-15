@@ -60,4 +60,12 @@ th, tr {
     overflow-y: auto;
     max-height: 150px;
 }
+
+.portrait .scoreboard {
+    top: 90px;
+    left: 20px;
+    transform-origin: top left;
+    transform: scale(1.25);
+    max-height: 120px;
+}
 </style>

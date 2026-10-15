@@ -70,4 +70,23 @@ const secondRow = computed(() => cards.value.slice(5));
     left: 50%;
     transform: translate(-50%, 0%);
 }
+
+.portrait .card-row, .portrait .card-halfrow {
+    min-width: 0;
+    min-height: 0;
+}
+.portrait .section, .portrait #topCards > img {
+    display: none;
+}
+.portrait #leftCards {
+    left: 90px;
+    top: 565px;
+}
+.portrait #rightCards {
+    right: 90px;
+    top: 565px;
+}
+.portrait #topCards {
+    top: 240px;
+}
 </style>

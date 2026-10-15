@@ -16,6 +16,9 @@ body.in-game {
   transform-origin: top left;
   overflow: hidden;
 }
+.portrait #stage {
+  touch-action: none;
+}
 
 /* Cards that are never moved manually by player. Also considered naming 'passive' */
 .fake-card {

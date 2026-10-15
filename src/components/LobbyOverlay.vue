@@ -264,4 +264,8 @@ async function share() {
 .pace-name { font-size: 15px; font-weight: 700; }
 .pace-hint { font-size: 11px; }
 .pace-option.active .pace-hint { color: #34495e; }
+
+.portrait .lobby {
+    width: 720px;
+}
 </style>

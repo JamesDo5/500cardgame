@@ -27,3 +27,5 @@ export const TABLE_WIDTH = 800;
 export const TABLE_HEIGHT = 560;
 export const STAGE_WIDTH = 1600;
 export const STAGE_HEIGHT = 1000;
+export const PORTRAIT_STAGE_WIDTH = 800;
+export const PORTRAIT_STAGE_MIN_HEIGHT = 1600;

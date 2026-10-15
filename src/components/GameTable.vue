@@ -1139,4 +1139,19 @@ onBeforeUnmount(() => {
     0%, 100% { transform: translateX(-50%) scale(1); }
     50% { transform: translateX(-50%) scale(1.06); }
 }
+
+.portrait #gameTableContainer {
+    top: 265px;
+    width: 800px;
+    height: 600px;
+}
+.portrait #gameTable {
+    height: 600px;
+}
+.portrait .card-played-left {
+    left: 35%;
+}
+.portrait .card-played-right {
+    left: 65%;
+}
 </style>

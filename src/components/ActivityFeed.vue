@@ -36,4 +36,12 @@ watch(() => feed.value.length, async () => {
 .feed-line {
     padding: 2px 0;
 }
+
+.portrait .activity-feed {
+    right: auto;
+    left: 215px;
+    bottom: 565px;
+    width: 330px;
+    max-height: 70px;
+}
 </style>

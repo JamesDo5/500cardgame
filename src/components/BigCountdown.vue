@@ -39,4 +39,13 @@ const fontSize = computed(() => `${70 + (BIG_COUNTDOWN_SECONDS - secondsLeft.val
     40% { transform: scale(1.15); opacity: 1; }
     100% { transform: scale(1); opacity: 0.9; }
 }
+
+.portrait .big-countdown {
+    right: auto;
+    left: 300px;
+    width: 200px;
+    text-align: center;
+    transform-origin: top center;
+    scale: 0.6;
+}
 </style>

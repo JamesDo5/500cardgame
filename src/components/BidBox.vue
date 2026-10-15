@@ -411,4 +411,37 @@ button.pass-button, button.submit-bid-button {
     margin-top: 10px;
     width: 45%;
 }
+
+.portrait .bidbox {
+    top: 600px;
+    transform: translate(-50%, -50%) scale(1.15);
+}
+.portrait .bid-banner {
+    top: 56px;
+    right: 20px;
+}
+.portrait .bid-big {
+    font-size: 84px;
+}
+.portrait .bid-big .bid-suit {
+    font-size: 76px;
+}
+.portrait .bidtable-toggle {
+    top: 12px;
+    left: auto;
+    right: 12px;
+}
+.portrait .bid-display {
+    font-size: 30px;
+}
+.portrait .left-bid, .portrait .top-bid, .portrait .right-bid {
+    bottom: auto;
+    top: -110px;
+}
+.portrait .left-bid {
+    left: 18%;
+}
+.portrait .right-bid {
+    right: 18%;
+}
 </style>
