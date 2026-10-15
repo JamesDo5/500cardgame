@@ -290,7 +290,7 @@ onMounted(() => {
     line-height: 1;
 }
 .bid-caption {
-    font-size: 18px;
+    font-size: 40px;
     letter-spacing: 2px;
     text-transform: uppercase;
     color: #bdc3c7;
