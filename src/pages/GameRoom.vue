@@ -96,15 +96,16 @@ watch(() => store.state.session.gameId, (id) => {
     if (id && props.gameId === 'new') router.replace({ name: 'game', params: { id } });
 });
 
+store.commit('resetGame');
+store.commit('setGameState', -1);
+store.commit('setJoinError', '');
+store.commit('setLobby', { seats: [], hostPos: -1, canStart: false });
+store.commit('setPace', DEFAULT_PACE);
+store.commit('setConnection', mode.standalone ? 'standalone' : 'idle');
+
 onMounted(() => {
     document.body.classList.add('in-game');
     window.addEventListener('resize', fitStage);
-    store.commit('resetGame');
-    store.commit('setGameState', mode.standalone ? -1 : -1);
-    store.commit('setJoinError', '');
-    store.commit('setLobby', { seats: [], hostPos: -1, canStart: false });
-    store.commit('setPace', DEFAULT_PACE);
-    store.commit('setConnection', mode.standalone ? 'standalone' : 'idle');
 });
 onBeforeUnmount(() => {
     document.body.classList.remove('in-game');
