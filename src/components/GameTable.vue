@@ -6,7 +6,7 @@
             <img class="fake-card card-played card-played-right" id="playedCardRight" :src="CARD_BACK_URL">
             <img class="fake-card card-played card-played-bottom" id="playedCardBottom" :src="CARD_BACK_URL">
             <div class="card-row" id="submitCards" :class="{ parked: !showPlayButton }"></div>
-            <button v-if="showPlayButton" class="table-button play-button" :class="{ armed: playArmed }" type="button" @click="playNow">Play card</button>
+            <button v-if="showPlayButton" class="table-button play-button" :class="{ armed: playArmed }" type="button" :disabled="!myPlayTurn" @click="playNow">Play card</button>
             <button v-if="showBlindButton" class="table-button blind-button" type="button" :disabled="blindFaceDown" :title="blindFaceDown ? 'Flip the blind first' : ''" @click="submitBlindNow">{{ blindFaceDown ? 'Flip the blind first' : 'Submit blind' }}</button>
             <div class="card-stack won-tricks-bottom" id="wonTricksBottom"></div>
             <div class="card-stack won-tricks-left" id="wonTricksLeft"></div>
@@ -997,6 +997,13 @@ onBeforeUnmount(() => {
     font-size: 24px;
     padding: 16px 44px;
     border-radius: 0;
+}
+.play-button:disabled, .play-button:disabled:hover {
+    background: #5d6d7e;
+    color: #aab7b8;
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.7;
 }
 .play-button.armed {
     background: linear-gradient(45deg, #f1c40f, #f39c12);
