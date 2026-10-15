@@ -16,9 +16,8 @@
             <div v-if="dealing" class="shuffle">
                 <img v-for="n in 7" :key="n" class="fake-card card-back shuffle-card" :style="{ animationDelay: `${(n - 1) * 0.12}s` }" :src="CARD_BACK_URL">
             </div>
-            <div v-if="dealing" class="deal-caption">{{ dealCaption }}</div>
             <Transition name="caption-fade">
-                <div v-if="turnCaption" class="turn-caption" :class="{ lead: leading }">{{ turnCaption }}</div>
+                <div v-if="boardCaption" class="board-caption" :class="captionClass">{{ boardCaption }}</div>
             </Transition>
             <button v-if="dealing && iAmDealer" class="deal-button" type="button" @click="dealNow">Deal</button>
         </div>
@@ -41,11 +40,31 @@ const store = useStore()
 const names = () => store.state.playerNames;
 const dealing = computed(() => store.state.gameState === 0);
 const iAmDealer = computed(() => store.state.dealer === 0);
-const dealCaption = computed(() => iAmDealer.value ? 'Your deal' : `${store.state.playerNames[store.state.dealer]} is dealing`);
 const showPlayButton = computed(() => store.state.gameState === 5);
 const myPlayTurn = computed(() => store.state.gameState === 5 && store.state.turn.pos === 0);
 const leading = computed(() => store.state.trickCards.every(c => !c));
-const turnCaption = computed(() => !myPlayTurn.value ? '' : leading.value ? 'You are leading' : 'Your turn');
+const myAction = computed(() => dealing.value ? iAmDealer.value : store.state.turn.pos === 0);
+const boardCaption = computed(() => {
+    const gs = store.state.gameState;
+    const pos = store.state.turn.pos;
+    if (gs === 0) return iAmDealer.value ? 'Your deal' : `${names()[store.state.dealer]} is dealing`;
+    if (pos < 0) return '';
+    const name = names()[pos];
+    if (gs === 1 || gs === 2) return pos === 0 ? 'Your bid' : `${name} is bidding`;
+    if (gs === 3) return pos === 0 ? 'Your blind' : `${name} is exchanging the blind`;
+    if (gs === 4) return pos === 0 ? '' : `${name} is exchanging the blind`;
+    if (gs === 5) return pos === 0 ? (leading.value ? 'You are leading' : 'Your turn') : `${name} is ${leading.value ? 'leading' : 'playing'}`;
+    return '';
+});
+const captionClass = computed(() => {
+    const gs = store.state.gameState;
+    return {
+        mine: myAction.value,
+        lead: myPlayTurn.value && leading.value,
+        corner: gs === 1 || gs === 2 || (gs === 5 && !myPlayTurn.value),
+        low: gs === 3 || gs === 4,
+    };
+});
 const playArmed = computed(() => myPlayTurn.value && store.state.stagedCount > 0);
 const showBlindButton = computed(() => store.state.gameState === 3 && store.getters.getBidBox()?.winningBidder === 0 && store.state.turn.pos === 0);
 const blindFaceDown = computed(() => store.state.blindFaceDown);
@@ -1056,7 +1075,7 @@ onBeforeUnmount(() => {
     50% { transform: translate(-50%, -50%) rotate(0deg); }
     75% { transform: translate(30%, -50%) rotate(8deg); }
 }
-.deal-caption, .turn-caption {
+.board-caption {
     position: absolute;
     top: 62%;
     left: 50%;
@@ -1068,13 +1087,24 @@ onBeforeUnmount(() => {
     white-space: nowrap;
     pointer-events: none;
 }
-.turn-caption {
+.board-caption.low {
+    top: 86%;
+}
+.board-caption.corner {
+    top: 14px;
+    left: 16px;
+    transform: none;
+    max-width: 222px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.board-caption.mine {
     font-size: 30px;
     font-weight: bold;
     color: #f1c40f;
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
 }
-.turn-caption.lead {
+.board-caption.lead {
     top: 42%;
     transform: translate(-50%, -50%);
     font-size: 52px;
