@@ -6,7 +6,7 @@
             <img class="fake-card card-played card-played-right" id="playedCardRight" :src="CARD_BACK_URL">
             <img class="fake-card card-played card-played-bottom" id="playedCardBottom" :src="CARD_BACK_URL">
             <div class="card-row" id="submitCards" :class="{ parked: !showPlayButton }"></div>
-            <button v-if="showPlayButton" class="table-button play-button" :class="{ armed: playArmed }" type="button" :disabled="!myPlayTurn" @click="playNow">Play card</button>
+            <button v-if="showPlayButton" class="table-button play-button" :class="{ armed: playArmed }" type="button" :disabled="!myPlayTurn" @click="playNow">{{ playArmed ? 'Play card?' : 'Play card' }}</button>
             <button v-if="showBlindButton" class="table-button blind-button" type="button" :disabled="blindFaceDown" :title="blindFaceDown ? 'Flip the blind first' : ''" @click="submitBlindNow">{{ blindFaceDown ? 'Flip the blind first' : 'Submit blind' }}</button>
             <div class="card-stack won-tricks-bottom" id="wonTricksBottom"></div>
             <div class="card-stack won-tricks-left" id="wonTricksLeft"></div>
@@ -46,7 +46,7 @@ const showPlayButton = computed(() => store.state.gameState === 5);
 const myPlayTurn = computed(() => store.state.gameState === 5 && store.state.turn.pos === 0);
 const leading = computed(() => store.state.trickCards.every(c => !c));
 const turnCaption = computed(() => !myPlayTurn.value ? '' : leading.value ? 'You are leading' : 'Your turn');
-const playArmed = computed(() => store.state.stagedCount > 0 && store.state.turn.pos === 0);
+const playArmed = computed(() => myPlayTurn.value && store.state.stagedCount > 0);
 const showBlindButton = computed(() => store.state.gameState === 3 && store.getters.getBidBox()?.winningBidder === 0 && store.state.turn.pos === 0);
 const blindFaceDown = computed(() => store.state.blindFaceDown);
 function playNow() {
@@ -1007,11 +1007,21 @@ onBeforeUnmount(() => {
 }
 .play-button.armed {
     background: linear-gradient(45deg, #f1c40f, #f39c12);
-    animation: armedGlow 1.1s ease-in-out infinite;
+    transform: translateX(110px) translateY(30px) scale(1.1);
+    box-shadow: 0 0 18px 4px rgba(241, 196, 15, 0.55), 0 3px 6px rgba(0, 0, 0, 0.3);
+    animation: armedPulse 1.4s ease-in-out infinite;
 }
-@keyframes armedGlow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(110px) translateY(30px) scale(1); }
-    50% { box-shadow: 0 0 0 14px rgba(241, 196, 15, 0), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(110px) translateY(30px) scale(1.05); }
+.play-button.armed:hover {
+    filter: brightness(1.08);
+}
+@keyframes armedPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(110px) translateY(30px) scale(1.08); }
+    50% { box-shadow: 0 0 0 14px rgba(241, 196, 15, 0), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(110px) translateY(30px) scale(1.14); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .play-button.armed {
+        animation: none;
+    }
 }
 .blind-button {
     top: 50%;
