@@ -28,7 +28,7 @@ const scores = computed(() => store.state.scores);
 
 <style scoped>
 table td + td, table th + th {
-    border-left: 2px solid tomato;
+    border-left: 2px solid white;
 }
 
 th {
