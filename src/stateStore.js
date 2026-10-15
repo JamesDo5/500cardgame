@@ -18,6 +18,7 @@ export default new Vuex.Store({
         handScores: [],
         turn: { pos: -1, deadlineMs: 0, startedMs: 0 },
         cardCounts: [10, 10, 10, 10],
+        trickCards: ['', '', '', ''],
         firstCardPlayed: false,
         gameWinner: -1,
         connection: 'idle',
@@ -72,11 +73,13 @@ export default new Vuex.Store({
             state.gameWinner = -1;
             state.rematchAtMs = 0;
             state.handCards = [];
+            state.trickCards = ['', '', '', ''];
             state.feed = [];
         },
         setTurn(state, turn) { state.turn = { startedMs: Date.now(), ...turn }; },
         setCardCount(state, { pos, n }) { state.cardCounts[pos] = Math.max(0, n); },
         resetCardCounts(state) { state.cardCounts = [10, 10, 10, 10]; },
+        setTrickCards(state, arr) { state.trickCards = arr.slice(); },
         setFirstCardPlayed(state, b) { state.firstCardPlayed = b; },
         setGameWinner(state, t) { state.gameWinner = t; },
         setConnection(state, s) { state.connection = s; },

@@ -17,6 +17,9 @@
                 <img v-for="n in 7" :key="n" class="fake-card card-back shuffle-card" :style="{ animationDelay: `${(n - 1) * 0.12}s` }" :src="CARD_BACK_URL">
             </div>
             <div v-if="dealing" class="deal-caption">{{ dealCaption }}</div>
+            <Transition name="caption-fade">
+                <div v-if="turnCaption" class="turn-caption" :class="{ lead: leading }">{{ turnCaption }}</div>
+            </Transition>
             <button v-if="dealing && iAmDealer" class="deal-button" type="button" @click="dealNow">Deal</button>
         </div>
         <div class="card-row" id="blindCards"></div>
@@ -40,6 +43,9 @@ const dealing = computed(() => store.state.gameState === 0);
 const iAmDealer = computed(() => store.state.dealer === 0);
 const dealCaption = computed(() => iAmDealer.value ? 'Your deal' : `${store.state.playerNames[store.state.dealer]} is dealing`);
 const showPlayButton = computed(() => store.state.gameState === 5);
+const myPlayTurn = computed(() => store.state.gameState === 5 && store.state.turn.pos === 0);
+const leading = computed(() => store.state.trickCards.every(c => !c));
+const turnCaption = computed(() => !myPlayTurn.value ? '' : leading.value ? 'You are leading' : 'Your turn');
 const playArmed = computed(() => store.state.stagedCount > 0 && store.state.turn.pos === 0);
 const showBlindButton = computed(() => store.state.gameState === 3 && store.getters.getBidBox()?.winningBidder === 0 && store.state.turn.pos === 0);
 const blindFaceDown = computed(() => store.state.blindFaceDown);
@@ -157,6 +163,10 @@ class GameTable {
 
     syncStaged() {
         store.commit('setStagedCount', this.submitCards.length);
+    }
+
+    syncPlayed() {
+        store.commit('setTrickCards', this.playedCards);
     }
 
     afterDragEnd(item) {
@@ -298,6 +308,7 @@ class GameTable {
         this.sortableBlindCards.option("disabled", true);
         this.sortableSubmitCards.option("disabled", true);
         this.clearPlayedCards();
+        this.syncPlayed();
         this.renderStacks();
         store.commit('setTrumpSuit', '');
         store.commit('setWinningBid', -1);
@@ -541,6 +552,7 @@ class GameTable {
         }
 
         this.playedCards[pos] = card;
+        this.syncPlayed();
         store.commit('setCardCount', { pos, n: store.state.cardCounts[pos] - 1 });
         const ele = document.getElementById('playedCard' + getPosName(pos));
         ele.dataset.card = card;
@@ -623,6 +635,7 @@ class GameTable {
         store.commit('feedPush', `${names()[winner]} won the trick.`);
         this.maybePartnerJoke(trick, leader, winner);
         this.playedCards = ['', '', '', ''];
+        this.syncPlayed();
         this.clearPlayedCards();
         this.renderStacks();
         this.resolving = false;
@@ -676,6 +689,7 @@ class GameTable {
 
     restoreTrick(playedCards, leader, wonTricks) {
         this.playedCards = playedCards.slice();
+        this.syncPlayed();
         this.lastTrickWinner = leader;
         this.wonTricks = wonTricks.slice();
         this.clearPlayedCards();
@@ -1025,7 +1039,7 @@ onBeforeUnmount(() => {
     50% { transform: translate(-50%, -50%) rotate(0deg); }
     75% { transform: translate(30%, -50%) rotate(8deg); }
 }
-.deal-caption {
+.deal-caption, .turn-caption {
     position: absolute;
     top: 62%;
     left: 50%;
@@ -1034,6 +1048,26 @@ onBeforeUnmount(() => {
     font-family: Arial, sans-serif;
     font-size: 20px;
     letter-spacing: 1px;
+    white-space: nowrap;
+    pointer-events: none;
+}
+.turn-caption {
+    font-size: 30px;
+    font-weight: bold;
+    color: #f1c40f;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+}
+.turn-caption.lead {
+    top: 42%;
+    transform: translate(-50%, -50%);
+    font-size: 52px;
+    letter-spacing: 3px;
+}
+.caption-fade-enter-active, .caption-fade-leave-active {
+    transition: opacity 0.35s ease;
+}
+.caption-fade-enter-from, .caption-fade-leave-to {
+    opacity: 0;
 }
 .deal-button {
     position: absolute;
