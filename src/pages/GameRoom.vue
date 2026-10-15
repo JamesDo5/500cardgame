@@ -124,7 +124,7 @@ onBeforeUnmount(() => {
         <div v-if="needName" class="gate">
             <form class="gate-card" @submit.prevent="submitName">
                 <div class="gate-kicker">Joining game {{ displayId }}</div>
-                <label class="gate-label" for="gateName">What should we call you?</label>
+                <label class="gate-label" for="gateName">What name should be shown at the table?</label>
                 <input id="gateName" v-model="nameInput" class="ui-input" maxlength="24" autofocus placeholder="Your name">
                 <div class="gate-actions">
                     <button class="ui-button" type="button" @click="backHome">Back</button>

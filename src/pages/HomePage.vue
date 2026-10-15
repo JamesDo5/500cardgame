@@ -28,7 +28,7 @@ function joinGame() {
         <header class="home-header">
             <a class="home-back" :href="SITE_URL">← jamesdouthit.com</a>
             <h1 class="home-title">500</h1>
-            <p class="home-sub">4 players required! We use "Avondale" scoring from the Wikipedia with no misère. We use a 5-card blind and 1 joker.</p>
+            <p class="home-sub">4 players required! There's a 5-card blind and 1 joker.<br>On the Wikipedia, find "Avondale" scoring (no misère).</p>
             <div class="home-links">
                 <button class="ui-button" type="button" @click="rulesRef?.show()">Read the rules</button>
                 <a class="ui-button" :href="WIKIPEDIA_URL" target="_blank" rel="noopener">500 on Wikipedia</a>

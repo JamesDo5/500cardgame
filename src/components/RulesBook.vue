@@ -55,7 +55,7 @@ const PAGES = [
             'The bid-winner leads first, then whoever wins a given trick will always lead the next.',
             'You <strong>must</strong> follow the suit that is led for the trick, <strong>unless</strong> you have 0 cards in that suit at all, in which case you can lay literally <strong>whatever you want</strong>.',
             'At the end of the trick, the highest trump card played wins the trick. If no trump cards were played, then the highest card in the suit which was led wins the trick.',
-            "We'll go around the table 10 times until everyone has played all 10 of their cards! Good luck!",
+            "Play goes around the table 10 times until everyone has played all 10 of their cards! Good luck!",
         ]},
     ]},
     { label: 'FYIs', sections: [
