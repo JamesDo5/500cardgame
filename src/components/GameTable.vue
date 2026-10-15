@@ -898,6 +898,7 @@ onBeforeUnmount(() => {
 #submitCards :deep(.real-card > *), #submitCards :deep(.hand-card > *) {
     width: 150px;
     height: 214px;
+    display: block;
 }
 
 #blindCards :deep(.real-card > *), #blindCards :deep(.hand-card > *) {
