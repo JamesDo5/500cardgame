@@ -192,7 +192,7 @@ onMounted(() => {
 #bottomCards :deep(.hand-card > *) {
     width: 150px;
     height: 214px;
-    background-color: white;
+    background-color: var(--ivory);
     border-radius: 0;
     display: flex;
     justify-content: center;
@@ -213,8 +213,8 @@ onMounted(() => {
     padding: 8px 18px;
     font-size: 15px;
     font-weight: bold;
-    color: #2c3e50;
-    background: #ecf0f1;
+    color: var(--ink);
+    background: var(--ivory);
     border: none;
     border-radius: 0;
     cursor: pointer;
@@ -222,7 +222,7 @@ onMounted(() => {
     z-index: 6;
 }
 .sort-button:hover {
-    background: #f1c40f;
+    background: var(--gold);
 }
 
 #bottomCards :deep(.illegal) {

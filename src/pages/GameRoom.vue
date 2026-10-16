@@ -215,18 +215,19 @@ onBeforeUnmount(() => {
 .gate {
     position: absolute;
     inset: 0;
-    background: rgba(20, 30, 40, 0.9);
+    background: rgba(8, 24, 14, 0.9);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 80;
     font-family: Arial, sans-serif;
-    color: #ecf0f1;
+    color: var(--ink);
 }
 .gate-card {
     width: 480px;
-    background: #2c3e50;
-    border: 3px solid #ecf0f1;
+    background: var(--ivory);
+    border: 3px solid var(--ink);
+    outline: 3px solid var(--gold);
     padding: 28px 32px;
     display: flex;
     flex-direction: column;
@@ -236,8 +237,12 @@ onBeforeUnmount(() => {
     font-size: 13px;
     letter-spacing: 3px;
     text-transform: uppercase;
-    color: #bdc3c7;
+    color: var(--card-red);
 }
+.gate-card .ui-button { border-color: var(--ink); }
+.gate-card .ui-button.danger { color: var(--card-red); border-color: var(--card-red); }
+.gate-card .ui-button.danger:hover { color: var(--ivory); }
+.gate-card .ui-input { border-color: var(--ink); }
 .gate-label { font-size: 22px; font-weight: 700; }
 .gate-text { font-size: 17px; line-height: 1.5; margin: 0; }
 .gate-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }

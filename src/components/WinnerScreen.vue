@@ -13,7 +13,7 @@ const weWon = computed(() => store.state.gameWinner === 0);
 const scores = computed(() => store.state.scores);
 const handScores = computed(() => store.state.handScores);
 const names = computed(() => store.state.playerNames);
-const COLORS = ['#f1c40f', '#e74c3c', '#2ecc71', '#3498db', '#9b59b6', '#ecf0f1'];
+const COLORS = ['#d4af37', '#b61c2b', '#161616', '#f6efdb', '#f1d16a', '#e2343f'];
 const confetti = Array.from({ length: 40 }, (_, i) => ({
     left: `${(i * 37) % 100}%`,
     delay: `${(i % 10) * 0.25}s`,
@@ -80,19 +80,24 @@ function leave() {
 .winner-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(20, 30, 40, 0.82);
+    background: rgba(8, 24, 14, 0.82);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 60;
     overflow: hidden;
 }
+.winner-actions .ui-button.danger {
+    color: var(--card-red);
+}
 .winner-card {
     position: relative;
-    background: #2c3e50;
+    background: var(--ivory);
+    border: 3px solid var(--ink);
+    outline: 3px solid var(--gold);
     border-radius: 0;
     padding: 32px 48px;
-    color: #ecf0f1;
+    color: var(--ink);
     font-family: Arial, sans-serif;
     text-align: center;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
@@ -106,7 +111,7 @@ function leave() {
 }
 .winner-sub {
     margin-top: 6px;
-    color: #bdc3c7;
+    color: var(--ink-soft);
 }
 .winner-scores {
     margin: 20px auto 0;
@@ -120,11 +125,14 @@ function leave() {
     text-decoration: underline;
     text-underline-offset: 3px;
 }
+.winner-scores th {
+    color: var(--card-red);
+}
 .winner-scores td + td, .winner-scores th + th {
-    border-left: 2px solid tomato;
+    border-left: 2px solid var(--ink);
 }
 .winner-total td {
-    border-top: 1px dashed lightslategray;
+    border-top: 1px dashed var(--ink-soft);
     font-weight: bold;
 }
 .winner-button {
@@ -132,15 +140,15 @@ function leave() {
     padding: 12px 36px;
     font-size: 20px;
     font-weight: bold;
-    color: #2c3e50;
-    background: linear-gradient(45deg, #f1c40f, #f39c12);
+    color: var(--ink);
+    background: linear-gradient(45deg, var(--gold-bright), var(--gold));
     border: none;
     border-radius: 0;
     cursor: pointer;
 }
 .winner-wait {
     margin-top: 24px;
-    color: #f1c40f;
+    color: var(--gold-deep);
     font-weight: bold;
 }
 .winner-actions {

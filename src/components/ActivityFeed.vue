@@ -26,10 +26,11 @@ watch(() => feed.value.length, async () => {
     width: 260px;
     max-height: 180px;
     overflow-y: auto;
-    color: gainsboro;
+    color: var(--muted);
     font-family: Arial, sans-serif;
     font-size: 13px;
-    background-color: rgba(0, 0, 0, 0.25);
+    background-color: rgba(0, 0, 0, 0.3);
+    border-left: 2px solid var(--gold-deep);
     border-radius: 0;
     padding: 8px;
 }

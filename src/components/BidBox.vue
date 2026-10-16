@@ -271,7 +271,10 @@ onMounted(() => {
     top: 45%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: white;
+    background-color: var(--ivory);
+    color: var(--ink);
+    border: 3px solid var(--ink);
+    box-shadow: 0 0 0 3px var(--gold), 0 12px 32px var(--shadow);
     padding: 18px;
     border-radius: 0;
     text-align: center;
@@ -293,7 +296,7 @@ onMounted(() => {
     position: absolute;
     top: 72px;
     right: 25px;
-    color: white;
+    color: var(--ivory);
     font-family: Arial, sans-serif;
     text-align: right;
     line-height: 1;
@@ -302,10 +305,10 @@ onMounted(() => {
     font-size: 40px;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: #bdc3c7;
+    color: var(--muted);
 }
 .bid-banner.contract .bid-caption {
-    color: #f1c40f;
+    color: var(--gold);
 }
 .bid-big {
     font-size: 110px;
@@ -319,23 +322,23 @@ onMounted(() => {
 .bid-points-big {
     font-size: 20px;
     font-weight: normal;
-    color: #ecf0f1;
+    color: var(--ivory);
     margin-left: 10px;
     vertical-align: middle;
 }
 .bid-sub {
     font-size: 20px;
     margin-top: 8px;
-    color: #ecf0f1;
+    color: var(--ivory);
 }
 .suit-red {
-    color: #ff5a5a;
+    color: var(--card-red-bright);
 }
 .suit-black {
-    color: #ecf0f1;
+    color: var(--ivory);
 }
 .bidbox .suit-black {
-    color: #ecf0f1;
+    color: var(--ivory);
 }
 .bid-display .bid-value {
     font-weight: 800;
@@ -346,11 +349,11 @@ onMounted(() => {
 .bid-display .bid-points {
     font-size: 0.45em;
     margin-left: 6px;
-    color: #bdc3c7;
+    color: var(--muted);
     font-weight: normal;
 }
 .bid-display.placed .bid-prefix, .bid-display.placed .bid-pass {
-    color: lightgreen;
+    color: var(--gold-bright);
 }
 .bid-prefix {
     font-size: 0.6em;
@@ -363,8 +366,8 @@ onMounted(() => {
     padding: 8px 16px;
     font-size: 14px;
     font-weight: bold;
-    color: #2c3e50;
-    background: #ecf0f1;
+    color: var(--ink);
+    background: var(--ivory);
     border: none;
     border-radius: 0;
     cursor: pointer;
@@ -372,14 +375,14 @@ onMounted(() => {
     z-index: 6;
 }
 .bidtable-toggle:hover {
-    background: #f1c40f;
+    background: var(--gold);
 }
 
 .bid-display {
     position: absolute;
     transform: translate(-50%, 50%);
     font-size: 36px;
-    color: white;
+    color: var(--ivory);
     font-family: Arial, sans-serif;
     text-align: center;
     white-space: nowrap;
@@ -487,10 +490,24 @@ button.bid-amount-button {
     font-size: 38px;
     line-height: 1;
     box-sizing: border-box;
+    color: var(--ink);
+    background: var(--ivory-2);
+    border: 2px solid var(--ivory-3);
+    cursor: pointer;
+}
+button.bid-amount-button:hover:not(:disabled) {
+    background: var(--gold-bright);
+    border-color: var(--gold);
+}
+button.bid-amount-button:disabled {
+    color: var(--ink-soft);
+    opacity: 0.45;
+    cursor: default;
 }
 button.bid-amount-button.selected {
-    outline: 3px solid #2ecc71;
+    outline: 3px solid var(--gold);
     outline-offset: -3px;
+    background: var(--gold-bright);
 }
 .bid-actions {
     display: flex;

@@ -874,8 +874,10 @@ onBeforeUnmount(() => {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s;
     will-change: transform;
-    background-color: #3498db;
-    color: white;
+    background-color: var(--card-back);
+    color: var(--ivory);
+    border: 2px solid var(--ivory);
+    box-sizing: border-box;
     font-weight: bold;
     font-size: 28px;
     position: absolute;
@@ -942,7 +944,7 @@ onBeforeUnmount(() => {
 }
 
 .discard-blind {
-    background-color: #2c3e50;
+    background-color: var(--felt-edge);
     opacity: 0.85;
     display: none;
     visibility: visible;
@@ -1008,17 +1010,17 @@ onBeforeUnmount(() => {
     left: 50%;
     transform: translate(-50%, -62%);
     z-index: 2;
-    border: 3px dashed #95a5a6;
+    border: 3px dashed var(--gold);
     border-radius: 0;
     padding: 16px;
     min-width: 150px;
     min-height: 214px;
     justify-content: center;
     align-items: center;
-    background-color: rgba(32, 50, 67, 0.92);
+    background-color: var(--felt-edge);
 }
 #submitCards:empty {
-    background-color: rgba(32, 50, 67, 0.25);
+    background-color: rgba(0, 0, 0, 0.18);
 }
 #submitCards.parked {
     display: none;
@@ -1032,7 +1034,7 @@ onBeforeUnmount(() => {
 #blindCards :deep(.real-card > *), #blindCards :deep(.hand-card > *) {
     width: 150px;
     height: 214px;
-    background-color: white;
+    background-color: var(--ivory);
     border-radius: 0;
     display: flex;
     justify-content: center;
@@ -1058,7 +1060,11 @@ onBeforeUnmount(() => {
 #gameTable {
     width: 800px;
     height: 560px;
-    background-color: #34495e;
+    background-color: var(--felt);
+    background-image: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.07), rgba(0, 0, 0, 0.22));
+    border: 4px solid var(--felt-edge);
+    box-sizing: border-box;
+    box-shadow: inset 0 0 0 2px var(--gold-deep), 0 10px 30px var(--shadow);
     border-radius: 0;
     position: absolute;
 }
@@ -1080,8 +1086,8 @@ onBeforeUnmount(() => {
     padding: 8px 22px;
     font-size: 16px;
     font-weight: bold;
-    color: #2c3e50;
-    background: #ecf0f1;
+    color: var(--ink);
+    background: var(--ivory);
     border: none;
     border-radius: 0;
     cursor: pointer;
@@ -1089,11 +1095,11 @@ onBeforeUnmount(() => {
     z-index: 6;
 }
 .table-button:hover {
-    background: #f1c40f;
+    background: var(--gold);
 }
 .table-button:disabled {
-    background: #bdc3c7;
-    color: #7f8c8d;
+    background: var(--ivory-3);
+    color: var(--ink-soft);
     cursor: not-allowed;
     box-shadow: none;
 }
@@ -1106,24 +1112,24 @@ onBeforeUnmount(() => {
     border-radius: 0;
 }
 .play-button:disabled, .play-button:disabled:hover {
-    background: #5d6d7e;
-    color: #aab7b8;
+    background: var(--felt-deep);
+    color: var(--muted);
     cursor: not-allowed;
     box-shadow: none;
     opacity: 0.7;
 }
 .play-button.armed {
-    background: linear-gradient(45deg, #f1c40f, #f39c12);
+    background: linear-gradient(45deg, var(--gold-bright), var(--gold));
     transform: translateX(110px) translateY(30px) scale(1.1);
-    box-shadow: 0 0 18px 4px rgba(241, 196, 15, 0.55), 0 3px 6px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 18px 4px rgba(212, 175, 55, 0.55), 0 3px 6px rgba(0, 0, 0, 0.3);
     animation: armedPulse 1.4s ease-in-out infinite;
 }
 .play-button.armed:hover {
     filter: brightness(1.08);
 }
 @keyframes armedPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(110px) translateY(30px) scale(1.08); }
-    50% { box-shadow: 0 0 0 14px rgba(241, 196, 15, 0), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(110px) translateY(30px) scale(1.14); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(110px) translateY(30px) scale(1.08); }
+    50% { box-shadow: 0 0 0 14px rgba(212, 175, 55, 0), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(110px) translateY(30px) scale(1.14); }
 }
 @media (prefers-reduced-motion: reduce) {
     .play-button.armed {
@@ -1190,7 +1196,7 @@ onBeforeUnmount(() => {
     top: 62%;
     left: 50%;
     transform: translateX(-50%);
-    color: #ecf0f1;
+    color: var(--ivory);
     font-family: Arial, sans-serif;
     font-size: 20px;
     letter-spacing: 1px;
@@ -1211,7 +1217,7 @@ onBeforeUnmount(() => {
 .board-caption.mine {
     font-size: 30px;
     font-weight: bold;
-    color: #f1c40f;
+    color: var(--gold-bright);
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
 }
 .board-caption.corner.mine {
@@ -1309,8 +1315,8 @@ onBeforeUnmount(() => {
     font-size: 40px;
     font-weight: bold;
     letter-spacing: 2px;
-    color: #2c3e50;
-    background: linear-gradient(45deg, #f1c40f, #f39c12);
+    color: var(--ink);
+    background: linear-gradient(45deg, var(--gold-bright), var(--gold));
     border: none;
     border-radius: 0;
     cursor: pointer;

@@ -28,11 +28,11 @@ const scores = computed(() => store.state.scores);
 
 <style scoped>
 table td + td, table th + th {
-    border-left: 2px solid white;
+    border-left: 2px solid var(--ink);
 }
 
 th {
-    color: white;
+    color: var(--card-red);
     text-decoration: underline;
     text-underline-offset: 3px;
 }
@@ -45,13 +45,15 @@ th, tr {
 }
 
 .total {
-    border-top: 1px dashed lightslategray;
+    border-top: 1px dashed var(--ink-soft);
+    font-weight: bold;
 }
 
 .scoreboard {
-    color: gainsboro;
-    outline-color: gainsboro;
-    outline-style: solid;
+    color: var(--ink);
+    background: var(--ivory);
+    outline: 2px solid var(--ink);
+    box-shadow: 0 0 0 4px var(--gold), 0 6px 16px var(--shadow);
     position: absolute;
     top: 75px;
     left: 75px;

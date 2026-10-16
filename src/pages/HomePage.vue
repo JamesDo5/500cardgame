@@ -66,22 +66,23 @@ function joinGame() {
     flex-direction: column;
     align-items: center;
     padding: 48px 24px 64px;
-    color: #ecf0f1;
+    color: var(--ivory);
     font-family: Arial, sans-serif;
     box-sizing: border-box;
 }
 .home-header { text-align: center; max-width: 720px; }
-.home-back { color: #bdc3c7; text-decoration: none; font-size: 14px; letter-spacing: 1px; }
-.home-back:hover { color: #f1c40f; }
+.home-back { color: var(--muted); text-decoration: none; font-size: 14px; letter-spacing: 1px; }
+.home-back:hover { color: var(--gold); }
 .home-title {
     font-size: 120px;
     margin: 12px 0 0;
     line-height: 1;
     letter-spacing: 6px;
     font-weight: 800;
-    text-shadow: 0 6px 0 #0f1a24;
+    color: var(--gold-bright);
+    text-shadow: 0 6px 0 var(--felt-edge);
 }
-.home-sub { font-size: 18px; color: #bdc3c7; margin: 12px 0 20px; }
+.home-sub { font-size: 18px; color: var(--muted); margin: 12px 0 20px; }
 .home-links { display: flex; gap: 12px; justify-content: center; }
 .home-forms {
     display: grid;
@@ -93,8 +94,9 @@ function joinGame() {
     .home-forms { grid-template-columns: 300px; }
 }
 .panel {
-    background: #2c3e50;
-    border: 3px solid #ecf0f1;
+    background: var(--felt-deep);
+    border: 3px solid var(--ivory);
+    outline: 3px solid var(--gold-deep);
     padding: 22px 24px;
     display: flex;
     flex-direction: column;
@@ -102,8 +104,8 @@ function joinGame() {
     margin: 0;
 }
 .panel h2 { margin: 0; font-size: 20px; letter-spacing: 1px; }
-.hint { font-size: 13px; color: #bdc3c7; margin: 0; line-height: 1.5; }
+.hint { font-size: 13px; color: var(--muted); margin: 0; line-height: 1.5; }
 .id-input { text-transform: uppercase; letter-spacing: 6px; font-weight: 700; text-align: center; }
 .wide { width: 100%; }
-.dev-link { margin-top: 40px; color: #7f8c8d; font-size: 13px; }
+.dev-link { margin-top: 40px; color: var(--muted); font-size: 13px; }
 </style>

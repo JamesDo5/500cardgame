@@ -25,11 +25,11 @@ const fontSize = computed(() => `${70 + (BIG_COUNTDOWN_SECONDS - secondsLeft.val
     top: 70px;
     right: 420px;
     transform-origin: top right;
-    color: #e74c3c;
+    color: var(--card-red-bright);
     font-family: Impact, 'Arial Black', sans-serif;
     font-weight: 900;
     line-height: 1;
-    text-shadow: 0 0 24px rgba(231, 76, 60, 0.7), 0 6px 0 #7b241c;
+    text-shadow: 0 0 24px rgba(182, 28, 43, 0.7), 0 6px 0 var(--ink);
     z-index: 40;
     pointer-events: none;
     animation: countPop 0.9s cubic-bezier(.2,1.6,.4,1);

@@ -1,6 +1,29 @@
+:root {
+  --felt: #1f5f3b;
+  --felt-deep: #16452b;
+  --felt-edge: #0e2f1c;
+  --page: #11271a;
+  --ivory: #f6efdb;
+  --ivory-2: #eadfc3;
+  --ivory-3: #d6c9a3;
+  --ink: #1b1b1b;
+  --ink-soft: #4b4b4b;
+  --card-red: #b61c2b;
+  --card-red-bright: #e2343f;
+  --card-black: #161616;
+  --gold: #d4af37;
+  --gold-bright: #f1d16a;
+  --gold-deep: #9a7a1f;
+  --muted: #cfc5a6;
+  --shadow: rgba(0, 0, 0, 0.35);
+  --card-back: #1d4e89;
+  --me-glyph: '👤';
+  --trump-color: var(--gold);
+}
+
 body {
   margin: 0;
-  background-color: #203243;
+  background-color: var(--page);
 }
 body.in-game {
   position: fixed;
@@ -45,11 +68,10 @@ img.fake-card, .hand-card > img, .real-card > img, .sortable-fallback > img {
   background-image: var(--card-back-placeholder);
 }
 
-/* Cards that are never moved manually by player. Also considered naming 'passive' */
 .fake-card {
   width: 70px;
   height: 100px;
-  background-color: white;
+  background-color: var(--ivory);
   border-radius: 0;
   display: flex;
   justify-content: center;
@@ -61,27 +83,26 @@ img.fake-card, .hand-card > img, .real-card > img, .sortable-fallback > img {
 }
 
 .card-back {
-  background-color: #3498db;
-  color: white;
+  background-color: var(--card-back);
+  color: var(--ivory);
   font-weight: bold;
 }
 .card-front {
-  background-color: white;
-  border: 1px solid #7f8c8d;
+  background-color: var(--ivory);
+  border: 1px solid var(--ink-soft);
   font-size: 29px;
   cursor: grab;
 }
 .sortable-chosen {
   cursor: grabbing;
 }
-/* TODO this can be destroyed once card images are implemented */
 .card-front.hearts,
 .card-front.diamonds {
-  color: red;
+  color: var(--card-red);
 }
 .card-front.clubs,
 .card-front.spades {
-  color: black;
+  color: var(--card-black);
 }
 
 
@@ -107,20 +128,20 @@ img.fake-card, .hand-card > img, .real-card > img, .sortable-fallback > img {
   font-size: 16px;
   font-weight: 700;
   font-family: Arial, sans-serif;
-  color: #2c3e50;
-  background: #ecf0f1;
-  border: 2px solid #ecf0f1;
+  color: var(--ink);
+  background: var(--ivory);
+  border: 2px solid var(--ivory);
   cursor: pointer;
   text-decoration: none;
   line-height: 1.2;
   letter-spacing: 0.5px;
 }
-.ui-button:hover { background: #f1c40f; border-color: #f1c40f; }
-.ui-button:disabled { opacity: 0.4; cursor: default; background: #ecf0f1; border-color: #ecf0f1; }
-.ui-button.primary { background: #f1c40f; border-color: #f1c40f; }
-.ui-button.primary:hover { background: #f39c12; border-color: #f39c12; }
-.ui-button.danger { background: transparent; color: #ecf0f1; border-color: #e74c3c; }
-.ui-button.danger:hover { background: #e74c3c; border-color: #e74c3c; color: white; }
+.ui-button:hover { background: var(--gold); border-color: var(--gold); }
+.ui-button:disabled { opacity: 0.4; cursor: default; background: var(--ivory); border-color: var(--ivory); }
+.ui-button.primary { background: var(--gold); border-color: var(--gold); }
+.ui-button.primary:hover { background: var(--gold-bright); border-color: var(--gold-bright); }
+.ui-button.danger { background: transparent; color: var(--ivory); border-color: var(--card-red-bright); }
+.ui-button.danger:hover { background: var(--card-red); border-color: var(--card-red); color: var(--ivory); }
 .ui-button.small { padding: 6px 14px; font-size: 13px; }
 .ui-input {
   width: 100%;
@@ -128,9 +149,9 @@ img.fake-card, .hand-card > img, .real-card > img, .sortable-fallback > img {
   padding: 10px 12px;
   font-size: 18px;
   font-family: Arial, sans-serif;
-  color: #2c3e50;
-  background: #ecf0f1;
-  border: 2px solid #ecf0f1;
+  color: var(--ink);
+  background: var(--ivory);
+  border: 2px solid var(--ivory);
   outline: none;
 }
-.ui-input:focus { border-color: #f1c40f; }
+.ui-input:focus { border-color: var(--gold); }
