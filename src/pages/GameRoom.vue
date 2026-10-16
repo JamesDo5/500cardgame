@@ -187,8 +187,8 @@ onBeforeUnmount(() => {
 
         <div v-if="confirmRestart" class="gate">
             <div class="gate-card">
-                <div class="gate-kicker">Restart the game?</div>
-                <p class="gate-text">Scores are cleared and everyone goes back to the lobby with the same seats.</p>
+                <div class="gate-kicker">Start over?</div>
+                <p class="gate-text">Scores reset and everyone goes back to the lobby.</p>
                 <div class="gate-actions">
                     <button class="ui-button" type="button" @click="confirmRestart = false">Back</button>
                     <button class="ui-button danger" type="button" @click="restartNow">Restart</button>

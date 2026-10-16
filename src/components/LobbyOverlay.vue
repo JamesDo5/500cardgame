@@ -28,8 +28,8 @@ const LAYOUT = [
 const connection = computed(() => store.state.connection);
 const pace = computed(() => store.state.lobby.pace ?? store.state.pace);
 const PACES = [
-    { value: PACE.COMPETITIVE, label: 'Competitive', hint: 'Standard time per turn' },
-    { value: PACE.RELAXED, label: 'Relaxed', hint: `${RELAXED_MULTIPLIER}x the time per turn` },
+    { value: PACE.COMPETITIVE, label: 'Competitive', hint: 'Normal timers' },
+    { value: PACE.RELAXED, label: 'Relaxed', hint: `Timers ${RELAXED_MULTIPLIER}x longer` },
 ];
 const themeLevel = computed(() => store.state.themeLevel);
 const THEMES = [

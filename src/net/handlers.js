@@ -26,9 +26,9 @@ export function installHandlers(socket, store) {
         .on(S2C.PACE_CHANGED, ({ pace, by }) => {
             if (!pace) return;
             store.commit('setPace', pace);
-            const who = by === 0 ? 'You' : store.state.playerNames[by] ?? 'Someone';
-            store.commit('notify', `${who} set ${pace} pace.`);
-            store.commit('feedPush', `${who} set ${pace} pace.`);
+            const line = by === 0 ? `Pace set to ${pace}.` : `${store.state.playerNames[by] ?? 'Someone'} switched to ${pace} pace.`;
+            store.commit('notify', line);
+            store.commit('feedPush', line);
         })
         .on(S2C.REMATCH_COUNTDOWN, ({ startsAtMs }) => store.commit('setRematchAt', startsAtMs))
         .on(S2C.PLAYER_LEFT, ({ pos, name, abandoned }) => {

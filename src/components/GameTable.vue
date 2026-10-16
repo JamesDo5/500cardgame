@@ -572,7 +572,7 @@ class GameTable {
         ele.className = `fake-card card-played card-played-${getPosName(pos).toLowerCase()} ${getSuitClass(cardStr2CardObj(card).s)}`;
         ele.style.display = "inline";
         this.flyIn(ele, pos);
-        store.commit('feedPush', `${names()[pos]} played ${card}${nominated ? ` as ${SUIT_SYMBOLS[nominated]}` : ''}${auto ? ' (auto)' : ''}.`);
+        store.commit('feedPush', nominated ? `${names()[pos]} led the joker as ${SUIT_SYMBOLS[nominated]}${auto ? ' (auto)' : ''}.` : `${names()[pos]} played ${card}${auto ? ' (auto)' : ''}.`);
 
         const next = nextToPlay(this.playedCards, this.lastTrickWinner);
         if (next === -1) {
