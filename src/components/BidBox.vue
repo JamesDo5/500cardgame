@@ -1,7 +1,7 @@
 <template>
     <div v-if="bigBid" class="bid-banner" id="finalBidDisplay" :class="{ contract: hasContract }">
         <div class="bid-caption">{{ caption }}</div>
-        <div class="bid-big" :class="bigBid.colorClass">{{ bigBid.tricks }}<span class="bid-suit">{{ bigBid.symbol }}</span><span class="bid-points-big">({{ bigBid.points }})</span></div>
+        <div class="bid-big" :class="bigBid.colorClass">{{ bigBid.tricks }}<span class="bid-suit" :class="{ glyph: bigBid.glyph }">{{ bigBid.symbol }}</span><span class="bid-points-big">({{ bigBid.points }})</span></div>
         <div class="bid-sub">{{ bigBid.sub }}</div>
     </div>
     <button v-if="showToggle" class="bidtable-toggle" type="button" @click="toggle">Bid table</button>
@@ -77,7 +77,7 @@ const bigBid = computed(() => {
     const pos = hasContract.value ? bidderPos.value : highestBy.value;
     if (idle || bid <= PASS) return null;
     const suit = trumpSuitForBid(bid);
-    return { tricks: neededTricks(bid), symbol: SUIT_SYMBOLS[suit], colorClass: suitColorClass(suit), points: bid, sub: who(pos) };
+    return { tricks: neededTricks(bid), symbol: SUIT_SYMBOLS[suit], glyph: suit !== 'n', colorClass: suitColorClass(suit), points: bid, sub: pos < 0 ? '' : `by ${who(pos)}` };
 });
 const bidderPos = computed(() => store.getters.getBidBox()?.winningBidder ?? -1);
 
@@ -312,13 +312,14 @@ onMounted(() => {
     color: var(--gold);
 }
 .bid-big {
-    font-size: 110px;
+    font-size: 132px;
     font-weight: 800;
     margin-top: 4px;
     text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
-.bid-big .bid-suit {
-    font-size: 100px;
+.bid-big .bid-suit.glyph {
+    font-size: 1.2em;
+    line-height: 0;
 }
 .bid-points-big {
     font-size: 20px;
@@ -328,8 +329,8 @@ onMounted(() => {
     vertical-align: middle;
 }
 .bid-sub {
-    font-size: 20px;
-    margin-top: 8px;
+    font-size: 24px;
+    margin-top: 10px;
     color: var(--ivory);
 }
 .suit-red {
@@ -563,10 +564,7 @@ button.pass-button, button.submit-bid-button {
     right: 20px;
 }
 .portrait .bid-big {
-    font-size: 84px;
-}
-.portrait .bid-big .bid-suit {
-    font-size: 76px;
+    font-size: 100px;
 }
 .portrait .bidtable-toggle {
     top: 12px;
