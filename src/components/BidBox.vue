@@ -18,7 +18,8 @@
             <div v-for="col in COLUMNS" :key="col.suit" class="bid-head" :class="col.cls">{{ col.label }}</div>
             <template v-for="(tricks, row) in TRICK_ROWS" :key="tricks">
                 <div class="bid-rowlabel">{{ tricks }}</div>
-                <div v-for="(col, c) in COLUMNS" :key="col.suit" class="bid-cell">
+                <div v-for="(col, c) in COLUMNS" :key="col.suit" class="bid-cell" :class="cellClass(bidAt(row, c))">
+                    <span v-if="bidderOf(bidAt(row, c)) !== -1" class="bid-badge">{{ badgeText(bidderOf(bidAt(row, c))) }}</span>
                     <button class="bid-amount-button" :value="bidAt(row, c)" :disabled="bidAt(row, c) <= highest || !myTurn" :class="{ selected: selected === bidAt(row, c) }" @click="select(bidAt(row, c))">{{ bidAt(row, c) }}</button>
                 </div>
             </template>
@@ -56,6 +57,13 @@ const highest = ref(PASS);
 const myTurn = ref(false);
 const highestBy = ref(-1);
 const displayBids = ref([-1, -1, -1, -1].map(formatBid));
+const placedBids = ref([-1, -1, -1, -1]);
+const bidderOf = (bid) => placedBids.value.indexOf(bid);
+const cellClass = (bid) => {
+    const pos = bidderOf(bid);
+    return { mine: pos === 0, partner: pos === 2, opponent: pos === 1 || pos === 3 };
+};
+const badgeText = (pos) => pos === 0 ? 'You' : pos === 2 ? 'Partner' : store.state.playerNames[pos];
 const POS_CLASSES = ['bottom-bid', 'left-bid', 'top-bid', 'right-bid'];
 const POS_IDS = ['bottomBid', 'leftBid', 'topBid', 'rightBid'];
 const hasContract = computed(() => store.state.gameState >= 3 && store.state.gameState <= 5 && store.state.winningBid > 0);
@@ -115,6 +123,7 @@ class BidBox {
 
     updateBidDisplays() {
         displayBids.value = this.bids.map(formatBid);
+        placedBids.value = this.bids.slice();
         highest.value = Math.max(this.getHighestBid(), PASS);
         highestBy.value = winningBidder(this.bids);
         myTurn.value = !isBiddingOver(this.bids) && nextToBid(this.bids, store.state.dealer) === 0 && store.state.gameState === 1;
@@ -429,6 +438,46 @@ onMounted(() => {
 .bid-cell {
     display: flex;
     min-width: 0;
+    position: relative;
+}
+.bid-cell.partner .bid-amount-button {
+    outline: 4px solid #2ecc71;
+    outline-offset: -4px;
+}
+.bid-cell.opponent .bid-amount-button {
+    outline: 3px dashed #bdc3c7;
+    outline-offset: -3px;
+}
+.bid-cell.mine .bid-amount-button {
+    outline: 4px solid #3498db;
+    outline-offset: -4px;
+}
+.bid-badge {
+    position: absolute;
+    top: -9px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 96%;
+    box-sizing: border-box;
+    padding: 1px 8px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: #2ecc71;
+    color: #2c3e50;
+    pointer-events: none;
+    z-index: 1;
+}
+.bid-cell.opponent .bid-badge {
+    background: #bdc3c7;
+}
+.bid-cell.mine .bid-badge {
+    background: #3498db;
+    color: white;
 }
 button.bid-amount-button {
     width: 100%;
@@ -478,6 +527,10 @@ button.pass-button, button.submit-bid-button {
 }
 .portrait button.bid-amount-button {
     font-size: 34px;
+}
+.portrait .bid-badge {
+    font-size: 17px;
+    top: -11px;
 }
 .portrait button.pass-button, .portrait button.submit-bid-button {
     font-size: 30px;
