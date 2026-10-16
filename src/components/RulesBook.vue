@@ -37,9 +37,9 @@ const PAGES = [
             'Lowest you can bid is 6, highest is obviously 10.',
         ]},
         { heading: 'Trump', bullets: true, lines: [
-            'The suit named by the winning bid is trump for the whole hand. Any card of the trump suit beats every card of the other three suits, no matter how high they are.',
-            'The jack of trump is the right bower. The jack of the other suit in the same colour is the left bower and counts as trump too. They are the two highest trumps, beaten only by the joker: joker, right bower, left bower, then the ace of trump and down.',
-            'A no-trump bid means there is no trump suit at all. Only the joker is trump, and jacks are ordinary jacks.',
+            'The winning bidder picks the trump suit. Any trump beats any card of another suit!',
+            'Top trumps: joker, then the jack of trump (right bower), then the jack of the same colour (left bower), then ace on down.',
+            'No trump means no trump suit. Only the joker is trump and jacks are just jacks.',
         ]},
         { heading: 'Points', bidTable: true },
         { heading: 'Scoring', bullets: true, lines: [
