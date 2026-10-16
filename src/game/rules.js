@@ -79,7 +79,9 @@ export function legalPlays(hand, playedCards, leader, trump, jokerSuit = '') {
     const led = ledSuit(playedCards, leader, trump, jokerSuit);
     if (!led) return hand.slice();
     const following = hand.filter(c => effectiveSuit(c, trump) === led);
-    return following.length ? following : hand.slice();
+    if (!following.length) return hand.slice();
+    if (trump === NO_TRUMP && hand.includes(JOKER) && !following.includes(JOKER)) following.push(JOKER);
+    return following;
 }
 
 export function longestSuit(hand) {

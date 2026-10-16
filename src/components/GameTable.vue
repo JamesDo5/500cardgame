@@ -60,7 +60,6 @@ const jokerBadge = computed(() => {
     if (!isNominatableSuit(suit) || pos === -1) return null;
     return { posClass: BADGE_POS_CLASSES[pos], colorClass: suitColorClass(suit), symbol: SUIT_SYMBOLS[suit] };
 });
-const JOKER_NT_NOTICE = "In no trumps the joker can only be played when you can't follow suit.";
 const myAction = computed(() => dealing.value ? iAmDealer.value : store.state.turn.pos === 0);
 const boardCaption = computed(() => {
     const gs = store.state.gameState;
@@ -537,7 +536,7 @@ class GameTable {
         const card = elem2CardStr(submitBoxElement.firstElementChild);
         const legal = this.legal(store.getters.getSharedHandCards().concat(card));
         if (!legal.includes(card)) {
-            store.commit('notify', card === JOKER && store.state.trumpSuit === NO_TRUMP ? JOKER_NT_NOTICE : "You must follow suit.");
+            store.commit('notify', "You must follow suit.");
             reenable();
             return 1;
         }
