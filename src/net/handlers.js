@@ -53,9 +53,9 @@ export function installHandlers(socket, store) {
         .on(S2C.BLIND_DONE, ({ pos }) => gt().incomingBlindDiscard(pos))
         .on(S2C.CARD_PLAYED, ({ pos, card, auto, suit }) => gt().incomingTrickCard(pos, card, auto, suit))
         .on(S2C.TRICK_RESULT, ({ winner }) => gt().reconcileTrickWinner(winner))
-        .on(S2C.HAND_SCORE, ({ scores }) => store.commit('reconcileScores', scores))
+        .on(S2C.HAND_SCORE, ({ deltas, scores }) => store.commit('reconcileHandScore', { deltas, scores }))
         .on(S2C.GAME_OVER, ({ winnerTeam, scores }) => {
-            store.commit('reconcileScores', scores);
+            store.commit('reconcileHandScore', { scores });
             gt().endGame(winnerTeam);
         })
         .on(S2C.TURN, ({ pos, deadlineMs }) => store.commit('setTurn', { pos, deadlineMs }))

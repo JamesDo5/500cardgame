@@ -16,6 +16,7 @@ export default new Vuex.Store({
         playerNames: ['Me', 'Left', 'Top', 'Right'],
         scores: [0, 0],
         handScores: [],
+        handScored: false,
         turn: { pos: -1, deadlineMs: 0, startedMs: 0 },
         cardCounts: [10, 10, 10, 10],
         trickCards: ['', '', '', ''],
@@ -47,27 +48,39 @@ export default new Vuex.Store({
         setTrumpSuit(state, s) { state.trumpSuit = s; },
         setPlayerName(state, { pos, name }) { state.playerNames[pos] = name; },
         addHandScore(state, deltas) {
-            state.handScores.push(deltas);
+            if (state.handScored) return;
+            state.handScores.push(deltas.slice());
             state.scores = [state.scores[0] + deltas[0], state.scores[1] + deltas[1]];
+            state.handScored = true;
         },
         setScores(state, { scores, handScores }) {
             state.scores = scores.slice();
             state.handScores = handScores.map(d => d.slice());
+            state.handScored = false;
         },
-        reconcileScores(state, scores) {
+        setHandScored(state, b) { state.handScored = b; },
+        reconcileHandScore(state, { deltas, scores }) {
             if (!Array.isArray(scores) || scores.length !== 2) return;
-            if (scores[0] === state.scores[0] && scores[1] === state.scores[1]) return;
-            console.warn('reconcileScores -- server', scores, 'disagrees with client', state.scores, '. Believing server.');
-            state.scores = scores.slice();
-            if (state.handScores.length) {
-                const last = state.handScores[state.handScores.length - 1];
-                const prior = [state.scores[0] - last[0], state.scores[1] - last[1]];
-                state.handScores[state.handScores.length - 1] = [scores[0] - prior[0], scores[1] - prior[1]];
+            const serverDeltas = Array.isArray(deltas) && deltas.length === 2 ? deltas.slice() : null;
+            if (!state.handScored) {
+                state.handScores.push(serverDeltas ?? [scores[0] - state.scores[0], scores[1] - state.scores[1]]);
+                state.scores = scores.slice();
+                state.handScored = true;
+                return;
             }
+            if (scores[0] === state.scores[0] && scores[1] === state.scores[1]) return;
+            console.warn('reconcileHandScore -- server', scores, 'disagrees with client', state.scores, '. Believing server.');
+            const last = state.handScores.length - 1;
+            if (last >= 0) {
+                const prev = state.handScores[last];
+                state.handScores[last] = serverDeltas ?? [prev[0] + scores[0] - state.scores[0], prev[1] + scores[1] - state.scores[1]];
+            }
+            state.scores = scores.slice();
         },
         resetGame(state) {
             state.scores = [0, 0];
             state.handScores = [];
+            state.handScored = false;
             state.winningBid = -1;
             state.trumpSuit = '';
             state.turn = { pos: -1, deadlineMs: 0, startedMs: 0 };

@@ -349,6 +349,7 @@ class GameTable {
         this.pendingCards = [];
         store.commit('resetCardCounts');
         store.commit('setFirstCardPlayed', false);
+        store.commit('setHandScored', false);
         this.heldPlayCard = '';
         document.getElementById('submitCards').innerHTML = "";
         this.syncStaged();
