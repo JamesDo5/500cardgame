@@ -1,5 +1,6 @@
 import Vuex from 'vuex'
 import { DEFAULT_PACE } from './config.js';
+import { loadThemeLevel } from './session.js';
 
 const FEED_MAX = 30;
 
@@ -27,6 +28,7 @@ export default new Vuex.Store({
         session: { gameId: '', seat: -1, token: '', name: '' },
         lobby: { seats: [], hostPos: -1, canStart: false },
         pace: DEFAULT_PACE,
+        themeLevel: loadThemeLevel(),
         joinError: '',
         rematchAtMs: 0,
         autoBots: true,
@@ -102,6 +104,7 @@ export default new Vuex.Store({
         setSession(state, patch) { state.session = { ...state.session, ...patch }; },
         setLobby(state, lobby) { state.lobby = lobby; },
         setPace(state, pace) { state.pace = pace; },
+        setThemeLevel(state, level) { state.themeLevel = level; },
         setJoinError(state, msg) { state.joinError = msg; },
         setRematchAt(state, ms) { state.rematchAtMs = ms; },
         setAutoBots(state, b) { state.autoBots = b; },

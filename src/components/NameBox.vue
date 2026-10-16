@@ -85,7 +85,7 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
     font-size: 20px;
     line-height: 1;
 }
-:root[data-trump="n"] #nameboxMe .player-name::before {
+:root[data-trump="n"][data-theme-level="full"] #nameboxMe .player-name::before {
     font-size: 11px;
     font-weight: 800;
     padding: 2px 4px;

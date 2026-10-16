@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { useStore } from 'vuex'
 import { socket } from '../net/socket.js';
 import { C2S, PACE } from '../net/messages.js';
-import { gameLink } from '../session.js';
+import { gameLink, saveThemeLevel, THEME_LEVELS } from '../session.js';
 import { mode, WIKIPEDIA_URL, RELAXED_MULTIPLIER } from '../config.js';
 
 const props = defineProps(['gameId']);
@@ -31,6 +31,11 @@ const PACES = [
     { value: PACE.COMPETITIVE, label: 'Competitive', hint: 'Standard time per turn' },
     { value: PACE.RELAXED, label: 'Relaxed', hint: `${RELAXED_MULTIPLIER}x the time per turn` },
 ];
+const themeLevel = computed(() => store.state.themeLevel);
+const THEMES = [
+    { value: THEME_LEVELS.LIGHT, label: 'Light', hint: 'Tab icon and card backs' },
+    { value: THEME_LEVELS.FULL, label: 'Full', hint: 'Table, colors and more' },
+];
 
 function seatClick(pos) {
     if (pos === 0 || mode.standalone) return;
@@ -44,6 +49,11 @@ function setPace(value) {
     if (value === pace.value) return;
     if (mode.standalone) { store.commit('setPace', value); return; }
     socket.send(C2S.SET_PACE, { pace: value });
+}
+function setThemeLevel(value) {
+    if (value === themeLevel.value) return;
+    saveThemeLevel(value);
+    store.commit('setThemeLevel', value);
 }
 async function share() {
     const link = gameLink(props.gameId);
@@ -91,13 +101,24 @@ async function share() {
                 </div>
             </div>
 
-            <div class="pace-row">
-                <div class="pace-label">Pace</div>
-                <div class="pace-toggle">
-                    <button v-for="p in PACES" :key="p.value" class="pace-option" :class="{ active: pace === p.value }" type="button" :aria-pressed="pace === p.value" @click="setPace(p.value)">
-                        <span class="pace-name">{{ p.label }}</span>
-                        <span class="pace-hint">{{ p.hint }}</span>
-                    </button>
+            <div class="option-rows">
+                <div class="pace-row">
+                    <div class="pace-label">Pace</div>
+                    <div class="pace-toggle">
+                        <button v-for="p in PACES" :key="p.value" class="pace-option" :class="{ active: pace === p.value }" type="button" :aria-pressed="pace === p.value" @click="setPace(p.value)">
+                            <span class="pace-name">{{ p.label }}</span>
+                            <span class="pace-hint">{{ p.hint }}</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="pace-row theme-row">
+                    <div class="pace-label">Trump theme</div>
+                    <div class="pace-toggle">
+                        <button v-for="t in THEMES" :key="t.value" class="pace-option theme-option" :class="{ active: themeLevel === t.value }" type="button" :aria-pressed="themeLevel === t.value" @click="setThemeLevel(t.value)">
+                            <span class="pace-name">{{ t.label }}</span>
+                            <span class="pace-hint">{{ t.hint }}</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -229,11 +250,17 @@ async function share() {
     color: var(--muted);
     letter-spacing: 1px;
 }
+.option-rows {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px 40px;
+    margin-bottom: 20px;
+}
 .pace-row {
     display: flex;
     align-items: center;
     gap: 16px;
-    margin-bottom: 20px;
 }
 .pace-label {
     font-size: 12px;

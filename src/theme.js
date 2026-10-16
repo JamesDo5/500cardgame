@@ -29,9 +29,15 @@ function faviconLink() {
     return link;
 }
 
-export function applyTrumpTheme(suit) {
+export function applyTrumpTheme(suit, level) {
     const root = document.documentElement;
-    if (suit) root.dataset.trump = suit; else delete root.dataset.trump;
+    if (suit) {
+        root.dataset.trump = suit;
+        root.dataset.themeLevel = level;
+    } else {
+        delete root.dataset.trump;
+        delete root.dataset.themeLevel;
+    }
     const link = faviconLink();
     if (suit) {
         link.type = 'image/svg+xml';

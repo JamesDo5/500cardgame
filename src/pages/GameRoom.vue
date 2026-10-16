@@ -212,22 +212,22 @@ onBeforeUnmount(() => {
 .table-chrome.standalone {
     top: 190px;
 }
-:root[data-trump] .table-chrome .ui-button {
+:root[data-trump][data-theme-level="full"] .table-chrome .ui-button {
     border-color: var(--trump-ink);
 }
-:root[data-trump] .table-chrome .ui-button.danger {
+:root[data-trump][data-theme-level="full"] .table-chrome .ui-button.danger {
     border-color: var(--trump-on-felt);
 }
-:root[data-trump] .table-chrome .ui-button::before {
+:root[data-trump][data-theme-level="full"] .table-chrome .ui-button::before {
     content: var(--trump-glyph);
     color: var(--trump-ink);
     margin-right: 6px;
     font-size: 12px;
 }
-:root[data-trump] .table-chrome .ui-button.danger::before {
+:root[data-trump][data-theme-level="full"] .table-chrome .ui-button.danger::before {
     color: var(--trump-on-felt);
 }
-:root[data-trump] .table-chrome .ui-button.danger:hover::before {
+:root[data-trump][data-theme-level="full"] .table-chrome .ui-button.danger:hover::before {
     color: var(--ivory);
 }
 .gate {

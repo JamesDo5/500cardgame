@@ -1,6 +1,8 @@
 const NAME_KEY = '500.playerName';
 const TOKEN_PREFIX = '500.token.';
 const HAND_PREFIX = '500.hand.';
+const THEME_LEVEL_KEY = '500.themeLevel';
+export const THEME_LEVELS = { LIGHT: 'light', FULL: 'full' };
 
 function storage() {
     try {
@@ -16,6 +18,14 @@ export function loadName() {
 
 export function saveName(name) {
     storage()?.setItem(NAME_KEY, name.trim());
+}
+
+export function loadThemeLevel() {
+    return storage()?.getItem(THEME_LEVEL_KEY) === THEME_LEVELS.FULL ? THEME_LEVELS.FULL : THEME_LEVELS.LIGHT;
+}
+
+export function saveThemeLevel(level) {
+    storage()?.setItem(THEME_LEVEL_KEY, level);
 }
 
 export function loadToken(gameId) {

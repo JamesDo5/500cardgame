@@ -16,11 +16,12 @@ provide('cardSuits', new Set([...SUITS, 'j']))
 provide('cardValues', new Set(VALUES))
 
 const trump = computed(() => activeTrump(store.state))
-watchEffect(() => applyTrumpTheme(trump.value))
+const themeLevel = computed(() => store.state.themeLevel)
+watchEffect(() => applyTrumpTheme(trump.value, themeLevel.value))
 </script>
 
 <template>
-  <div :class="{ portrait: layout.portrait, 'hand-one-row': handOneRow }" :data-trump="trump || null">
+  <div :class="{ portrait: layout.portrait, 'hand-one-row': handOneRow }" :data-trump="trump || null" :data-theme-level="trump ? themeLevel : null">
     <router-view />
   </div>
 </template>

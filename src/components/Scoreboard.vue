@@ -66,10 +66,10 @@ th, tr {
     overflow-y: auto;
     max-height: 150px;
 }
-:root[data-trump] .scoreboard th {
+:root[data-trump][data-theme-level="full"] .scoreboard th {
     color: var(--trump-ink);
 }
-:root[data-trump] .scoreboard::before {
+:root[data-trump][data-theme-level="full"] .scoreboard::before {
     content: var(--trump-glyph);
     position: absolute;
     top: -11px;
@@ -84,7 +84,7 @@ th, tr {
     font-weight: 800;
     z-index: 1;
 }
-:root[data-trump] .scoreboard::after {
+:root[data-trump][data-theme-level="full"] .scoreboard::after {
     content: var(--trump-glyph);
     position: absolute;
     bottom: -11px;
