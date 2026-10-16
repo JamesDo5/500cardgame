@@ -112,8 +112,8 @@ class GameTable {
         this.blindCards = [];
         this.submitCards = [];
         this.playedCards = ['', '', '', ''];
+        this.playedThisHand = new Set();
         this.lastTrickWinner = -1;
-        this.predictedTrickWinner = -1;
         this.wonTricks = [0, 0, 0, 0];
         this.mockHands = null;
         this.mockBlind = null;
@@ -339,8 +339,8 @@ class GameTable {
         this.blindCards = [];
         this.submitCards = [];
         this.playedCards = ['', '', '', ''];
+        this.playedThisHand = new Set();
         this.lastTrickWinner = -1;
-        this.predictedTrickWinner = -1;
         this.wonTricks = [0, 0, 0, 0];
         this.mockHands = null;
         this.mockBlind = null;
@@ -588,10 +588,6 @@ class GameTable {
     }
 
     incomingTrickCard(pos, card, auto = false, suit = '') {
-        if (this.resolving) {
-            this.pendingCards.push([pos, card, auto, suit]);
-            return 0;
-        }
         if (!isValidCardStr(card)) {
             console.error("incomingTrickCard -- invalid card:", card);
             return 1;
@@ -600,7 +596,11 @@ class GameTable {
             console.error("incomingTrickCard -- invalid position:", pos);
             return 1;
         }
-        if (this.playedCards[pos] === card) return 0;
+        if (this.playedCards[pos] === card || this.playedThisHand.has(card)) return 0;
+        if (this.resolving) {
+            this.pendingCards.push([pos, card, auto, suit]);
+            return 0;
+        }
         if (this.playedCards[pos] !== '') {
             console.error("incomingTrickCard --", getPosName(pos), "already played", this.playedCards[pos], "this trick, got", card);
             if (!mode.standalone) socket.send(C2S.REQUEST_SYNC);
@@ -615,6 +615,7 @@ class GameTable {
 
         const nominated = nominatesSuit(card, this.playedCards, this.lastTrickWinner, store.state.trumpSuit) && isNominatableSuit(suit) ? suit : '';
         this.playedCards[pos] = card;
+        this.playedThisHand.add(card);
         this.syncPlayed();
         if (nominated) store.commit('setJokerSuit', nominated);
         store.commit('setCardCount', { pos, n: store.state.cardCounts[pos] - 1 });
@@ -655,9 +656,7 @@ class GameTable {
     }
 
     endTrick() {
-        const winner = trickWinner(this.playedCards, this.lastTrickWinner, store.state.trumpSuit);
-        this.predictedTrickWinner = winner;
-        this.resolveTrick(winner);
+        this.resolveTrick(trickWinner(this.playedCards, this.lastTrickWinner, store.state.trumpSuit));
     }
 
     resolveTrick(winner) {
@@ -727,27 +726,24 @@ class GameTable {
     }
 
     reconcileTrickWinner(winner) {
+        if (winner < 0 || winner > 3) return;
         if (this.resolving) {
             if (winner !== this.resolveTarget) {
                 console.warn("reconcileTrickWinner -- client predicted", this.resolveTarget, "server says", winner, ". Believing server.");
                 this.resolveTarget = winner;
             }
-            this.predictedTrickWinner = -1;
             return;
         }
-        if (this.predictedTrickWinner === -1) {
-            this.resolveTrick(winner);
+        if (winner === this.lastTrickWinner) return;
+        if (this.playedCards.some(Boolean) || this.getFinishedTricks() === 0) {
+            console.error("reconcileTrickWinner -- server says", getPosName(winner), "won a trick the client has no record of. Resyncing.");
+            if (!mode.standalone) socket.send(C2S.REQUEST_SYNC);
             return;
         }
-        if (winner === this.predictedTrickWinner) {
-            this.predictedTrickWinner = -1;
-            return;
-        }
-        console.warn("reconcileTrickWinner -- client predicted", this.predictedTrickWinner, "server says", winner, ". Believing server.");
-        this.wonTricks[this.predictedTrickWinner] -= 1;
+        console.warn("reconcileTrickWinner -- client predicted", this.lastTrickWinner, "server says", winner, ". Believing server.");
+        this.wonTricks[this.lastTrickWinner] -= 1;
         this.wonTricks[winner] += 1;
         this.lastTrickWinner = winner;
-        this.predictedTrickWinner = -1;
         this.renderStacks();
         this.setTurn(winner);
         this.updateLegalHighlights();
@@ -755,6 +751,7 @@ class GameTable {
 
     restoreTrick(playedCards, leader, wonTricks, jokerSuit = '') {
         this.playedCards = playedCards.slice();
+        this.playedThisHand = new Set(playedCards.filter(Boolean));
         this.syncPlayed();
         store.commit('setJokerSuit', isNominatableSuit(jokerSuit) ? jokerSuit : '');
         this.lastTrickWinner = leader;
