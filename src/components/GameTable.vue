@@ -1090,7 +1090,9 @@ onBeforeUnmount(() => {
 .blind-button {
     top: 50%;
     left: 50%;
-    transform: translate(-50%, 135px);
+    transform: translate(-50%, 122px);
+    font-size: 30px;
+    padding: 18px 56px;
 }
 .won-tricks-bottom {
     top: 88%;
@@ -1231,9 +1233,10 @@ onBeforeUnmount(() => {
     top: 70%;
     left: 50%;
     transform: translateX(-50%);
-    padding: 12px 40px;
-    font-size: 24px;
+    padding: 22px 90px;
+    font-size: 40px;
     font-weight: bold;
+    letter-spacing: 2px;
     color: #2c3e50;
     background: linear-gradient(45deg, #f1c40f, #f39c12);
     border: none;
@@ -1257,6 +1260,10 @@ onBeforeUnmount(() => {
 }
 .portrait #gameTable {
     height: 600px;
+}
+.portrait .play-button {
+    font-size: 36px;
+    padding: 24px 60px;
 }
 .portrait .card-played-left {
     left: 35%;
