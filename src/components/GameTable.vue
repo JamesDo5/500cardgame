@@ -74,15 +74,18 @@ const boardCaption = computed(() => {
     if (gs === 1 || gs === 2) return pos === 0 ? 'Your bid' : `${name} is bidding`;
     if (gs === 3) return pos === 0 ? 'Your blind' : `${name} is exchanging the blind`;
     if (gs === 4) return pos === 0 ? '' : `${name} is exchanging the blind`;
-    if (gs === 5) return pos === 0 ? (leading.value ? 'You are leading' : 'Your turn') : `${name} is ${leading.value ? 'leading' : 'playing'}`;
+    if (gs === 5) {
+        if (leading.value) return pos === 0 ? 'You are leading' : `${name} is leading`;
+        return pos === 0 ? 'Your turn' : '';
+    }
     return '';
 });
 const captionClass = computed(() => {
     const gs = store.state.gameState;
     return {
         mine: myAction.value,
-        lead: myPlayTurn.value && leading.value,
-        corner: gs === 1 || gs === 2 || (gs === 5 && !myPlayTurn.value),
+        lead: gs === 5 && leading.value,
+        corner: gs === 1 || gs === 2,
         low: gs === 3 || gs === 4,
     };
 });
@@ -1220,8 +1223,17 @@ onBeforeUnmount(() => {
 .board-caption.lead {
     top: 42%;
     transform: translate(-50%, -50%);
-    font-size: 52px;
+    width: 76%;
+    font-size: 54px;
+    font-weight: bold;
     letter-spacing: 3px;
+    line-height: 1.1;
+    white-space: normal;
+    text-align: center;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+}
+.board-caption.lead.mine {
+    font-size: 62px;
 }
 .caption-fade-enter-active, .caption-fade-leave-active {
     transition: opacity 0.35s ease;
