@@ -212,22 +212,22 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
 }
 
 .portrait #nameboxLeftCards {
-    top: 565px;
+    top: calc(565px + var(--hand-shift, 0px));
     left: 90px;
 }
 .portrait #nameboxTopCards {
-    top: 240px;
+    top: calc(240px + var(--hand-shift, 0px));
     left: 400px;
 }
 .portrait #nameboxRightCards {
-    top: 565px;
+    top: calc(565px + var(--hand-shift, 0px));
     left: auto;
     right: 90px;
     transform: translate(50%, -50%);
 }
 .portrait #nameboxMe {
     top: auto;
-    bottom: 565px;
+    bottom: calc(565px - var(--hand-shift, 0px));
     left: 110px;
     transform: translate(-50%, 0);
 }

@@ -232,7 +232,8 @@ onMounted(() => {
     height: 271px;
 }
 .portrait .sort-button {
-    bottom: 565px;
+    bottom: calc(565px - var(--hand-shift, 0px));
     right: 20px;
+    transition: bottom 0.3s ease;
 }
 </style>

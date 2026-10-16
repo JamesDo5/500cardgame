@@ -11,6 +11,13 @@ body.in-game {
   touch-action: manipulation;
 }
 
+.portrait {
+  --hand-shift: 0px;
+}
+.portrait.hand-one-row {
+  --hand-shift: 277px;
+}
+
 #stage {
   position: absolute;
   display: flex;

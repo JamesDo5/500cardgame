@@ -40,8 +40,9 @@ watch(() => feed.value.length, async () => {
 .portrait .activity-feed {
     right: auto;
     left: 215px;
-    bottom: 565px;
+    bottom: calc(565px - var(--hand-shift, 0px));
     width: 330px;
     max-height: 70px;
+    transition: bottom 0.3s ease;
 }
 </style>
