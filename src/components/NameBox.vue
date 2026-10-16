@@ -38,7 +38,7 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
         <div class="namecard-bg"></div>
         <div class="namecard"></div>
         <div class="player-name">
-            {{ name }}
+            <span class="name-text">{{ name }}</span>
             <span v-if="isDealer" class="dealer-chip" title="Dealer">D</span>
             <span v-if="secondsLeft !== null" class="cat-clock" :class="{ urgent }">
                 <svg viewBox="0 0 28 28" class="clock-ring">
@@ -221,12 +221,35 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
 }
 .portrait #nameboxRightCards {
     top: 565px;
-    left: 710px;
+    left: auto;
+    right: 90px;
+    transform: translate(50%, -50%);
 }
 .portrait #nameboxMe {
     top: auto;
     bottom: 565px;
     left: 110px;
     transform: translate(-50%, 0);
+}
+.portrait .player-name {
+    box-sizing: border-box;
+    max-width: 170px;
+    padding: 6px 10px;
+    gap: 6px;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    white-space: normal;
+}
+.portrait .name-text {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    min-width: 0;
+    line-height: 1.2;
+    overflow-wrap: break-word;
+}
+.portrait .dealer-chip, .portrait .cat-clock {
+    flex-shrink: 0;
 }
 </style>
