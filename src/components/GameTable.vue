@@ -18,6 +18,9 @@
             <div class="card-stack won-tricks-top" id="wonTricksTop"></div>
             <div class="card-stack won-tricks-right" id="wonTricksRight"></div>
             <div class="card-stack discard-blind" id="blindDiscard"></div>
+            <div v-if="showBlindStack" class="blind-stack">
+                <img v-for="n in 5" :key="n" class="fake-card card-back blind-stack-card" :src="CARD_BACK_URL">
+            </div>
             <div v-if="dealing" class="shuffle">
                 <img v-for="n in 7" :key="n" class="fake-card card-back shuffle-card" :style="{ animationDelay: `${(n - 1) * 0.12}s` }" :src="CARD_BACK_URL">
             </div>
@@ -46,6 +49,7 @@ const names = () => store.state.playerNames;
 const dealing = computed(() => store.state.gameState === 0);
 const iAmDealer = computed(() => store.state.dealer === 0);
 const showPlayButton = computed(() => store.state.gameState === 5);
+const showBlindStack = computed(() => store.state.gameState === 1 || store.state.gameState === 2);
 const myPlayTurn = computed(() => store.state.gameState === 5 && store.state.turn.pos === 0);
 const leading = computed(() => store.state.trickCards.every(c => !c));
 const NOMINATABLE_SUITS = SUITS;
@@ -1102,6 +1106,26 @@ onBeforeUnmount(() => {
     top: 88%;
     left: 22%;
 }
+
+.blind-stack {
+    position: absolute;
+    top: 30%;
+    left: 5%;
+    width: 0;
+    height: 0;
+    transform: scale(0.74);
+    pointer-events: none;
+}
+.blind-stack-card {
+    position: absolute;
+    left: -35px;
+    top: -50px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.blind-stack-card:nth-child(2) { transform: translate(2px, -2px) rotate(-2deg); }
+.blind-stack-card:nth-child(3) { transform: translate(4px, -4px) rotate(2deg); }
+.blind-stack-card:nth-child(4) { transform: translate(6px, -6px) rotate(-1deg); }
+.blind-stack-card:nth-child(5) { transform: translate(8px, -8px) rotate(1deg); }
 
 .shuffle {
     position: absolute;
