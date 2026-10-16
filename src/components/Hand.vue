@@ -9,8 +9,8 @@
 import { onMounted, computed } from 'vue';
 import { useStore } from 'vuex'
 import Sortable from 'sortablejs';
-import { CARD_BACK_URL, elem2CardStr, isValidCardStr, produceCardHtml } from '../game/cards.js';
-import { sortHand } from '../game/rules.js';
+import { CARD_BACK_URL, JOKER, elem2CardStr, isValidCardStr, produceCardHtml } from '../game/cards.js';
+import { NO_TRUMP, sortHand } from '../game/rules.js';
 
 const emit = defineEmits(['hand-rendered'])
 const store = useStore()
@@ -76,7 +76,12 @@ function initSortable() {
 
     bottomCardsElem.addEventListener("click", (evt) => {
         const card = evt.target.closest(".hand-card");
-        if (card && bottomCardsElem.contains(card)) card.classList.toggle("spun");
+        if (!card || !bottomCardsElem.contains(card)) return;
+        if (card.classList.contains("illegal") && elem2CardStr(card) === JOKER && store.state.trumpSuit === NO_TRUMP) {
+            store.commit('notify', "In no trumps the joker can only be played when you can't follow suit.");
+            return;
+        }
+        card.classList.toggle("spun");
     });
     return 0;
 }

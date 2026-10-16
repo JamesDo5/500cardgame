@@ -51,7 +51,7 @@ export function installHandlers(socket, store) {
         .on(S2C.BIDDING_RESULT, (p) => bb().incomingBiddingResult(p))
         .on(S2C.BLIND, ({ cards }) => gt().incomingBlind(cards, true))
         .on(S2C.BLIND_DONE, ({ pos }) => gt().incomingBlindDiscard(pos))
-        .on(S2C.CARD_PLAYED, ({ pos, card, auto }) => gt().incomingTrickCard(pos, card, auto))
+        .on(S2C.CARD_PLAYED, ({ pos, card, auto, suit }) => gt().incomingTrickCard(pos, card, auto, suit))
         .on(S2C.TRICK_RESULT, ({ winner }) => gt().reconcileTrickWinner(winner))
         .on(S2C.HAND_SCORE, ({ scores }) => store.commit('reconcileScores', scores))
         .on(S2C.GAME_OVER, ({ winnerTeam, scores }) => {
@@ -94,7 +94,7 @@ function applySnapshot(store, snap) {
     bb.updateBidDisplays();
     if (Array.isArray(snap.blind)) gt.incomingBlind(snap.blind, false);
     if (snap.blindDone && Number.isInteger(snap.bidWinner)) gt.incomingBlindDiscard(snap.bidWinner);
-    if (Array.isArray(snap.playedCards)) gt.restoreTrick(snap.playedCards, snap.leader, snap.wonTricks);
+    if (Array.isArray(snap.playedCards)) gt.restoreTrick(snap.playedCards, snap.leader, snap.wonTricks, snap.jokerSuit);
     if (snap.turn) store.commit('setTurn', snap.turn);
     store.commit('setGameState', snap.gameState ?? -1);
     if (store.state.gameState === 6) store.commit('setGameWinner', snap.winnerTeam ?? -1);

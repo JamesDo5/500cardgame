@@ -19,6 +19,7 @@ export default new Vuex.Store({
         turn: { pos: -1, deadlineMs: 0, startedMs: 0 },
         cardCounts: [10, 10, 10, 10],
         trickCards: ['', '', '', ''],
+        jokerSuit: '',
         firstCardPlayed: false,
         gameWinner: -1,
         connection: 'idle',
@@ -29,7 +30,7 @@ export default new Vuex.Store({
         rematchAtMs: 0,
         autoBots: true,
         timersEnabled: true,
-        stagedCount: 0,
+        stagedCards: [],
         blindFaceDown: false,
         notice: '',
         feed: [],
@@ -74,12 +75,14 @@ export default new Vuex.Store({
             state.rematchAtMs = 0;
             state.handCards = [];
             state.trickCards = ['', '', '', ''];
+            state.jokerSuit = '';
             state.feed = [];
         },
         setTurn(state, turn) { state.turn = { startedMs: Date.now(), ...turn }; },
         setCardCount(state, { pos, n }) { state.cardCounts[pos] = Math.max(0, n); },
         resetCardCounts(state) { state.cardCounts = [10, 10, 10, 10]; },
         setTrickCards(state, arr) { state.trickCards = arr.slice(); },
+        setJokerSuit(state, s) { state.jokerSuit = s; },
         setFirstCardPlayed(state, b) { state.firstCardPlayed = b; },
         setGameWinner(state, t) { state.gameWinner = t; },
         setConnection(state, s) { state.connection = s; },
@@ -90,7 +93,7 @@ export default new Vuex.Store({
         setRematchAt(state, ms) { state.rematchAtMs = ms; },
         setAutoBots(state, b) { state.autoBots = b; },
         setTimersEnabled(state, b) { state.timersEnabled = b; },
-        setStagedCount(state, n) { state.stagedCount = n; },
+        setStagedCards(state, arr) { state.stagedCards = arr.slice(); },
         setBlindFaceDown(state, b) { state.blindFaceDown = b; },
         notify(state, msg) { state.notice = msg; },
         clearNotice(state) { state.notice = ''; },

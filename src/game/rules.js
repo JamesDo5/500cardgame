@@ -1,4 +1,4 @@
-import { cardStr2CardObj, JOKER, teamOf, otherTeam } from './cards.js';
+import { cardStr2CardObj, JOKER, SUITS, teamOf, otherTeam } from './cards.js';
 
 export const NO_TRUMP = 'n';
 export const PASS = 0;
@@ -60,12 +60,31 @@ function beats(card, current, ledSuit, trump) {
     return cs === ledSuit;
 }
 
-export function legalPlays(hand, playedCards, leader, trump) {
+export function isNominatableSuit(suit) {
+    return SUITS.includes(suit);
+}
+
+export function nominatesSuit(card, playedCards, leader, trump) {
+    return card === JOKER && trump === NO_TRUMP && playedCards.every(c => !c) && leader >= 0;
+}
+
+export function ledSuit(playedCards, leader, trump, jokerSuit = '') {
     const leadCard = playedCards[leader];
-    if (!leadCard) return hand.slice();
-    const ledSuit = effectiveSuit(leadCard, trump);
-    const following = hand.filter(c => effectiveSuit(c, trump) === ledSuit);
+    if (!leadCard) return '';
+    if (leadCard === JOKER && trump === NO_TRUMP && isNominatableSuit(jokerSuit)) return jokerSuit;
+    return effectiveSuit(leadCard, trump);
+}
+
+export function legalPlays(hand, playedCards, leader, trump, jokerSuit = '') {
+    const led = ledSuit(playedCards, leader, trump, jokerSuit);
+    if (!led) return hand.slice();
+    const following = hand.filter(c => effectiveSuit(c, trump) === led);
     return following.length ? following : hand.slice();
+}
+
+export function longestSuit(hand) {
+    const counts = SUITS.map(s => hand.filter(c => c !== JOKER && cardStr2CardObj(c).s === s).length);
+    return SUITS[counts.indexOf(Math.max(...counts))];
 }
 
 export function nextToPlay(playedCards, leader) {

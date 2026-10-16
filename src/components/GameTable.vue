@@ -5,8 +5,13 @@
             <img class="fake-card card-played card-played-top" id="playedCardTop" :src="CARD_BACK_URL">
             <img class="fake-card card-played card-played-right" id="playedCardRight" :src="CARD_BACK_URL">
             <img class="fake-card card-played card-played-bottom" id="playedCardBottom" :src="CARD_BACK_URL">
+            <div v-if="jokerBadge" class="joker-badge" :class="[jokerBadge.posClass, jokerBadge.colorClass]">{{ jokerBadge.symbol }}</div>
             <div class="card-row" id="submitCards" :class="{ parked: !showPlayButton }"></div>
-            <button v-if="showPlayButton" class="table-button play-button" :class="{ armed: playArmed }" type="button" :disabled="!myPlayTurn" @click="playNow">{{ playArmed ? 'Play card?' : 'Play card' }}</button>
+            <div v-if="suitChooserOpen" class="suit-chooser">
+                <div class="suit-chooser-label">Joker leads as</div>
+                <button v-for="s in NOMINATABLE_SUITS" :key="s" class="suit-option" :class="[suitColorClass(s), { chosen: chosenSuit === s }]" type="button" :aria-pressed="chosenSuit === s" @click="chosenSuit = s">{{ SUIT_SYMBOLS[s] }}</button>
+            </div>
+            <button v-if="showPlayButton" class="table-button play-button" :class="{ armed: playArmed }" type="button" :disabled="!myPlayTurn || suitNeeded" @click="playNow">{{ suitNeeded ? 'Pick a suit' : playArmed ? 'Play card?' : 'Play card' }}</button>
             <button v-if="showBlindButton" class="table-button blind-button" type="button" :disabled="blindFaceDown" :title="blindFaceDown ? 'Flip the blind first' : ''" @click="submitBlindNow">{{ blindFaceDown ? 'Flip the blind first' : 'Submit blind' }}</button>
             <div class="card-stack won-tricks-bottom" id="wonTricksBottom"></div>
             <div class="card-stack won-tricks-left" id="wonTricksLeft"></div>
@@ -26,14 +31,14 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, computed, toRaw } from 'vue';
+import { onMounted, onBeforeUnmount, computed, ref, toRaw, watch } from 'vue';
 import { useStore } from 'vuex'
 import Sortable from 'sortablejs';
 import { mode, TURN_TIMEOUT_MS, BID_TIMEOUT_MS, BLIND_TIMEOUT_MS, DEAL_TIMEOUT_MS, TABLE_WIDTH, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS, TRICK_HOLD_MS, CARD_FLY_MS, TRICK_SWEEP_MS, paceMultiplier } from '../config.js';
 import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
-import { CARD_BACK_URL, HIDDEN_CARD, cardImageUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, dealMock, teamOf } from '../game/cards.js';
-import { trickWinner, trickWinnerWithout, legalPlays, lowestCards, nextToPlay, nextToBid, scoreHand, gameOutcome } from '../game/rules.js';
+import { CARD_BACK_URL, HIDDEN_CARD, JOKER, SUITS, SUIT_SYMBOLS, suitColorClass, cardImageUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, dealMock, teamOf } from '../game/cards.js';
+import { NO_TRUMP, trickWinner, trickWinnerWithout, legalPlays, lowestCards, nextToPlay, nextToBid, scoreHand, gameOutcome, nominatesSuit, isNominatableSuit, longestSuit } from '../game/rules.js';
 
 const store = useStore()
 
@@ -43,6 +48,19 @@ const iAmDealer = computed(() => store.state.dealer === 0);
 const showPlayButton = computed(() => store.state.gameState === 5);
 const myPlayTurn = computed(() => store.state.gameState === 5 && store.state.turn.pos === 0);
 const leading = computed(() => store.state.trickCards.every(c => !c));
+const NOMINATABLE_SUITS = SUITS;
+const chosenSuit = ref('');
+const suitChooserOpen = computed(() => myPlayTurn.value && leading.value && store.state.trumpSuit === NO_TRUMP && store.state.stagedCards.includes(JOKER));
+const suitNeeded = computed(() => suitChooserOpen.value && !chosenSuit.value);
+watch(suitChooserOpen, (open) => { if (!open) chosenSuit.value = ''; });
+const BADGE_POS_CLASSES = ['badge-bottom', 'badge-left', 'badge-top', 'badge-right'];
+const jokerBadge = computed(() => {
+    const suit = store.state.jokerSuit;
+    const pos = store.state.trickCards.indexOf(JOKER);
+    if (!isNominatableSuit(suit) || pos === -1) return null;
+    return { posClass: BADGE_POS_CLASSES[pos], colorClass: suitColorClass(suit), symbol: SUIT_SYMBOLS[suit] };
+});
+const JOKER_NT_NOTICE = "In no trumps the joker can only be played when you can't follow suit.";
 const myAction = computed(() => dealing.value ? iAmDealer.value : store.state.turn.pos === 0);
 const boardCaption = computed(() => {
     const gs = store.state.gameState;
@@ -65,7 +83,7 @@ const captionClass = computed(() => {
         low: gs === 3 || gs === 4,
     };
 });
-const playArmed = computed(() => myPlayTurn.value && store.state.stagedCount > 0);
+const playArmed = computed(() => myPlayTurn.value && store.state.stagedCards.length > 0);
 const showBlindButton = computed(() => store.state.gameState === 3 && store.getters.getBidBox()?.winningBidder === 0 && store.state.turn.pos === 0);
 const blindFaceDown = computed(() => store.state.blindFaceDown);
 function playNow() {
@@ -181,7 +199,21 @@ class GameTable {
     }
 
     syncStaged() {
-        store.commit('setStagedCount', this.submitCards.length);
+        store.commit('setStagedCards', this.submitCards);
+    }
+
+    legal(hand) {
+        return legalPlays(hand, this.playedCards, this.lastTrickWinner, store.state.trumpSuit, store.state.jokerSuit);
+    }
+
+    nominationFor(card, hand) {
+        if (!nominatesSuit(card, this.playedCards, this.lastTrickWinner, store.state.trumpSuit)) return '';
+        return isNominatableSuit(chosenSuit.value) ? chosenSuit.value : longestSuit(hand);
+    }
+
+    sendPlay(card, suit) {
+        if (mode.standalone) return;
+        socket.send(C2S.PLAY_CARD, suit ? { card, suit } : { card });
     }
 
     syncPlayed() {
@@ -328,6 +360,7 @@ class GameTable {
         this.sortableSubmitCards.option("disabled", true);
         this.clearPlayedCards();
         this.syncPlayed();
+        store.commit('setJokerSuit', '');
         this.renderStacks();
         store.commit('setTrumpSuit', '');
         store.commit('setWinningBid', -1);
@@ -478,18 +511,20 @@ class GameTable {
         }
         if (submitBoxElement.children.length === 0) {
             const hand = store.getters.getSharedHandCards();
-            const legalInHand = legalPlays(hand, this.playedCards, this.lastTrickWinner, store.state.trumpSuit);
+            const legalInHand = this.legal(hand);
             if (legalInHand.length !== 1) {
                 store.commit('notify', hand.length ? "Drag a card to the play box first." : "No cards left.");
                 reenable();
                 return 1;
             }
             const only = legalInHand[0];
+            const rest = hand.filter(c => c !== only);
+            const suit = this.nominationFor(only, rest);
             document.querySelectorAll(`#bottomCards [data-card="${only}"]`).forEach(ele => ele.remove());
-            store.commit('setSharedHandCards', hand.filter(c => c !== only));
+            store.commit('setSharedHandCards', rest);
             store.commit('setFirstCardPlayed', true);
-            this.incomingTrickCard(0, only, false);
-            if (!mode.standalone) socket.send(C2S.PLAY_CARD, { card: only });
+            this.incomingTrickCard(0, only, false, suit);
+            this.sendPlay(only, suit);
             reenable();
             return 0;
         }
@@ -499,19 +534,25 @@ class GameTable {
             return 1;
         }
         const card = elem2CardStr(submitBoxElement.firstElementChild);
-        const legal = legalPlays(store.getters.getSharedHandCards().concat(card), this.playedCards, this.lastTrickWinner, store.state.trumpSuit);
+        const legal = this.legal(store.getters.getSharedHandCards().concat(card));
         if (!legal.includes(card)) {
-            store.commit('notify', "You must follow suit.");
+            store.commit('notify', card === JOKER && store.state.trumpSuit === NO_TRUMP ? JOKER_NT_NOTICE : "You must follow suit.");
             reenable();
             return 1;
         }
+        if (nominatesSuit(card, this.playedCards, this.lastTrickWinner, store.state.trumpSuit) && !isNominatableSuit(chosenSuit.value)) {
+            store.commit('notify', "Pick the suit the joker leads as.");
+            reenable();
+            return 1;
+        }
+        const suit = this.nominationFor(card, store.getters.getSharedHandCards());
 
         submitBoxElement.innerHTML = "";
         this.submitCards = [];
         this.syncStaged();
         store.commit('setFirstCardPlayed', true);
-        this.incomingTrickCard(0, card, false);
-        if (!mode.standalone) socket.send(C2S.PLAY_CARD, { card });
+        this.incomingTrickCard(0, card, false, suit);
+        this.sendPlay(card, suit);
         reenable();
         return 0;
     }
@@ -523,7 +564,7 @@ class GameTable {
         const boxed = this.submitCards.slice();
         const hand = store.getters.getSharedHandCards();
         const all = Array.from(new Set(hand.concat(boxed, draggedCard ? [draggedCard] : [])));
-        const legal = legalPlays(all, this.playedCards, this.lastTrickWinner, store.state.trumpSuit);
+        const legal = this.legal(all);
         const card = boxed.find(c => legal.includes(c)) ?? (legal.includes(draggedCard) ? draggedCard : lowestCards(legal, 1)[0]);
         if (!card) {
             this.setTurn(-1);
@@ -534,19 +575,20 @@ class GameTable {
         } else {
             document.querySelectorAll(`#submitCards [data-card="${card}"], #bottomCards [data-card="${card}"]`).forEach(ele => ele.remove());
         }
+        const suit = this.nominationFor(card, all.filter(c => c !== card));
         store.commit('setSharedHandCards', hand.filter(c => c !== card));
         this.submitCards = boxed.filter(c => c !== card);
         this.syncStaged();
         store.commit('notify', card === draggedCard ? `Time's up, played the ${card} you were holding.` : `Time's up, played ${card} for you.`);
         store.commit('setFirstCardPlayed', true);
-        this.incomingTrickCard(0, card, true);
-        if (!mode.standalone) socket.send(C2S.PLAY_CARD, { card });
+        this.incomingTrickCard(0, card, true, suit);
+        this.sendPlay(card, suit);
         return 0;
     }
 
-    incomingTrickCard(pos, card, auto = false) {
+    incomingTrickCard(pos, card, auto = false, suit = '') {
         if (this.resolving) {
-            this.pendingCards.push([pos, card, auto]);
+            this.pendingCards.push([pos, card, auto, suit]);
             return 0;
         }
         if (!isValidCardStr(card)) {
@@ -570,8 +612,10 @@ class GameTable {
             return 1;
         }
 
+        const nominated = nominatesSuit(card, this.playedCards, this.lastTrickWinner, store.state.trumpSuit) && isNominatableSuit(suit) ? suit : '';
         this.playedCards[pos] = card;
         this.syncPlayed();
+        if (nominated) store.commit('setJokerSuit', nominated);
         store.commit('setCardCount', { pos, n: store.state.cardCounts[pos] - 1 });
         const ele = document.getElementById('playedCard' + getPosName(pos));
         ele.dataset.card = card;
@@ -579,7 +623,7 @@ class GameTable {
         ele.className = `fake-card card-played card-played-${getPosName(pos).toLowerCase()} ${getSuitClass(cardStr2CardObj(card).s)}`;
         ele.style.display = "inline";
         this.flyIn(ele, pos);
-        store.commit('feedPush', `${names()[pos]} played ${card}${auto ? ' (auto)' : ''}.`);
+        store.commit('feedPush', `${names()[pos]} played ${card}${nominated ? ` as ${SUIT_SYMBOLS[nominated]}` : ''}${auto ? ' (auto)' : ''}.`);
 
         const next = nextToPlay(this.playedCards, this.lastTrickWinner);
         if (next === -1) {
@@ -625,6 +669,7 @@ class GameTable {
 
     sweepTrick() {
         const winner = this.resolveTarget;
+        store.commit('setJokerSuit', '');
         const stack = document.getElementById('wonTricks' + getPosName(winner));
         const stackStyle = getComputedStyle(stack);
         const cards = Array.from(document.getElementsByClassName("card-played")).filter(ele => ele.style.display !== "none");
@@ -655,6 +700,7 @@ class GameTable {
         this.maybePartnerJoke(trick, leader, winner);
         this.playedCards = ['', '', '', ''];
         this.syncPlayed();
+        store.commit('setJokerSuit', '');
         this.clearPlayedCards();
         this.renderStacks();
         this.resolving = false;
@@ -667,7 +713,7 @@ class GameTable {
         this.updateLegalHighlights();
         const pending = this.pendingCards;
         this.pendingCards = [];
-        pending.forEach(([pos, card, auto]) => this.incomingTrickCard(pos, card, auto));
+        pending.forEach(([pos, card, auto, suit]) => this.incomingTrickCard(pos, card, auto, suit));
     }
 
     maybePartnerJoke(trick, leader, winner) {
@@ -706,9 +752,10 @@ class GameTable {
         this.updateLegalHighlights();
     }
 
-    restoreTrick(playedCards, leader, wonTricks) {
+    restoreTrick(playedCards, leader, wonTricks, jokerSuit = '') {
         this.playedCards = playedCards.slice();
         this.syncPlayed();
+        store.commit('setJokerSuit', isNominatableSuit(jokerSuit) ? jokerSuit : '');
         this.lastTrickWinner = leader;
         this.wonTricks = wonTricks.slice();
         this.clearPlayedCards();
@@ -743,15 +790,16 @@ class GameTable {
         const hand = store.getters.getHand();
         if (!hand) return;
         const myTurn = store.state.gameState === 5 && nextToPlay(this.playedCards, this.lastTrickWinner) === 0;
-        hand.markLegal(myTurn ? legalPlays(store.getters.getSharedHandCards(), this.playedCards, this.lastTrickWinner, store.state.trumpSuit) : null);
+        hand.markLegal(myTurn ? this.legal(store.getters.getSharedHandCards()) : null);
     }
 
     botPlay(pos) {
         if (!mode.standalone || !this.mockHands) return 1;
-        const legal = legalPlays(this.mockHands[pos], this.playedCards, this.lastTrickWinner, store.state.trumpSuit);
+        const legal = this.legal(this.mockHands[pos]);
         const card = legal[Math.floor(Math.random() * legal.length)];
         this.mockHands[pos].splice(this.mockHands[pos].indexOf(card), 1);
-        return this.incomingTrickCard(pos, card, false);
+        const suit = nominatesSuit(card, this.playedCards, this.lastTrickWinner, store.state.trumpSuit) ? longestSuit(this.mockHands[pos]) : '';
+        return this.incomingTrickCard(pos, card, false, suit);
     }
 
     getFinishedTricks() {
@@ -1116,6 +1164,65 @@ onBeforeUnmount(() => {
 .caption-fade-enter-from, .caption-fade-leave-to {
     opacity: 0;
 }
+.joker-badge {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    font-size: 28px;
+    font-weight: bold;
+    background: #ffffff;
+    border: 2px solid #2c3e50;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    pointer-events: none;
+}
+.joker-badge.suit-red { color: #c0392b; }
+.joker-badge.suit-black { color: #111111; }
+.badge-bottom { top: 62%; left: calc(50% + 92px); }
+.badge-top { top: 22%; left: calc(50% - 92px); }
+.badge-left { top: calc(42% - 92px); left: 28%; }
+.badge-right { top: calc(42% + 92px); left: 72%; }
+
+.suit-chooser {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translate(-50%, -300px);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(32, 50, 67, 0.95);
+    border: 2px solid #f1c40f;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    z-index: 7;
+}
+.suit-chooser-label {
+    color: #ecf0f1;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-right: 6px;
+    white-space: nowrap;
+}
+.suit-option {
+    width: 48px;
+    height: 48px;
+    font-size: 32px;
+    line-height: 1;
+    background: #ffffff;
+    border: 3px solid transparent;
+    cursor: pointer;
+}
+.suit-option.suit-red { color: #c0392b; }
+.suit-option.suit-black { color: #111111; }
+.suit-option:hover { border-color: #95a5a6; }
+.suit-option.chosen { border-color: #f1c40f; box-shadow: 0 0 10px 2px rgba(241, 196, 15, 0.6); }
+
 .deal-button {
     position: absolute;
     top: 70%;
