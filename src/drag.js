@@ -31,6 +31,8 @@ let flights = [];
 let raf = 0;
 let lastFrame = 0;
 let frameHook = null;
+const armed = new WeakSet();
+const noop = () => { };
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const easeOut = (t) => 1 - Math.pow(1 - t, 3);
@@ -38,6 +40,14 @@ const nearestTurn = (theta) => Math.round(theta / TWO_PI) * TWO_PI;
 
 function stageEl() {
     return document.getElementById('stage');
+}
+
+function armCards(container) {
+    for (const el of container.children) {
+        if (armed.has(el)) continue;
+        armed.add(el);
+        el.addEventListener('click', noop);
+    }
 }
 
 function measureStage() {
@@ -84,7 +94,7 @@ function insertAt(container, el, index) {
 
 function makeClone(el, w, h) {
     const clone = el.cloneNode(true);
-    clone.classList.remove('hand-card', 'real-card', 'spun', 'illegal', 'bouncy');
+    clone.classList.remove('hand-card', 'real-card', 'spun', 'illegal', 'legal', 'bouncy');
     clone.classList.add('drag-card');
     clone.removeAttribute('id');
     clone.style.width = `${w}px`;
@@ -508,12 +518,17 @@ export const cardDrag = {
         for (const z of cfg.zones) {
             z.pad = { top: 0, right: 0, bottom: 0, left: 0, ...(z.pad ?? {}) };
             z.handler = (evt) => onPointerDown(evt, z);
-            z.el()?.addEventListener('pointerdown', z.handler);
+            const el = z.el();
+            if (!el) continue;
+            el.addEventListener('pointerdown', z.handler);
+            armCards(el);
+            z.observer = new MutationObserver(() => armCards(el));
+            z.observer.observe(el, { childList: true });
         }
     },
     dispose() {
         this.abort();
-        cfg?.zones.forEach(z => z.el()?.removeEventListener('pointerdown', z.handler));
+        cfg?.zones.forEach(z => { z.el()?.removeEventListener('pointerdown', z.handler); z.observer?.disconnect(); });
         layer?.remove();
         layer = null;
         cfg = null;

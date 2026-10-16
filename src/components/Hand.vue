@@ -71,6 +71,7 @@ function renderHand(cards) {
     }
     cardDrag.abort();
     cardsElement.innerHTML = cards.map(card => produceCardHtml(card, false, 'hand-card')).join('');
+    store.getters.getGameTable()?.updateLegalHighlights();
     return 0;
 }
 
@@ -78,8 +79,10 @@ function markLegal(legalCards) {
     const cardsElement = document.getElementById('bottomCards');
     if (!cardsElement) return;
     for (const ele of cardsElement.children) {
-        const illegal = legalCards !== null && !legalCards.includes(elem2CardStr(ele));
-        ele.classList.toggle("illegal", illegal);
+        const marked = legalCards !== null && ele.classList.contains('hand-card');
+        const legal = marked && legalCards.includes(elem2CardStr(ele));
+        ele.classList.toggle("illegal", marked && !legal);
+        ele.classList.toggle("legal", legal);
     }
 }
 
@@ -185,6 +188,23 @@ onMounted(() => {
 .portrait #bottomCards :deep(.hand-card > *) {
     width: 190px;
     height: 271px;
+}
+.portrait #bottomCards :deep(.illegal) {
+    opacity: 1;
+    filter: grayscale(0.65) brightness(0.78);
+    transform: translateY(6px);
+}
+.portrait #bottomCards :deep(.illegal.spun) {
+    transform: translateY(6px) rotate(0.5turn);
+}
+.portrait #bottomCards :deep(.legal) {
+    z-index: 1;
+    transform: translateY(-6px);
+    outline: 3px solid var(--gold-bright);
+    outline-offset: -1px;
+}
+.portrait #bottomCards :deep(.legal.spun) {
+    transform: translateY(-6px) rotate(0.5turn);
 }
 .portrait .sort-button {
     bottom: calc(565px - var(--hand-shift, 0px));
