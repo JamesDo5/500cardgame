@@ -33,8 +33,13 @@ const PAGES = [
     { label: 'Bidding', sections: [
         { heading: 'Bidding', lines: [
             'Player to the left of the dealer will bid first, and it continues clockwise (left).',
-            "You're bidding on the number of tricks you and your partner can win together this hand, and in which suit you'll accomplish this.",
+            "You're bidding on the number of tricks you and your partner can win together this hand, and which suit will be trump while you do it.",
             'Lowest you can bid is 6, highest is obviously 10.',
+        ]},
+        { heading: 'Trump', bullets: true, lines: [
+            'The suit named by the winning bid is trump for the whole hand. Any card of the trump suit beats every card of the other three suits, no matter how high they are.',
+            'The jack of trump is the right bower. The jack of the other suit in the same colour is the left bower and counts as trump too. They are the two highest trumps, beaten only by the joker: joker, right bower, left bower, then the ace of trump and down.',
+            'A no-trump bid means there is no trump suit at all. Only the joker is trump, and jacks are ordinary jacks.',
         ]},
         { heading: 'Points', bidTable: true },
         { heading: 'Scoring', bullets: true, lines: [
