@@ -1,8 +1,8 @@
 <template>
-    <div class="bid-banner" id="finalBidDisplay" :class="{ contract: hasContract }">
+    <div v-if="bigBid" class="bid-banner" id="finalBidDisplay" :class="{ contract: hasContract }">
         <div class="bid-caption">{{ caption }}</div>
-        <div v-if="bigBid" class="bid-big" :class="bigBid.colorClass">{{ bigBid.tricks }}<span class="bid-suit">{{ bigBid.symbol }}</span><span class="bid-points-big">({{ bigBid.points }})</span></div>
-        <div v-if="bigBid" class="bid-sub">{{ bigBid.sub }}</div>
+        <div class="bid-big" :class="bigBid.colorClass">{{ bigBid.tricks }}<span class="bid-suit">{{ bigBid.symbol }}</span><span class="bid-points-big">({{ bigBid.points }})</span></div>
+        <div class="bid-sub">{{ bigBid.sub }}</div>
     </div>
     <button v-if="showToggle" class="bidtable-toggle" type="button" @click="toggle">Bid table</button>
     <div class="bidbox" id="bidbox">
