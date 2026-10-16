@@ -181,12 +181,24 @@ class GameTable {
         this.updateLegalHighlights();
     }
 
+    myBlindOpen() {
+        return store.state.gameState === 3 && store.getters.getBidBox()?.winningBidder === 0 && !store.state.blindFaceDown;
+    }
+
     tapCard(el, zone) {
+        const card = el.dataset.card;
         if (zone === 'blind') {
-            if (store.state.gameState === 3 && store.state.blindFaceDown) this.flipBlind();
-            return '';
+            if (store.state.gameState === 3 && store.state.blindFaceDown) {
+                this.flipBlind();
+                return '';
+            }
+            return this.myBlindOpen() ? 'hand' : '';
         }
-        return zone === 'hand' ? 'spin' : '';
+        if (zone !== 'hand') return '';
+        const myTurn = store.state.gameState === 5 && !this.resolving && nextToPlay(this.playedCards, this.lastTrickWinner) === 0;
+        if (myTurn && this.submitCards.length === 0 && this.legal(store.getters.getSharedHandCards()).includes(card)) return 'play';
+        if (this.myBlindOpen() && this.domCards('blindCards').length < 5) return 'blind';
+        return 'spin';
     }
 
     syncStaged() {

@@ -327,6 +327,7 @@ function finishDrag(tap, cancelled) {
         spin = want === 'spin';
         to = want && !spin && want !== d.zone && zoneOf(want)?.el() ? want : d.zone;
         place(d, to, to === d.zone ? d.index : -1);
+        d.omega = 0;
     }
     if (!zoneOf(to)?.el() || !d.el.isConnected) {
         d.clone.remove();
