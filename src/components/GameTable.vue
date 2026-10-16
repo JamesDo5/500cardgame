@@ -75,7 +75,7 @@ const boardCaption = computed(() => {
     if (gs === 3) return pos === 0 ? 'Your blind' : `${name} is exchanging the blind`;
     if (gs === 4) return pos === 0 ? '' : `${name} is exchanging the blind`;
     if (gs === 5) {
-        if (leading.value) return pos === 0 ? 'You are leading' : `${name} is leading`;
+        if (leading.value) return pos === 0 ? 'Your lead' : `${name} is leading`;
         return pos === 0 ? 'Your turn' : '';
     }
     return '';
