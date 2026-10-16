@@ -1,5 +1,5 @@
 import { S2C, JOIN_ERROR_CODES } from './messages.js';
-import { saveToken } from '../session.js';
+import { saveToken, loadHandOrder } from '../session.js';
 import { isValidCardStr } from '../game/cards.js';
 
 export function installHandlers(socket, store) {
@@ -76,6 +76,13 @@ function setNames(store, names) {
     names.forEach((name, pos) => store.commit('setPlayerName', { pos, name }));
 }
 
+function keepHandOrder(store, cards) {
+    const current = store.getters.getSharedHandCards();
+    const prior = current.length ? current : loadHandOrder(store.state.session.gameId);
+    const kept = prior.filter(c => cards.includes(c));
+    return kept.concat(cards.filter(c => !kept.includes(c)));
+}
+
 function applySnapshot(store, snap) {
     const gt = store.getters.getGameTable();
     const bb = store.getters.getBidBox();
@@ -86,7 +93,7 @@ function applySnapshot(store, snap) {
     store.commit('setScores', { scores: snap.scores ?? [0, 0], handScores: snap.handScores ?? [] });
     bb.reset();
     gt.newHand();
-    if (Array.isArray(snap.hand)) hand.replaceHand(snap.hand);
+    if (Array.isArray(snap.hand)) hand.replaceHand(keepHandOrder(store, snap.hand));
     if (Array.isArray(snap.bids)) bb.bids = snap.bids.slice();
     if (snap.trump) store.commit('setTrumpSuit', snap.trump);
     if (Number.isInteger(snap.winningBid)) store.commit('setWinningBid', snap.winningBid);

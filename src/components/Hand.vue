@@ -6,11 +6,12 @@
 </template>
 
 <script setup>
-import { onMounted, computed } from 'vue';
+import { onMounted, computed, watch } from 'vue';
 import { useStore } from 'vuex'
 import Sortable from 'sortablejs';
 import { CARD_BACK_URL, elem2CardStr, isValidCardStr, preloadCardImages, produceCardHtml } from '../game/cards.js';
 import { NO_TRUMP, sortHand } from '../game/rules.js';
+import { saveHandOrder } from '../session.js';
 
 const emit = defineEmits(['hand-rendered'])
 const store = useStore()
@@ -50,8 +51,9 @@ function initSortable() {
                 evt.item.remove();
                 return;
             }
-            store.commit('setSharedHandCards', hcs.concat(card));
+            syncOrder();
         },
+        onUpdate: () => syncOrder(),
         onRemove: (evt) => {
             if (store.getters.getGameTable()?.dropHeld) return;
             const card = elem2CardStr(evt.item);
@@ -81,6 +83,17 @@ function initSortable() {
     });
     return 0;
 }
+
+function syncOrder() {
+    const cardsElement = document.getElementById('bottomCards');
+    if (!cardsElement) return;
+    store.commit('setSharedHandCards', Array.from(cardsElement.children).map(elem2CardStr));
+}
+
+watch(() => store.state.handCards, (cards) => {
+    const gameId = store.state.session.gameId;
+    if (gameId && cards.length) saveHandOrder(gameId, cards);
+});
 
 function incomingHandCards(cards) {
     if (!Array.isArray(cards) || cards.length !== 10 || !cards.every(isValidCardStr)) {
