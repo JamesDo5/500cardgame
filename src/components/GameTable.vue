@@ -11,8 +11,8 @@
                 <div class="suit-chooser-label">Joker leads as</div>
                 <button v-for="s in NOMINATABLE_SUITS" :key="s" class="suit-option" :class="[suitColorClass(s), { chosen: chosenSuit === s }]" type="button" :aria-pressed="chosenSuit === s" @click="chosenSuit = s">{{ SUIT_SYMBOLS[s] }}</button>
             </div>
-            <button v-if="showPlayButton" class="table-button play-button" :class="{ armed: playArmed }" type="button" :disabled="!myPlayTurn || suitNeeded" @click="playNow">{{ suitNeeded ? 'Pick a suit' : playArmed ? 'Play card?' : 'Play card' }}</button>
-            <button v-if="showBlindButton" class="table-button blind-button" type="button" :disabled="blindFaceDown" :title="blindFaceDown ? 'Flip the blind first' : ''" @click="submitBlindNow">{{ blindFaceDown ? 'Flip the blind first' : 'Submit blind' }}</button>
+            <button v-if="showPlayButton" class="table-button play-button" :class="{ armed: playArmed }" type="button" :disabled="!myPlayTurn || suitNeeded" @click="playNow">{{ suitNeeded ? 'Choose' : playArmed ? 'Play card?' : 'Play card' }}</button>
+            <button v-if="showBlindButton" class="table-button blind-button" type="button" :disabled="blindFaceDown" :title="blindFaceDown ? 'Flip the blind over first' : ''" @click="submitBlindNow">{{ blindFaceDown ? 'Flip the blind over first' : 'Submit blind' }}</button>
             <div class="card-stack won-tricks-bottom" id="wonTricksBottom"></div>
             <div class="card-stack won-tricks-left" id="wonTricksLeft"></div>
             <div class="card-stack won-tricks-top" id="wonTricksTop"></div>
@@ -71,14 +71,14 @@ const myAction = computed(() => dealing.value ? iAmDealer.value : store.state.tu
 const boardCaption = computed(() => {
     const gs = store.state.gameState;
     const pos = store.state.turn.pos;
-    if (gs === 0) return iAmDealer.value ? 'Your deal' : `${names()[store.state.dealer]} is dealing`;
+    if (gs === 0) return iAmDealer.value ? 'Your deal' : `${names()[store.state.dealer]}'s deal`;
     if (pos < 0) return '';
     const name = names()[pos];
-    if (gs === 1 || gs === 2) return pos === 0 ? 'Your bid' : `${name} is bidding`;
-    if (gs === 3) return pos === 0 ? 'Your blind' : `${name} is exchanging the blind`;
-    if (gs === 4) return pos === 0 ? '' : `${name} is exchanging the blind`;
+    if (gs === 1 || gs === 2) return pos === 0 ? 'Your bid' : `${name}'s bid`;
+    if (gs === 3) return pos === 0 ? 'Your blind' : `${name} has the blind`;
+    if (gs === 4) return pos === 0 ? '' : `${name} has the blind`;
     if (gs === 5) {
-        if (leading.value) return pos === 0 ? 'Your lead' : `${name} is leading`;
+        if (leading.value) return pos === 0 ? 'Your lead' : `${name}'s lead`;
         return pos === 0 && !store.state.stagedCards.length ? 'Your turn' : '';
     }
     return '';
@@ -155,16 +155,16 @@ class GameTable {
 
     dropMessage(card, from, to) {
         if (to === 'play') {
-            if (store.state.gameState !== 5) return "Trick play hasn't started.";
+            if (store.state.gameState !== 5) return "Not time to play yet.";
             if (this.resolving || nextToPlay(this.playedCards, this.lastTrickWinner) !== 0) return "It's not your turn.";
             const all = Array.from(new Set(store.getters.getSharedHandCards().concat(this.submitCards, card)));
-            if (!this.legal(all).includes(card)) return "You must follow suit.";
+            if (!this.legal(all).includes(card)) return "Follow suit!";
             return '';
         }
         if (to === 'blind') {
-            if (store.state.gameState !== 3 || store.getters.getBidBox()?.winningBidder !== 0) return "The blind isn't yours.";
-            if (store.state.blindFaceDown) return "Flip the blind first.";
-            if (this.domCards('blindCards').filter(c => c !== card).length >= 5) return "The blind holds exactly 5 cards.";
+            if (store.state.gameState !== 3 || store.getters.getBidBox()?.winningBidder !== 0) return "That blind isn't yours.";
+            if (store.state.blindFaceDown) return "Flip the blind over first.";
+            if (this.domCards('blindCards').filter(c => c !== card).length >= 5) return "Discard exactly 5 cards to the blind.";
             return '';
         }
         return '';
@@ -382,7 +382,7 @@ class GameTable {
         const blindElement = document.getElementById('blindCards');
         const items = Array.from(blindElement.children);
         if (store.state.blindFaceDown || items.some(ele => ele.classList.contains('card-back'))) {
-            store.commit('notify', "Flip the blind first.");
+            store.commit('notify', "Flip the blind over first.");
             store.commit('setBlindFaceDown', true);
             return 1;
         }
@@ -458,7 +458,7 @@ class GameTable {
     submitTrick() {
         const submitBoxElement = document.getElementById('submitCards');
         if (store.state.gameState !== 5) {
-            store.commit('notify', "Trick play hasn't started.");
+            store.commit('notify', "Not time to play yet.");
             return 1;
         }
         if (nextToPlay(this.playedCards, this.lastTrickWinner) !== 0) {
@@ -490,11 +490,11 @@ class GameTable {
         const card = elem2CardStr(submitBoxElement.firstElementChild);
         const legal = this.legal(store.getters.getSharedHandCards().concat(card));
         if (!legal.includes(card)) {
-            store.commit('notify', "You must follow suit.");
+            store.commit('notify', "Follow suit!");
             return 1;
         }
         if (nominatesSuit(card, this.playedCards, this.lastTrickWinner, store.state.trumpSuit) && !isNominatableSuit(chosenSuit.value)) {
-            store.commit('notify', "Pick the suit the joker leads as.");
+            store.commit('notify', "Choose a suit!");
             return 1;
         }
         const suit = this.nominationFor(card, store.getters.getSharedHandCards());
