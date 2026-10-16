@@ -25,6 +25,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - run: |
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+          git config --global --add url."https://github.com/".insteadOf "git@github.com:"
       - run: npm ci
       - run: npm run build -- --base=/500cardgame/
       - uses: aws-actions/configure-aws-credentials@v4
