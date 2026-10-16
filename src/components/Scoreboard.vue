@@ -28,7 +28,7 @@ const scores = computed(() => store.state.scores);
 
 <style scoped>
 table td + td, table th + th {
-    border-left: 2px solid tomato;
+    border-left: 2px solid white;
 }
 
 th {
@@ -59,5 +59,13 @@ th, tr {
     transform: scale(1.5);
     overflow-y: auto;
     max-height: 150px;
+}
+
+.portrait .scoreboard {
+    top: 90px;
+    left: 20px;
+    transform-origin: top left;
+    transform: scale(1.25);
+    max-height: 120px;
 }
 </style>

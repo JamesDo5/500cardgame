@@ -60,4 +60,13 @@ onMounted(() => emit('gametable-ready'));
     color: white;
     font-family: Arial, sans-serif;
 }
+
+.portrait #gameState {
+    bottom: auto;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0;
+    font-size: 18px;
+}
 </style>

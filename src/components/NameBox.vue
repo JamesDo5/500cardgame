@@ -210,4 +210,23 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
     from { transform: rotate(-10deg); }
     to { transform: rotate(10deg); }
 }
+
+.portrait #nameboxLeftCards {
+    top: 565px;
+    left: 90px;
+}
+.portrait #nameboxTopCards {
+    top: 240px;
+    left: 400px;
+}
+.portrait #nameboxRightCards {
+    top: 565px;
+    left: 710px;
+}
+.portrait #nameboxMe {
+    top: auto;
+    bottom: 565px;
+    left: 110px;
+    transform: translate(-50%, 0);
+}
 </style>

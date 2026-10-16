@@ -6,8 +6,8 @@
             <img class="fake-card card-played card-played-right" id="playedCardRight" :src="CARD_BACK_URL">
             <img class="fake-card card-played card-played-bottom" id="playedCardBottom" :src="CARD_BACK_URL">
             <div class="card-row" id="submitCards" :class="{ parked: !showPlayButton }"></div>
-            <button v-if="showPlayButton" class="table-button play-button" :class="{ armed: playArmed }" type="button" @click="playNow">Play card</button>
-            <button v-if="showBlindButton" class="table-button blind-button" type="button" @click="submitBlindNow">Submit blind</button>
+            <button v-if="showPlayButton" class="table-button play-button" :class="{ armed: playArmed }" type="button" :disabled="!myPlayTurn" @click="playNow">{{ playArmed ? 'Play card?' : 'Play card' }}</button>
+            <button v-if="showBlindButton" class="table-button blind-button" type="button" :disabled="blindFaceDown" :title="blindFaceDown ? 'Flip the blind first' : ''" @click="submitBlindNow">{{ blindFaceDown ? 'Flip the blind first' : 'Submit blind' }}</button>
             <div class="card-stack won-tricks-bottom" id="wonTricksBottom"></div>
             <div class="card-stack won-tricks-left" id="wonTricksLeft"></div>
             <div class="card-stack won-tricks-top" id="wonTricksTop"></div>
@@ -16,7 +16,9 @@
             <div v-if="dealing" class="shuffle">
                 <img v-for="n in 7" :key="n" class="fake-card card-back shuffle-card" :style="{ animationDelay: `${(n - 1) * 0.12}s` }" :src="CARD_BACK_URL">
             </div>
-            <div v-if="dealing" class="deal-caption">{{ dealCaption }}</div>
+            <Transition name="caption-fade">
+                <div v-if="boardCaption" class="board-caption" :class="captionClass">{{ boardCaption }}</div>
+            </Transition>
             <button v-if="dealing && iAmDealer" class="deal-button" type="button" @click="dealNow">Deal</button>
         </div>
         <div class="card-row" id="blindCards"></div>
@@ -27,7 +29,7 @@
 import { onMounted, onBeforeUnmount, computed, toRaw } from 'vue';
 import { useStore } from 'vuex'
 import Sortable from 'sortablejs';
-import { mode, TURN_TIMEOUT_MS, BID_TIMEOUT_MS, BLIND_TIMEOUT_MS, DEAL_TIMEOUT_MS, TABLE_WIDTH, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS, TRICK_HOLD_MS, CARD_FLY_MS, TRICK_SWEEP_MS } from '../config.js';
+import { mode, TURN_TIMEOUT_MS, BID_TIMEOUT_MS, BLIND_TIMEOUT_MS, DEAL_TIMEOUT_MS, TABLE_WIDTH, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS, TRICK_HOLD_MS, CARD_FLY_MS, TRICK_SWEEP_MS, paceMultiplier } from '../config.js';
 import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
 import { CARD_BACK_URL, HIDDEN_CARD, cardImageUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, dealMock, teamOf } from '../game/cards.js';
@@ -38,10 +40,34 @@ const store = useStore()
 const names = () => store.state.playerNames;
 const dealing = computed(() => store.state.gameState === 0);
 const iAmDealer = computed(() => store.state.dealer === 0);
-const dealCaption = computed(() => iAmDealer.value ? 'Your deal' : `${store.state.playerNames[store.state.dealer]} is dealing`);
 const showPlayButton = computed(() => store.state.gameState === 5);
-const playArmed = computed(() => store.state.stagedCount > 0 && store.state.turn.pos === 0);
+const myPlayTurn = computed(() => store.state.gameState === 5 && store.state.turn.pos === 0);
+const leading = computed(() => store.state.trickCards.every(c => !c));
+const myAction = computed(() => dealing.value ? iAmDealer.value : store.state.turn.pos === 0);
+const boardCaption = computed(() => {
+    const gs = store.state.gameState;
+    const pos = store.state.turn.pos;
+    if (gs === 0) return iAmDealer.value ? 'Your deal' : `${names()[store.state.dealer]} is dealing`;
+    if (pos < 0) return '';
+    const name = names()[pos];
+    if (gs === 1 || gs === 2) return pos === 0 ? 'Your bid' : `${name} is bidding`;
+    if (gs === 3) return pos === 0 ? 'Your blind' : `${name} is exchanging the blind`;
+    if (gs === 4) return pos === 0 ? '' : `${name} is exchanging the blind`;
+    if (gs === 5) return pos === 0 ? (leading.value ? 'You are leading' : 'Your turn') : `${name} is ${leading.value ? 'leading' : 'playing'}`;
+    return '';
+});
+const captionClass = computed(() => {
+    const gs = store.state.gameState;
+    return {
+        mine: myAction.value,
+        lead: myPlayTurn.value && leading.value,
+        corner: gs === 1 || gs === 2 || (gs === 5 && !myPlayTurn.value),
+        low: gs === 3 || gs === 4,
+    };
+});
+const playArmed = computed(() => myPlayTurn.value && store.state.stagedCount > 0);
 const showBlindButton = computed(() => store.state.gameState === 3 && store.getters.getBidBox()?.winningBidder === 0 && store.state.turn.pos === 0);
+const blindFaceDown = computed(() => store.state.blindFaceDown);
 function playNow() {
     store.getters.getGameTable().submitTrick();
 }
@@ -158,6 +184,10 @@ class GameTable {
         store.commit('setStagedCount', this.submitCards.length);
     }
 
+    syncPlayed() {
+        store.commit('setTrickCards', this.playedCards);
+    }
+
     afterDragEnd(item) {
         if (this.dropHeld) {
             this.dropHeld = false;
@@ -214,7 +244,7 @@ class GameTable {
             return;
         }
         const ms = gs === 0 ? DEAL_TIMEOUT_MS : gs === 1 || gs === 2 ? BID_TIMEOUT_MS : gs === 3 || gs === 4 ? BLIND_TIMEOUT_MS : TURN_TIMEOUT_MS;
-        store.commit('setTurn', { pos, deadlineMs: Date.now() + ms });
+        store.commit('setTurn', { pos, deadlineMs: Date.now() + ms * paceMultiplier(store.state.pace) });
     }
 
     expectedActor() {
@@ -293,9 +323,11 @@ class GameTable {
         document.getElementById('blindCards').innerHTML = "";
         document.getElementById('blindCards').style.display = "flex";
         document.getElementById('blindDiscard').style.display = "none";
+        store.commit('setBlindFaceDown', false);
         this.sortableBlindCards.option("disabled", true);
         this.sortableSubmitCards.option("disabled", true);
         this.clearPlayedCards();
+        this.syncPlayed();
         this.renderStacks();
         store.commit('setTrumpSuit', '');
         store.commit('setWinningBid', -1);
@@ -335,6 +367,11 @@ class GameTable {
         const cardsElement = document.getElementById('blindCards');
         cardsElement.style.display = "flex";
         cardsElement.innerHTML = this.blindCards.map(card => produceCardHtml(card, faceDown, 'real-card')).join('');
+        this.setBlindFaceDown(faceDown);
+    }
+
+    setBlindFaceDown(faceDown) {
+        store.commit('setBlindFaceDown', faceDown);
         this.sortableBlindCards.option("disabled", faceDown);
     }
 
@@ -347,15 +384,15 @@ class GameTable {
 
     submitBlind() {
         const blindElement = document.getElementById('blindCards');
-        this.sortableBlindCards.option("disabled", true);
         const items = Array.from(blindElement.children);
-        if (items.length !== 5) {
-            store.commit('notify', "Discard exactly 5 cards to the blind.");
-            this.sortableBlindCards.option("disabled", false);
+        if (store.state.blindFaceDown || items.some(ele => ele.classList.contains('card-back'))) {
+            store.commit('notify', "Flip the blind first.");
+            this.setBlindFaceDown(true);
             return 1;
         }
-        if (items.some(ele => ele.classList.contains('card-back'))) {
-            store.commit('notify', "Flip the blind over before submitting.");
+        this.sortableBlindCards.option("disabled", true);
+        if (items.length !== 5) {
+            store.commit('notify', "Discard exactly 5 cards to the blind.");
             this.sortableBlindCards.option("disabled", false);
             return 1;
         }
@@ -534,6 +571,7 @@ class GameTable {
         }
 
         this.playedCards[pos] = card;
+        this.syncPlayed();
         store.commit('setCardCount', { pos, n: store.state.cardCounts[pos] - 1 });
         const ele = document.getElementById('playedCard' + getPosName(pos));
         ele.dataset.card = card;
@@ -616,6 +654,7 @@ class GameTable {
         store.commit('feedPush', `${names()[winner]} won the trick.`);
         this.maybePartnerJoke(trick, leader, winner);
         this.playedCards = ['', '', '', ''];
+        this.syncPlayed();
         this.clearPlayedCards();
         this.renderStacks();
         this.resolving = false;
@@ -669,6 +708,7 @@ class GameTable {
 
     restoreTrick(playedCards, leader, wonTricks) {
         this.playedCards = playedCards.slice();
+        this.syncPlayed();
         this.lastTrickWinner = leader;
         this.wonTricks = wonTricks.slice();
         this.clearPlayedCards();
@@ -898,6 +938,7 @@ onBeforeUnmount(() => {
 #submitCards :deep(.real-card > *), #submitCards :deep(.hand-card > *) {
     width: 150px;
     height: 214px;
+    display: block;
 }
 
 #blindCards :deep(.real-card > *), #blindCards :deep(.hand-card > *) {
@@ -962,6 +1003,12 @@ onBeforeUnmount(() => {
 .table-button:hover {
     background: #f1c40f;
 }
+.table-button:disabled {
+    background: #bdc3c7;
+    color: #7f8c8d;
+    cursor: not-allowed;
+    box-shadow: none;
+}
 .play-button {
     top: 100%;
     left: 50%;
@@ -970,13 +1017,30 @@ onBeforeUnmount(() => {
     padding: 16px 44px;
     border-radius: 0;
 }
+.play-button:disabled, .play-button:disabled:hover {
+    background: #5d6d7e;
+    color: #aab7b8;
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.7;
+}
 .play-button.armed {
     background: linear-gradient(45deg, #f1c40f, #f39c12);
-    animation: armedGlow 1.1s ease-in-out infinite;
+    transform: translateX(110px) translateY(30px) scale(1.1);
+    box-shadow: 0 0 18px 4px rgba(241, 196, 15, 0.55), 0 3px 6px rgba(0, 0, 0, 0.3);
+    animation: armedPulse 1.4s ease-in-out infinite;
 }
-@keyframes armedGlow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(110px) translateY(30px) scale(1); }
-    50% { box-shadow: 0 0 0 14px rgba(241, 196, 15, 0), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(110px) translateY(30px) scale(1.05); }
+.play-button.armed:hover {
+    filter: brightness(1.08);
+}
+@keyframes armedPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(110px) translateY(30px) scale(1.08); }
+    50% { box-shadow: 0 0 0 14px rgba(241, 196, 15, 0), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(110px) translateY(30px) scale(1.14); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .play-button.armed {
+        animation: none;
+    }
 }
 .blind-button {
     top: 50%;
@@ -1011,7 +1075,7 @@ onBeforeUnmount(() => {
     50% { transform: translate(-50%, -50%) rotate(0deg); }
     75% { transform: translate(30%, -50%) rotate(8deg); }
 }
-.deal-caption {
+.board-caption {
     position: absolute;
     top: 62%;
     left: 50%;
@@ -1020,6 +1084,37 @@ onBeforeUnmount(() => {
     font-family: Arial, sans-serif;
     font-size: 20px;
     letter-spacing: 1px;
+    white-space: nowrap;
+    pointer-events: none;
+}
+.board-caption.low {
+    top: 86%;
+}
+.board-caption.corner {
+    top: 14px;
+    left: 16px;
+    transform: none;
+    max-width: 222px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.board-caption.mine {
+    font-size: 30px;
+    font-weight: bold;
+    color: #f1c40f;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+}
+.board-caption.lead {
+    top: 42%;
+    transform: translate(-50%, -50%);
+    font-size: 52px;
+    letter-spacing: 3px;
+}
+.caption-fade-enter-active, .caption-fade-leave-active {
+    transition: opacity 0.35s ease;
+}
+.caption-fade-enter-from, .caption-fade-leave-to {
+    opacity: 0;
 }
 .deal-button {
     position: absolute;
@@ -1043,5 +1138,20 @@ onBeforeUnmount(() => {
 @keyframes dealPulse {
     0%, 100% { transform: translateX(-50%) scale(1); }
     50% { transform: translateX(-50%) scale(1.06); }
+}
+
+.portrait #gameTableContainer {
+    top: 265px;
+    width: 800px;
+    height: 600px;
+}
+.portrait #gameTable {
+    height: 600px;
+}
+.portrait .card-played-left {
+    left: 35%;
+}
+.portrait .card-played-right {
+    left: 65%;
 }
 </style>

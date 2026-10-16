@@ -214,4 +214,22 @@ onMounted(() => {
     filter: grayscale(0.7);
     cursor: not-allowed;
 }
+
+.portrait #bottomCards {
+    width: 800px;
+    flex-wrap: wrap;
+    gap: 6px 0;
+    min-height: 0;
+}
+.portrait #bottomCards :deep(.hand-card) {
+    margin-right: -50px;
+}
+.portrait #bottomCards :deep(.hand-card > *) {
+    width: 190px;
+    height: 271px;
+}
+.portrait .sort-button {
+    bottom: 565px;
+    right: 20px;
+}
 </style>

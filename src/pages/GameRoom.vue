@@ -6,7 +6,8 @@ import GamePage from '../components/GamePage.vue'
 import DevButtons from '../components/DevButtons.vue'
 import LobbyOverlay from '../components/LobbyOverlay.vue'
 import RulesBook from '../components/RulesBook.vue'
-import { DEV, mode, WS_URL, STAGE_WIDTH, STAGE_HEIGHT, LOCAL_GAME_ID } from '../config.js'
+import { DEV, mode, WS_URL, STAGE_WIDTH, STAGE_HEIGHT, PORTRAIT_STAGE_WIDTH, PORTRAIT_STAGE_MIN_HEIGHT, LOCAL_GAME_ID, DEFAULT_PACE } from '../config.js'
+import { layout } from '../layout.js'
 import { socket } from '../net/socket.js'
 import { C2S } from '../net/messages.js'
 import { installHandlers } from '../net/handlers.js'
@@ -32,16 +33,19 @@ const displayId = computed(() => store.state.session.gameId || (props.gameId ===
 const showLeave = computed(() => !mode.standalone && gameState.value >= 0 && gameState.value !== 6);
 
 function fitStage() {
-    const scale = Math.min(window.innerWidth / STAGE_WIDTH, window.innerHeight / STAGE_HEIGHT);
+    const w = layout.portrait ? PORTRAIT_STAGE_WIDTH : STAGE_WIDTH;
+    const h = layout.portrait ? Math.max(PORTRAIT_STAGE_MIN_HEIGHT, Math.round(w * window.innerHeight / window.innerWidth)) : STAGE_HEIGHT;
+    const scale = Math.min(window.innerWidth / w, window.innerHeight / h);
     stageStyle.value = {
-        width: `${STAGE_WIDTH}px`,
-        height: `${STAGE_HEIGHT}px`,
-        left: `${(window.innerWidth - STAGE_WIDTH * scale) / 2}px`,
-        top: `${(window.innerHeight - STAGE_HEIGHT * scale) / 2}px`,
+        width: `${w}px`,
+        height: `${h}px`,
+        left: `${(window.innerWidth - w * scale) / 2}px`,
+        top: `${(window.innerHeight - h * scale) / 2}px`,
         transform: `scale(${scale})`,
     };
 }
 fitStage();
+watch(() => layout.portrait, fitStage);
 
 function connect() {
     const name = nameInput.value.trim();
@@ -92,14 +96,16 @@ watch(() => store.state.session.gameId, (id) => {
     if (id && props.gameId === 'new') router.replace({ name: 'game', params: { id } });
 });
 
+store.commit('resetGame');
+store.commit('setGameState', -1);
+store.commit('setJoinError', '');
+store.commit('setLobby', { seats: [], hostPos: -1, canStart: false });
+store.commit('setPace', DEFAULT_PACE);
+store.commit('setConnection', mode.standalone ? 'standalone' : 'idle');
+
 onMounted(() => {
     document.body.classList.add('in-game');
     window.addEventListener('resize', fitStage);
-    store.commit('resetGame');
-    store.commit('setGameState', mode.standalone ? -1 : -1);
-    store.commit('setJoinError', '');
-    store.commit('setLobby', { seats: [], hostPos: -1, canStart: false });
-    store.commit('setConnection', mode.standalone ? 'standalone' : 'idle');
 });
 onBeforeUnmount(() => {
     document.body.classList.remove('in-game');
@@ -124,7 +130,7 @@ onBeforeUnmount(() => {
         <div v-if="needName" class="gate">
             <form class="gate-card" @submit.prevent="submitName">
                 <div class="gate-kicker">Joining game {{ displayId }}</div>
-                <label class="gate-label" for="gateName">What should we call you?</label>
+                <label class="gate-label" for="gateName">What name should be shown at the table?</label>
                 <input id="gateName" v-model="nameInput" class="ui-input" maxlength="24" autofocus placeholder="Your name">
                 <div class="gate-actions">
                     <button class="ui-button" type="button" @click="backHome">Back</button>

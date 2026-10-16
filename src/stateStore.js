@@ -1,4 +1,5 @@
 import Vuex from 'vuex'
+import { DEFAULT_PACE } from './config.js';
 
 const FEED_MAX = 30;
 
@@ -17,16 +18,19 @@ export default new Vuex.Store({
         handScores: [],
         turn: { pos: -1, deadlineMs: 0, startedMs: 0 },
         cardCounts: [10, 10, 10, 10],
+        trickCards: ['', '', '', ''],
         firstCardPlayed: false,
         gameWinner: -1,
         connection: 'idle',
         session: { gameId: '', seat: -1, token: '', name: '' },
         lobby: { seats: [], hostPos: -1, canStart: false },
+        pace: DEFAULT_PACE,
         joinError: '',
         rematchAtMs: 0,
         autoBots: true,
         timersEnabled: true,
         stagedCount: 0,
+        blindFaceDown: false,
         notice: '',
         feed: [],
     },
@@ -69,21 +73,25 @@ export default new Vuex.Store({
             state.gameWinner = -1;
             state.rematchAtMs = 0;
             state.handCards = [];
+            state.trickCards = ['', '', '', ''];
             state.feed = [];
         },
         setTurn(state, turn) { state.turn = { startedMs: Date.now(), ...turn }; },
         setCardCount(state, { pos, n }) { state.cardCounts[pos] = Math.max(0, n); },
         resetCardCounts(state) { state.cardCounts = [10, 10, 10, 10]; },
+        setTrickCards(state, arr) { state.trickCards = arr.slice(); },
         setFirstCardPlayed(state, b) { state.firstCardPlayed = b; },
         setGameWinner(state, t) { state.gameWinner = t; },
         setConnection(state, s) { state.connection = s; },
         setSession(state, patch) { state.session = { ...state.session, ...patch }; },
         setLobby(state, lobby) { state.lobby = lobby; },
+        setPace(state, pace) { state.pace = pace; },
         setJoinError(state, msg) { state.joinError = msg; },
         setRematchAt(state, ms) { state.rematchAtMs = ms; },
         setAutoBots(state, b) { state.autoBots = b; },
         setTimersEnabled(state, b) { state.timersEnabled = b; },
         setStagedCount(state, n) { state.stagedCount = n; },
+        setBlindFaceDown(state, b) { state.blindFaceDown = b; },
         notify(state, msg) { state.notice = msg; },
         clearNotice(state) { state.notice = ''; },
         feedPush(state, msg) {
