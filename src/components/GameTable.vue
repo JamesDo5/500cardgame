@@ -1,10 +1,10 @@
 <template>
     <div id="gameTableContainer">
         <div id="gameTable">
-            <img class="fake-card card-played card-played-left" id="playedCardLeft" :src="CARD_BACK_URL">
-            <img class="fake-card card-played card-played-top" id="playedCardTop" :src="CARD_BACK_URL">
-            <img class="fake-card card-played card-played-right" id="playedCardRight" :src="CARD_BACK_URL">
-            <img class="fake-card card-played card-played-bottom" id="playedCardBottom" :src="CARD_BACK_URL">
+            <img class="fake-card card-played card-played-left" id="playedCardLeft" draggable="false" :src="CARD_BACK_URL">
+            <img class="fake-card card-played card-played-top" id="playedCardTop" draggable="false" :src="CARD_BACK_URL">
+            <img class="fake-card card-played card-played-right" id="playedCardRight" draggable="false" :src="CARD_BACK_URL">
+            <img class="fake-card card-played card-played-bottom" id="playedCardBottom" draggable="false" :src="CARD_BACK_URL">
             <div v-if="jokerBadge" class="joker-badge" :class="[jokerBadge.posClass, jokerBadge.colorClass]">{{ jokerBadge.symbol }}</div>
             <div class="card-row" id="submitCards" :class="{ parked: !showPlayButton }"></div>
             <div v-if="suitChooserOpen" class="suit-chooser">
@@ -22,7 +22,7 @@
                 <img v-for="n in 5" :key="n" class="fake-card card-back blind-stack-card" :src="CARD_BACK_URL">
             </div>
             <div v-if="dealing" class="shuffle">
-                <img v-for="n in 7" :key="n" class="fake-card card-back shuffle-card" :style="{ animationDelay: `${(n - 1) * 0.12}s` }" :src="CARD_BACK_URL">
+                <img v-for="n in 7" :key="n" class="fake-card card-back shuffle-card" draggable="false" :style="{ animationDelay: `${(n - 1) * 0.12}s` }" :src="CARD_BACK_URL">
             </div>
             <Transition name="caption-fade">
                 <div v-if="boardCaption" class="board-caption" :class="captionClass">{{ boardCaption }}</div>

@@ -17,14 +17,14 @@ const secondRow = computed(() => cards.value.slice(5));
 <template>
     <div :class="isTop ? 'card-row' : 'card-halfrow'" :id="playerpos">
         <template v-if="isTop">
-            <img v-for="(c, n) in cards" :key="n" class="fake-card card-back" :data-card="c" :src="CARD_BACK_URL">
+            <img v-for="(c, n) in cards" :key="n" class="fake-card card-back" draggable="false" :data-card="c" :src="CARD_BACK_URL">
         </template>
         <template v-else>
             <div class="section">
-                <img v-for="(c, n) in firstRow" :key="n" class="fake-card card-back section-member" :data-card="c" :src="CARD_BACK_URL">
+                <img v-for="(c, n) in firstRow" :key="n" class="fake-card card-back section-member" draggable="false" :data-card="c" :src="CARD_BACK_URL">
             </div>
             <div class="section">
-                <img v-for="(c, n) in secondRow" :key="n" class="fake-card card-back section-member" :data-card="c" :src="CARD_BACK_URL">
+                <img v-for="(c, n) in secondRow" :key="n" class="fake-card card-back section-member" draggable="false" :data-card="c" :src="CARD_BACK_URL">
             </div>
         </template>
     </div>

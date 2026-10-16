@@ -20,6 +20,13 @@ body.in-game {
 }
 .fake-card, .hand-card, .real-card {
   touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+img.fake-card, .hand-card > img, .real-card > img, .sortable-fallback > img {
+  pointer-events: none;
+  -webkit-user-drag: none;
 }
 
 /* Cards that are never moved manually by player. Also considered naming 'passive' */

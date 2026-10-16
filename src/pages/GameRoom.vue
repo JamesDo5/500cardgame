@@ -137,7 +137,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div id="stage" :style="stageStyle">
+    <div id="stage" :style="stageStyle" @contextmenu.prevent>
         <GamePage @gametable-ready="tableReady" />
         <DevButtons v-if="mode.standalone" ref="devButtonsRef" />
 
