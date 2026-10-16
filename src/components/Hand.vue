@@ -1,7 +1,7 @@
 <template>
     <button v-if="canSort" class="sort-button" type="button" @click="sortNow">Sort hand</button>
     <div class="card-row" id="bottomCards">
-        <div v-for="n in 10" :key="n" class="card-back hand-card"><img draggable="false" :src="CARD_BACK_URL"></div>
+        <div v-for="n in 10" :key="n" class="card-back hand-card"><img draggable="false" :src="backUrl"></div>
     </div>
 </template>
 
@@ -9,9 +9,10 @@
 import { onMounted, computed, watch } from 'vue';
 import { useStore } from 'vuex'
 import Sortable from 'sortablejs';
-import { CARD_BACK_URL, elem2CardStr, isValidCardStr, preloadCardImages, produceCardHtml } from '../game/cards.js';
+import { cardBackUrl, elem2CardStr, isValidCardStr, preloadCardImages, produceCardHtml } from '../game/cards.js';
 import { sortHand } from '../game/rules.js';
 import { saveHandOrder } from '../session.js';
+import { activeTrump } from '../theme.js';
 
 const emit = defineEmits(['hand-rendered'])
 const store = useStore()
@@ -21,6 +22,7 @@ const dragEndHandlers = [];
 function onDragEnd(fn) {
     dragEndHandlers.push(fn);
 }
+const backUrl = computed(() => cardBackUrl(activeTrump(store.state)));
 const canSort = computed(() => store.state.gameState >= 1 && store.state.gameState <= 5 && !store.state.firstCardPlayed && store.state.handCards.length > 1);
 
 function sortNow() {

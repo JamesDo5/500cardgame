@@ -1,10 +1,10 @@
 <template>
     <div id="gameTableContainer">
         <div id="gameTable">
-            <img class="fake-card card-played card-played-left" id="playedCardLeft" draggable="false" :src="CARD_BACK_URL">
-            <img class="fake-card card-played card-played-top" id="playedCardTop" draggable="false" :src="CARD_BACK_URL">
-            <img class="fake-card card-played card-played-right" id="playedCardRight" draggable="false" :src="CARD_BACK_URL">
-            <img class="fake-card card-played card-played-bottom" id="playedCardBottom" draggable="false" :src="CARD_BACK_URL">
+            <img class="fake-card card-played card-played-left" id="playedCardLeft" draggable="false" :src="backUrl">
+            <img class="fake-card card-played card-played-top" id="playedCardTop" draggable="false" :src="backUrl">
+            <img class="fake-card card-played card-played-right" id="playedCardRight" draggable="false" :src="backUrl">
+            <img class="fake-card card-played card-played-bottom" id="playedCardBottom" draggable="false" :src="backUrl">
             <div v-if="jokerBadge" class="joker-badge" :class="[jokerBadge.posClass, jokerBadge.colorClass]">{{ jokerBadge.symbol }}</div>
             <div class="card-row" id="submitCards" :class="{ parked: !showPlayButton }"></div>
             <div v-if="suitChooserOpen" class="suit-chooser">
@@ -22,7 +22,7 @@
                 <img v-for="n in 5" :key="n" class="fake-card card-back blind-stack-card" :src="CARD_BACK_URL">
             </div>
             <div v-if="dealing" class="shuffle">
-                <img v-for="n in 7" :key="n" class="fake-card card-back shuffle-card" draggable="false" :style="{ animationDelay: `${(n - 1) * 0.12}s` }" :src="CARD_BACK_URL">
+                <img v-for="n in 7" :key="n" class="fake-card card-back shuffle-card" draggable="false" :style="{ animationDelay: `${(n - 1) * 0.12}s` }" :src="backUrl">
             </div>
             <Transition name="caption-fade">
                 <div v-if="boardCaption" class="board-caption" :class="captionClass">{{ boardCaption }}</div>
@@ -40,12 +40,14 @@ import Sortable from 'sortablejs';
 import { mode, TURN_TIMEOUT_MS, BID_TIMEOUT_MS, BLIND_TIMEOUT_MS, DEAL_TIMEOUT_MS, TABLE_WIDTH, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS, TRICK_HOLD_MS, CARD_FLY_MS, TRICK_SWEEP_MS, paceMultiplier } from '../config.js';
 import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
-import { CARD_BACK_URL, HIDDEN_CARD, JOKER, SUITS, SUIT_SYMBOLS, suitColorClass, cardImageUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, preloadCardImages, dealMock, teamOf } from '../game/cards.js';
+import { CARD_BACK_URL, cardBackUrl, HIDDEN_CARD, JOKER, SUITS, SUIT_SYMBOLS, suitColorClass, cardImageUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, preloadCardImages, dealMock, teamOf } from '../game/cards.js';
 import { NO_TRUMP, trickWinner, trickWinnerWithout, legalPlays, lowestCards, nextToPlay, nextToBid, scoreHand, gameOutcome, nominatesSuit, isNominatableSuit, longestSuit } from '../game/rules.js';
+import { activeTrump } from '../theme.js';
 
 const store = useStore()
 
 const names = () => store.state.playerNames;
+const backUrl = computed(() => cardBackUrl(activeTrump(store.state)));
 const dealing = computed(() => store.state.gameState === 0);
 const iAmDealer = computed(() => store.state.dealer === 0);
 const showPlayButton = computed(() => store.state.gameState === 5);
@@ -407,7 +409,7 @@ class GameTable {
     renderBlind(faceDown) {
         const cardsElement = document.getElementById('blindCards');
         cardsElement.style.display = "flex";
-        cardsElement.innerHTML = this.blindCards.map(card => produceCardHtml(card, faceDown, 'real-card')).join('');
+        cardsElement.innerHTML = this.blindCards.map(card => produceCardHtml(card, faceDown, 'real-card', backUrl.value)).join('');
         this.setBlindFaceDown(faceDown);
     }
 
@@ -778,7 +780,7 @@ class GameTable {
     clearPlayedCards() {
         Array.from(document.getElementsByClassName("card-played")).forEach((ele) => {
             ele.dataset.card = HIDDEN_CARD;
-            ele.src = CARD_BACK_URL;
+            ele.src = backUrl.value;
             ele.style.display = "none";
         });
     }

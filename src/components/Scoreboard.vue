@@ -8,7 +8,8 @@ const scores = computed(() => store.state.scores);
 </script>
 
 <template>
-    <table class="scoreboard">
+    <div class="scoreboard">
+    <table class="score-table">
         <tbody id="scoreBoardTbody">
             <tr>
                 <th id="team0name">Us</th>
@@ -24,6 +25,7 @@ const scores = computed(() => store.state.scores);
             </tr>
         </tbody>
     </table>
+    </div>
 </template>
 
 <style scoped>
@@ -52,15 +54,50 @@ th, tr {
 .scoreboard {
     color: var(--ink);
     background: var(--ivory);
-    outline: 2px solid var(--ink);
+    outline: 2px solid var(--trump-ink, var(--ink));
     box-shadow: 0 0 0 4px var(--gold), 0 6px 16px var(--shadow);
     position: absolute;
     top: 75px;
     left: 75px;
     text-align: center;
     transform: scale(1.5);
+}
+.score-table {
     overflow-y: auto;
     max-height: 150px;
+}
+:root[data-trump] .scoreboard th {
+    color: var(--trump-ink);
+}
+:root[data-trump] .scoreboard::before {
+    content: var(--trump-glyph);
+    position: absolute;
+    top: -11px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ivory);
+    color: var(--trump-ink);
+    border: 2px solid var(--trump-ink);
+    padding: 0 5px;
+    font-size: 12px;
+    line-height: 14px;
+    font-weight: 800;
+    z-index: 1;
+}
+:root[data-trump] .scoreboard::after {
+    content: var(--trump-glyph);
+    position: absolute;
+    bottom: -11px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ivory);
+    color: var(--trump-ink);
+    border: 2px solid var(--trump-ink);
+    padding: 0 5px;
+    font-size: 12px;
+    line-height: 14px;
+    font-weight: 800;
+    z-index: 1;
 }
 
 .portrait .scoreboard {

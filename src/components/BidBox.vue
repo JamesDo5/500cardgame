@@ -15,7 +15,7 @@
         <span class="close-bidbox" id="closeBidBox" @click="hide">&times;</span>
         <div class="bid-grid">
             <div class="bid-corner"></div>
-            <div v-for="col in COLUMNS" :key="col.suit" class="bid-head" :class="col.cls">{{ col.label }}</div>
+            <div v-for="col in COLUMNS" :key="col.suit" class="bid-head" :class="[col.cls, { 'trump-col': hasContract && col.suit === trumpSuit }]">{{ col.label }}</div>
             <template v-for="(tricks, row) in TRICK_ROWS" :key="tricks">
                 <div class="bid-rowlabel">{{ tricks }}</div>
                 <div v-for="(col, c) in COLUMNS" :key="col.suit" class="bid-cell" :class="cellClass(bidAt(row, c))">
@@ -67,6 +67,7 @@ const badgeText = (pos) => pos === 0 ? 'You' : pos === 2 ? 'Partner' : store.sta
 const POS_CLASSES = ['bottom-bid', 'left-bid', 'top-bid', 'right-bid'];
 const POS_IDS = ['bottomBid', 'leftBid', 'topBid', 'rightBid'];
 const hasContract = computed(() => store.state.gameState >= 3 && store.state.gameState <= 5 && store.state.winningBid > 0);
+const trumpSuit = computed(() => store.state.trumpSuit);
 const showToggle = computed(() => store.state.gameState >= 1 && store.state.gameState <= 5);
 const who = (pos) => pos < 0 ? '' : `${store.state.playerNames[pos]} (${teamOf(pos) === 0 ? 'us' : 'them'})`;
 const caption = computed(() => hasContract.value ? 'Bid' : 'Highest bid');
@@ -482,6 +483,11 @@ onMounted(() => {
     background: #3498db;
     color: white;
 }
+.bid-head.trump-col {
+    background: var(--gold);
+    box-shadow: inset 0 0 0 2px var(--ink), 0 0 0 2px var(--gold-deep);
+}
+
 button.bid-amount-button {
     width: 100%;
     height: 100%;

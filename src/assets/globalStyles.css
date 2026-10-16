@@ -21,9 +21,71 @@
   --trump-color: var(--gold);
 }
 
+:root[data-trump] {
+  --me-glyph: var(--trump-glyph);
+  --trump-color: var(--trump-ink);
+}
+:root[data-trump="s"] {
+  --trump-glyph: '♠';
+  --trump-ink: var(--card-black);
+  --trump-on-felt: var(--ivory);
+  --felt: color-mix(in srgb, #1f5f3b 82%, #161616 18%);
+  --felt-deep: color-mix(in srgb, #16452b 82%, #161616 18%);
+  --felt-edge: #071a10;
+  --page: color-mix(in srgb, #11271a 80%, #000000 20%);
+  --card-back: #1b1b1b;
+  --wallpaper: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><text x='30' y='30' font-size='26' font-weight='bold' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='central' fill='%23f6efdb' fill-opacity='0.07'>&%239824;</text><text x='90' y='90' font-size='26' font-weight='bold' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='central' fill='%23f6efdb' fill-opacity='0.07'>&%239824;</text></svg>");
+}
+:root[data-trump="c"] {
+  --trump-glyph: '♣';
+  --trump-ink: var(--card-black);
+  --trump-on-felt: var(--ivory);
+  --felt: color-mix(in srgb, #1f5f3b 86%, #161616 14%);
+  --felt-deep: color-mix(in srgb, #16452b 86%, #161616 14%);
+  --felt-edge: #081d12;
+  --page: color-mix(in srgb, #11271a 84%, #000000 16%);
+  --card-back: #163d2a;
+  --wallpaper: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><text x='30' y='30' font-size='26' font-weight='bold' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='central' fill='%23f6efdb' fill-opacity='0.07'>&%239827;</text><text x='90' y='90' font-size='26' font-weight='bold' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='central' fill='%23f6efdb' fill-opacity='0.07'>&%239827;</text></svg>");
+}
+:root[data-trump="d"] {
+  --trump-glyph: '♦';
+  --trump-ink: var(--card-red);
+  --trump-on-felt: var(--card-red-bright);
+  --felt: color-mix(in srgb, #1f5f3b 84%, #b61c2b 16%);
+  --felt-deep: color-mix(in srgb, #16452b 84%, #b61c2b 16%);
+  --felt-edge: color-mix(in srgb, #0e2f1c 84%, #b61c2b 16%);
+  --page: color-mix(in srgb, #11271a 70%, #7f1220 30%);
+  --card-back: #b61c2b;
+  --wallpaper: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><text x='30' y='30' font-size='26' font-weight='bold' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='central' fill='%23e2343f' fill-opacity='0.12'>&%239830;</text><text x='90' y='90' font-size='26' font-weight='bold' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='central' fill='%23e2343f' fill-opacity='0.12'>&%239830;</text></svg>");
+}
+:root[data-trump="h"] {
+  --trump-glyph: '♥';
+  --trump-ink: var(--card-red);
+  --trump-on-felt: var(--card-red-bright);
+  --felt: color-mix(in srgb, #1f5f3b 82%, #7f1220 18%);
+  --felt-deep: color-mix(in srgb, #16452b 82%, #7f1220 18%);
+  --felt-edge: color-mix(in srgb, #0e2f1c 82%, #7f1220 18%);
+  --page: color-mix(in srgb, #11271a 66%, #7f1220 34%);
+  --card-back: #7f1220;
+  --wallpaper: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><text x='30' y='30' font-size='26' font-weight='bold' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='central' fill='%23e2343f' fill-opacity='0.12'>&%239829;</text><text x='90' y='90' font-size='26' font-weight='bold' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='central' fill='%23e2343f' fill-opacity='0.12'>&%239829;</text></svg>");
+}
+:root[data-trump="n"] {
+  --trump-glyph: 'NT';
+  --trump-ink: #1c2f5a;
+  --trump-on-felt: var(--gold-bright);
+  --felt: color-mix(in srgb, #1f5f3b 55%, #1c2f5a 45%);
+  --felt-deep: color-mix(in srgb, #16452b 55%, #1c2f5a 45%);
+  --felt-edge: color-mix(in srgb, #0e2f1c 55%, #0d1733 45%);
+  --page: color-mix(in srgb, #11271a 55%, #0d1733 45%);
+  --card-back: #1c2f5a;
+  --wallpaper: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><text x='30' y='30' font-size='26' font-weight='bold' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='central' fill='%23d4af37' fill-opacity='0.09'>NT</text><text x='90' y='90' font-size='26' font-weight='bold' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='central' fill='%23d4af37' fill-opacity='0.09'>NT</text></svg>");
+}
+
 body {
   margin: 0;
   background-color: var(--page);
+  background-image: var(--wallpaper, none);
+  transition: background-color 0.6s ease;
 }
 body.in-game {
   position: fixed;

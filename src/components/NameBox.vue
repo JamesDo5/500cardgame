@@ -80,7 +80,17 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
     left: 1420px;
 }
 #nameboxMe .player-name::before {
-    content: '👤';
+    content: var(--me-glyph);
+    color: var(--trump-ink, var(--ink));
+    font-size: 20px;
+    line-height: 1;
+}
+:root[data-trump="n"] #nameboxMe .player-name::before {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 4px;
+    border: 2px solid var(--trump-ink);
+    color: var(--trump-ink);
 }
 
 .namecard-bg {
