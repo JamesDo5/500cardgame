@@ -1149,6 +1149,12 @@ onBeforeUnmount(() => {
     color: #f1c40f;
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
 }
+.board-caption.corner.mine {
+    top: 8px;
+    font-size: 44px;
+    line-height: 1;
+    max-width: 340px;
+}
 .board-caption.lead {
     top: 42%;
     transform: translate(-50%, -50%);
