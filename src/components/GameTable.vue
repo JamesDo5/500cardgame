@@ -784,7 +784,8 @@ class GameTable {
         this.wonTricks.forEach((count, pos) => {
             const ele = document.getElementById('wonTricks' + getPosName(pos));
             ele.style.visibility = count > 0 ? "visible" : "hidden";
-            ele.textContent = count;
+            const cards = Array.from({ length: count }, (_, i) => `<img class="stack-card" src="${CARD_BACK_URL}" style="--i:${i}">`).join('');
+            ele.innerHTML = `${cards}<span class="stack-count">${count}</span>`;
         });
     }
 
@@ -877,6 +878,40 @@ onBeforeUnmount(() => {
     position: absolute;
     display: flex;
     visibility: hidden;
+}
+
+.card-stack :deep(.stack-card) {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 70px;
+    height: 100px;
+    --s: 1;
+    transform: translate(calc(var(--i) * var(--s) * 2px), calc(var(--i) * -4px)) rotate(calc(var(--s) * 3deg));
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45);
+}
+.card-stack :deep(.stack-card:nth-child(even)) {
+    --s: -1;
+}
+.card-stack :deep(.stack-count) {
+    position: relative;
+    z-index: 1;
+    min-width: 44px;
+    padding: 0 10px;
+    font-size: 54px;
+    line-height: 1.15;
+    background: rgba(44, 62, 80, 0.85);
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+}
+
+.won-tricks-left :deep(.stack-count) {
+    transform: rotate(-90deg);
+}
+.won-tricks-top :deep(.stack-count) {
+    transform: rotate(180deg);
+}
+.won-tricks-right :deep(.stack-count) {
+    transform: rotate(90deg);
 }
 
 .won-tricks-left {
