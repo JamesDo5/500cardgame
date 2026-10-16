@@ -25,12 +25,14 @@ const stageStyle = ref({});
 const nameInput = ref(loadName());
 const needName = ref(!mode.standalone && !nameInput.value);
 const confirmLeave = ref(false);
+const confirmRestart = ref(false);
 
 const gameState = computed(() => store.state.gameState);
 const inLobby = computed(() => !mode.standalone && gameState.value === -1 && !store.state.joinError);
 const joinError = computed(() => store.state.joinError);
 const displayId = computed(() => store.state.session.gameId || (props.gameId === 'new' ? '····' : props.gameId));
-const showLeave = computed(() => !mode.standalone && gameState.value >= 0 && gameState.value !== 6);
+const showLeave = computed(() => gameState.value >= 0 && gameState.value !== 6);
+const iAmHost = computed(() => mode.standalone || !!store.state.lobby.seats?.[0]?.host);
 
 function fitStage() {
     const w = layout.portrait ? PORTRAIT_STAGE_WIDTH : STAGE_WIDTH;
@@ -85,6 +87,17 @@ function requestLeave() {
     else leaveNow();
 }
 
+function requestRestart() {
+    confirmLeave.value = false;
+    confirmRestart.value = true;
+}
+
+function restartNow() {
+    confirmRestart.value = false;
+    if (mode.standalone) store.getters.getGameTable().newGame();
+    else socket.send(C2S.RESTART_GAME);
+}
+
 function backHome() {
     socket.close();
     if (props.gameId !== 'new') forgetToken(props.gameId);
@@ -120,7 +133,7 @@ onBeforeUnmount(() => {
         <GamePage @gametable-ready="tableReady" />
         <DevButtons v-if="mode.standalone" ref="devButtonsRef" />
 
-        <div v-if="showLeave" class="table-chrome">
+        <div v-if="showLeave" class="table-chrome" :class="{ standalone: mode.standalone }">
             <button class="ui-button small danger" type="button" @click="requestLeave">Leave</button>
             <button class="ui-button small" type="button" @click="rulesRef?.show()">Rules</button>
         </div>
@@ -155,7 +168,19 @@ onBeforeUnmount(() => {
                 <p class="gate-text">The game is in progress. Leaving ends it for everyone and sends the table back to the lobby.</p>
                 <div class="gate-actions">
                     <button class="ui-button" type="button" @click="confirmLeave = false">Stay</button>
+                    <button v-if="iAmHost" class="ui-button" type="button" @click="requestRestart">Restart game</button>
                     <button class="ui-button danger" type="button" @click="leaveNow">Leave anyway</button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="confirmRestart" class="gate">
+            <div class="gate-card">
+                <div class="gate-kicker">Restart the game?</div>
+                <p class="gate-text">Scores are cleared and everyone goes back to the lobby with the same seats.</p>
+                <div class="gate-actions">
+                    <button class="ui-button" type="button" @click="confirmRestart = false">Back</button>
+                    <button class="ui-button danger" type="button" @click="restartNow">Restart</button>
                 </div>
             </div>
         </div>
@@ -172,6 +197,9 @@ onBeforeUnmount(() => {
     display: flex;
     gap: 8px;
     z-index: 30;
+}
+.table-chrome.standalone {
+    top: 190px;
 }
 .gate {
     position: absolute;

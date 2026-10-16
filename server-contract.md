@@ -209,6 +209,7 @@ host presses Start.
 | C2S | `leave` | `{}` | frees the seat immediately; see below |
 | S2C | `playerLeft` | `{ pos, name, abandoned }` | to the remaining players; `abandoned` true when a game in progress was thrown away |
 | C2S | `rematch` | `{}` | after `gameOver`; schedules a restart with the same seats |
+| C2S | `restartGame` | `{}` | host only, any phase; the room returns to the lobby with scores cleared and the same seats, so everyone gets `syncState` with `gameState: -1` and `lobbyState`; error `NOT_HOST` |
 | S2C | `rematchCountdown` | `{ startsAtMs }` | broadcast after the first rematch request |
 
 ### Host
