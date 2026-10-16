@@ -58,6 +58,17 @@ export function cardImageUrl(cardStr) {
 }
 export const CARD_BACK_URL = `${ASSET_BASE}cards/cat_cardback.jpeg`;
 
+const preloaded = new Set();
+export function preloadCardImages(cards) {
+    cards.forEach(card => {
+        const url = cardImageUrl(card);
+        if (preloaded.has(url)) return;
+        preloaded.add(url);
+        const img = new Image();
+        img.src = url;
+    });
+}
+
 export function cardPlaceholderSvg(cardStr) {
     let svg;
     if (!cardStr || cardStr === HIDDEN_CARD) {

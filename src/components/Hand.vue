@@ -9,7 +9,7 @@
 import { onMounted, computed } from 'vue';
 import { useStore } from 'vuex'
 import Sortable from 'sortablejs';
-import { CARD_BACK_URL, elem2CardStr, isValidCardStr, produceCardHtml } from '../game/cards.js';
+import { CARD_BACK_URL, elem2CardStr, isValidCardStr, preloadCardImages, produceCardHtml } from '../game/cards.js';
 import { NO_TRUMP, sortHand } from '../game/rules.js';
 
 const emit = defineEmits(['hand-rendered'])
@@ -87,6 +87,7 @@ function incomingHandCards(cards) {
         console.error("incomingHandCards() -- expected 10 valid cards, got:", cards);
         return 1;
     }
+    preloadCardImages(cards);
     store.commit('setSharedHandCards', cards.slice());
     renderHand(cards);
     emit('hand-rendered');
@@ -98,6 +99,7 @@ function replaceHand(cards) {
         console.error("replaceHand() -- invalid cards:", cards);
         return 1;
     }
+    preloadCardImages(cards);
     store.commit('setSharedHandCards', cards.slice());
     renderHand(cards);
     return 0;

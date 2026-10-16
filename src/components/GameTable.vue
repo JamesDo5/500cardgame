@@ -40,7 +40,7 @@ import Sortable from 'sortablejs';
 import { mode, TURN_TIMEOUT_MS, BID_TIMEOUT_MS, BLIND_TIMEOUT_MS, DEAL_TIMEOUT_MS, TABLE_WIDTH, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS, TRICK_HOLD_MS, CARD_FLY_MS, TRICK_SWEEP_MS, paceMultiplier } from '../config.js';
 import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
-import { CARD_BACK_URL, HIDDEN_CARD, JOKER, SUITS, SUIT_SYMBOLS, suitColorClass, cardImageUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, dealMock, teamOf } from '../game/cards.js';
+import { CARD_BACK_URL, HIDDEN_CARD, JOKER, SUITS, SUIT_SYMBOLS, suitColorClass, cardImageUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, preloadCardImages, dealMock, teamOf } from '../game/cards.js';
 import { NO_TRUMP, trickWinner, trickWinnerWithout, legalPlays, lowestCards, nextToPlay, nextToBid, scoreHand, gameOutcome, nominatesSuit, isNominatableSuit, longestSuit } from '../game/rules.js';
 
 const store = useStore()
@@ -396,6 +396,7 @@ class GameTable {
             return 1;
         }
         this.blindCards = cards.slice();
+        preloadCardImages(cards);
         this.renderBlind(faceDown);
         return 0;
     }
