@@ -484,7 +484,7 @@ onMounted(() => {
     background: #3498db;
     color: white;
 }
-:root[data-trump][data-theme-level="full"] .bid-head.trump-col {
+:root[data-trump] .bid-head.trump-col {
     background: var(--gold);
     box-shadow: inset 0 0 0 2px var(--ink), 0 0 0 2px var(--gold-deep);
 }
