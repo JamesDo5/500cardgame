@@ -10,7 +10,7 @@ import { onMounted, computed, watch } from 'vue';
 import { useStore } from 'vuex'
 import Sortable from 'sortablejs';
 import { CARD_BACK_URL, elem2CardStr, isValidCardStr, preloadCardImages, produceCardHtml } from '../game/cards.js';
-import { NO_TRUMP, sortHand } from '../game/rules.js';
+import { sortHand } from '../game/rules.js';
 import { saveHandOrder } from '../session.js';
 
 const emit = defineEmits(['hand-rendered'])

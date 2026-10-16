@@ -37,6 +37,13 @@ img.fake-card, .hand-card > img, .real-card > img, .sortable-fallback > img {
   pointer-events: none;
   -webkit-user-drag: none;
 }
+.fake-card, .card-back > img, .hand-card > img, .real-card > img, .sortable-fallback > img {
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+.fake-card, .card-back > img {
+  background-image: var(--card-back-placeholder);
+}
 
 /* Cards that are never moved manually by player. Also considered naming 'passive' */
 .fake-card {

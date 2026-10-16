@@ -86,7 +86,10 @@ export function cardPlaceholderSvg(cardStr) {
     return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
 }
 
+export const CARD_BACK_PLACEHOLDER = cardPlaceholderSvg(HIDDEN_CARD);
+
 export function installCardImageFallback() {
+    document.documentElement.style.setProperty('--card-back-placeholder', `url("${CARD_BACK_PLACEHOLDER}")`);
     document.addEventListener('error', (evt) => {
         const img = evt.target;
         if (!(img instanceof HTMLImageElement) || img.src.startsWith('data:')) return;
@@ -109,7 +112,8 @@ export function produceCardHtml(cardStr, faceDown, outerClass) {
     const { s } = cardStr2CardObj(cardStr);
     const faceClass = faceDown ? 'card-back' : `card-front ${getSuitClass(s)}`;
     const src = faceDown ? CARD_BACK_URL : cardImageUrl(cardStr);
-    return `<div class="${outerClass} ${faceClass}" data-card="${cardStr}"><img draggable="false" src="${src}"></div>`;
+    const placeholder = cardPlaceholderSvg(faceDown ? HIDDEN_CARD : cardStr);
+    return `<div class="${outerClass} ${faceClass}" data-card="${cardStr}"><img draggable="false" src="${src}" style="background-image:url('${placeholder}')"></div>`;
 }
 
 export function buildDeck() {
