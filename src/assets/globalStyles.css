@@ -3,8 +3,10 @@ body {
   background-color: #203243;
 }
 body.in-game {
-  height: 100vh;
+  position: fixed;
+  inset: 0;
   overflow: hidden;
+  overscroll-behavior: none;
   user-select: none;
   touch-action: manipulation;
 }

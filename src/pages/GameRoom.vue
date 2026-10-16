@@ -35,14 +35,16 @@ const showLeave = computed(() => gameState.value >= 0 && gameState.value !== 6);
 const iAmHost = computed(() => mode.standalone || !!store.state.lobby.seats?.[0]?.host);
 
 function fitStage() {
+    const vw = document.documentElement.clientWidth;
+    const vh = document.documentElement.clientHeight;
     const w = layout.portrait ? PORTRAIT_STAGE_WIDTH : STAGE_WIDTH;
-    const h = layout.portrait ? Math.max(PORTRAIT_STAGE_MIN_HEIGHT, Math.round(w * window.innerHeight / window.innerWidth)) : STAGE_HEIGHT;
-    const scale = Math.min(window.innerWidth / w, window.innerHeight / h);
+    const h = layout.portrait ? Math.max(PORTRAIT_STAGE_MIN_HEIGHT, Math.floor(w * vh / vw)) : STAGE_HEIGHT;
+    const scale = Math.min(vw / w, vh / h);
     stageStyle.value = {
         width: `${w}px`,
         height: `${h}px`,
-        left: `${(window.innerWidth - w * scale) / 2}px`,
-        top: `${(window.innerHeight - h * scale) / 2}px`,
+        left: `${(vw - w * scale) / 2}px`,
+        top: `${(vh - h * scale) / 2}px`,
         transform: `scale(${scale})`,
     };
 }
@@ -122,6 +124,7 @@ const GESTURE_EVENTS = ['gesturestart', 'gesturechange', 'gestureend'];
 
 onMounted(() => {
     document.body.classList.add('in-game');
+    fitStage();
     window.addEventListener('resize', fitStage);
     GESTURE_EVENTS.forEach(type => document.addEventListener(type, blockGesture));
     document.addEventListener('touchmove', blockPinch, { passive: false });
