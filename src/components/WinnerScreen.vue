@@ -44,11 +44,13 @@ function leave() {
 </script>
 
 <template>
+    <Teleport to="body">
+        <div v-if="visible && weWon" class="confetti-layer">
+            <span v-for="(c, i) in confetti" :key="i" class="confetti" :style="{ left: c.left, animationDelay: c.delay, animationDuration: c.duration, backgroundColor: c.color, transform: `rotate(${c.rotate})` }"></span>
+        </div>
+    </Teleport>
     <Transition name="winner">
         <div v-if="visible" class="winner-overlay">
-            <div v-if="weWon" class="confetti-layer">
-                <span v-for="(c, i) in confetti" :key="i" class="confetti" :style="{ left: c.left, animationDelay: c.delay, animationDuration: c.duration, backgroundColor: c.color, transform: `rotate(${c.rotate})` }"></span>
-            </div>
             <div class="winner-card">
                 <div class="winner-title">{{ weWon ? 'We win!' : 'They win' }}</div>
                 <div class="winner-sub">{{ weWon ? `${names[0]} and ${names[2]} take it.` : `${names[1]} and ${names[3]} take it.` }}</div>
@@ -150,15 +152,17 @@ function leave() {
 .winner-actions .winner-button { margin-top: 0; }
 .winner-button:disabled { opacity: 0.5; cursor: default; }
 .confetti-layer {
-    position: absolute;
+    position: fixed;
     inset: 0;
+    overflow: hidden;
     pointer-events: none;
+    z-index: 1000;
 }
 .confetti {
     position: absolute;
-    top: -20px;
-    width: 10px;
-    height: 16px;
+    top: -24px;
+    width: 12px;
+    height: 18px;
     border-radius: 0;
     animation-name: confettiFall;
     animation-timing-function: linear;
@@ -166,7 +170,7 @@ function leave() {
 }
 @keyframes confettiFall {
     0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-    100% { transform: translateY(1050px) rotate(720deg); opacity: 0.6; }
+    100% { transform: translateY(110vh) rotate(720deg); opacity: 0.6; }
 }
 @keyframes winnerPop {
     from { transform: scale(0.6); opacity: 0; }
