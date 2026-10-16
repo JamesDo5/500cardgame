@@ -1,8 +1,8 @@
 <template>
-    <div class="bid-banner" id="finalBidDisplay" :class="{ contract: hasContract }">
+    <div v-if="bigBid" class="bid-banner" id="finalBidDisplay" :class="{ contract: hasContract }">
         <div class="bid-caption">{{ caption }}</div>
-        <div v-if="bigBid" class="bid-big" :class="bigBid.colorClass">{{ bigBid.tricks }}<span class="bid-suit">{{ bigBid.symbol }}</span><span class="bid-points-big">({{ bigBid.points }})</span></div>
-        <div v-if="bigBid" class="bid-sub">{{ bigBid.sub }}</div>
+        <div class="bid-big" :class="bigBid.colorClass">{{ bigBid.tricks }}<span class="bid-suit" :class="{ glyph: bigBid.glyph }">{{ bigBid.symbol }}</span><span class="bid-points-big">({{ bigBid.points }})</span></div>
+        <div class="bid-sub">{{ bigBid.sub }}</div>
     </div>
     <button v-if="showToggle" class="bidtable-toggle" type="button" @click="toggle">Bid table</button>
     <div class="bidbox" id="bidbox">
@@ -13,22 +13,21 @@
             <span v-else class="bid-none">---</span>
         </div>
         <span class="close-bidbox" id="closeBidBox" @click="hide">&times;</span>
-        <table>
-            <tbody>
-                <tr>
-                    <th></th>
-                    <th v-for="col in COLUMNS" :key="col.suit" :style="col.style">{{ col.label }}</th>
-                </tr>
-                <tr v-for="(tricks, row) in TRICK_ROWS" :key="tricks">
-                    <td style="font-size:24px">{{ tricks }}</td>
-                    <td v-for="(col, c) in COLUMNS" :key="col.suit">
-                        <button class="bid-amount-button" :value="bidAt(row, c)" :disabled="bidAt(row, c) <= highest || !myTurn" :class="{ selected: selected === bidAt(row, c) }" @click="select(bidAt(row, c))">{{ bidAt(row, c) }}</button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-        <button class="bid-amount-button pass-button" type="button" id="passBidBtn" :class="{ selected: selected === PASS }" :disabled="!myTurn" @click="select(PASS)">Pass</button>
-        <button class="bid-amount-button submit-bid-button" type="button" id="submitBidBtn" :disabled="selected === -1 || !myTurn" @click="submit">Submit</button>
+        <div class="bid-grid">
+            <div class="bid-corner"></div>
+            <div v-for="col in COLUMNS" :key="col.suit" class="bid-head" :class="[col.cls, { 'trump-col': hasContract && col.suit === trumpSuit }]">{{ col.label }}</div>
+            <template v-for="(tricks, row) in TRICK_ROWS" :key="tricks">
+                <div class="bid-rowlabel">{{ tricks }}</div>
+                <div v-for="(col, c) in COLUMNS" :key="col.suit" class="bid-cell" :class="cellClass(bidAt(row, c))">
+                    <span v-if="bidderOf(bidAt(row, c)) !== -1" class="bid-badge">{{ badgeText(bidderOf(bidAt(row, c))) }}</span>
+                    <button class="bid-amount-button" :value="bidAt(row, c)" :disabled="bidAt(row, c) <= highest || !myTurn" :class="{ selected: selected === bidAt(row, c) }" @click="select(bidAt(row, c))">{{ bidAt(row, c) }}</button>
+                </div>
+            </template>
+        </div>
+        <div class="bid-actions">
+            <button class="bid-amount-button pass-button" type="button" id="passBidBtn" :class="{ selected: selected === PASS }" :disabled="!myTurn" @click="select(PASS)">Pass</button>
+            <button class="bid-amount-button submit-bid-button" type="button" id="submitBidBtn" :disabled="selected === -1 || !myTurn" @click="submit">Submit</button>
+        </div>
     </div>
 </template>
 
@@ -44,11 +43,11 @@ import { PASS, MIN_BID, MAX_BID, isValidBid, trumpSuitForBid, neededTricks, next
 const store = useStore()
 
 const COLUMNS = [
-    { suit: 's', label: '♠', style: 'font-size:32px' },
-    { suit: 'c', label: '♣', style: 'font-size:32px' },
-    { suit: 'd', label: '♦', style: 'color:red;font-size:32px' },
-    { suit: 'h', label: '♥', style: 'color:red;font-size:32px' },
-    { suit: 'n', label: 'NoTrmp', style: 'font-size:16px' },
+    { suit: 's', label: '♠', cls: '' },
+    { suit: 'c', label: '♣', cls: '' },
+    { suit: 'd', label: '♦', cls: 'red' },
+    { suit: 'h', label: '♥', cls: 'red' },
+    { suit: 'n', label: 'NoTrmp', cls: 'small' },
 ];
 const TRICK_ROWS = [6, 7, 8, 9, 10];
 const bidAt = (row, col) => 40 + row * 100 + col * 20;
@@ -58,9 +57,17 @@ const highest = ref(PASS);
 const myTurn = ref(false);
 const highestBy = ref(-1);
 const displayBids = ref([-1, -1, -1, -1].map(formatBid));
+const placedBids = ref([-1, -1, -1, -1]);
+const bidderOf = (bid) => placedBids.value.indexOf(bid);
+const cellClass = (bid) => {
+    const pos = bidderOf(bid);
+    return { mine: pos === 0, partner: pos === 2, opponent: pos === 1 || pos === 3 };
+};
+const badgeText = (pos) => pos === 0 ? 'You' : pos === 2 ? 'Partner' : store.state.playerNames[pos];
 const POS_CLASSES = ['bottom-bid', 'left-bid', 'top-bid', 'right-bid'];
 const POS_IDS = ['bottomBid', 'leftBid', 'topBid', 'rightBid'];
 const hasContract = computed(() => store.state.gameState >= 3 && store.state.gameState <= 5 && store.state.winningBid > 0);
+const trumpSuit = computed(() => store.state.trumpSuit);
 const showToggle = computed(() => store.state.gameState >= 1 && store.state.gameState <= 5);
 const who = (pos) => pos < 0 ? '' : `${store.state.playerNames[pos]} (${teamOf(pos) === 0 ? 'us' : 'them'})`;
 const caption = computed(() => hasContract.value ? 'Bid' : 'Highest bid');
@@ -70,7 +77,7 @@ const bigBid = computed(() => {
     const pos = hasContract.value ? bidderPos.value : highestBy.value;
     if (idle || bid <= PASS) return null;
     const suit = trumpSuitForBid(bid);
-    return { tricks: neededTricks(bid), symbol: SUIT_SYMBOLS[suit], colorClass: suitColorClass(suit), points: bid, sub: who(pos) };
+    return { tricks: neededTricks(bid), symbol: SUIT_SYMBOLS[suit], glyph: suit !== 'n', colorClass: suitColorClass(suit), points: bid, sub: pos < 0 ? '' : `by ${who(pos)}` };
 });
 const bidderPos = computed(() => store.getters.getBidBox()?.winningBidder ?? -1);
 
@@ -117,6 +124,7 @@ class BidBox {
 
     updateBidDisplays() {
         displayBids.value = this.bids.map(formatBid);
+        placedBids.value = this.bids.slice();
         highest.value = Math.max(this.getHighestBid(), PASS);
         highestBy.value = winningBidder(this.bids);
         myTurn.value = !isBiddingOver(this.bids) && nextToBid(this.bids, store.state.dealer) === 0 && store.state.gameState === 1;
@@ -261,14 +269,19 @@ onMounted(() => {
 .bidbox {
     display: none;
     position: absolute;
-    top: 44%;
+    top: 45%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: white;
-    padding: 20px;
+    background-color: var(--ivory);
+    color: var(--ink);
+    border: 3px solid var(--ink);
+    box-shadow: 0 0 0 3px var(--gold), 0 12px 32px var(--shadow);
+    padding: 18px;
     border-radius: 0;
     text-align: center;
     z-index: 9;
+    box-sizing: border-box;
+    width: 660px;
 }
 
 .close-bidbox {
@@ -284,7 +297,7 @@ onMounted(() => {
     position: absolute;
     top: 72px;
     right: 25px;
-    color: white;
+    color: var(--ivory);
     font-family: Arial, sans-serif;
     text-align: right;
     line-height: 1;
@@ -293,40 +306,41 @@ onMounted(() => {
     font-size: 40px;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: #bdc3c7;
+    color: var(--muted);
 }
 .bid-banner.contract .bid-caption {
-    color: #f1c40f;
+    color: var(--gold);
 }
 .bid-big {
-    font-size: 110px;
+    font-size: 132px;
     font-weight: 800;
     margin-top: 4px;
     text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
-.bid-big .bid-suit {
-    font-size: 100px;
+.bid-big .bid-suit.glyph {
+    font-size: 1.2em;
+    line-height: 0;
 }
 .bid-points-big {
     font-size: 20px;
     font-weight: normal;
-    color: #ecf0f1;
+    color: var(--ivory);
     margin-left: 10px;
     vertical-align: middle;
 }
 .bid-sub {
-    font-size: 20px;
-    margin-top: 8px;
-    color: #ecf0f1;
+    font-size: 24px;
+    margin-top: 10px;
+    color: var(--ivory);
 }
 .suit-red {
-    color: #ff5a5a;
+    color: var(--card-red-bright);
 }
 .suit-black {
-    color: #ecf0f1;
+    color: var(--ivory);
 }
 .bidbox .suit-black {
-    color: #ecf0f1;
+    color: var(--ivory);
 }
 .bid-display .bid-value {
     font-weight: 800;
@@ -337,11 +351,11 @@ onMounted(() => {
 .bid-display .bid-points {
     font-size: 0.45em;
     margin-left: 6px;
-    color: #bdc3c7;
+    color: var(--muted);
     font-weight: normal;
 }
 .bid-display.placed .bid-prefix, .bid-display.placed .bid-pass {
-    color: lightgreen;
+    color: var(--gold-bright);
 }
 .bid-prefix {
     font-size: 0.6em;
@@ -354,8 +368,8 @@ onMounted(() => {
     padding: 8px 16px;
     font-size: 14px;
     font-weight: bold;
-    color: #2c3e50;
-    background: #ecf0f1;
+    color: var(--ink);
+    background: var(--ivory);
     border: none;
     border-radius: 0;
     cursor: pointer;
@@ -363,68 +377,194 @@ onMounted(() => {
     z-index: 6;
 }
 .bidtable-toggle:hover {
-    background: #f1c40f;
+    background: var(--gold);
 }
 
 .bid-display {
     position: absolute;
     transform: translate(-50%, 50%);
-    font-size: 40px;
-    color: white;
+    font-size: 36px;
+    color: var(--ivory);
     font-family: Arial, sans-serif;
     text-align: center;
     white-space: nowrap;
 }
 .bottom-bid {
-    bottom: -60px;
+    bottom: -45px;
     left: 50%;
 }
 .left-bid {
-    left: -120px;
+    left: -62px;
     bottom: 50%;
 }
 .top-bid {
-    top: -125px;
-    left: 50%;
+    top: -70px;
+    left: calc(50% + 190px);
+}
+.top-bid .bid-prefix, .bottom-bid .bid-prefix {
+    display: inline;
+    margin-right: 10px;
 }
 .right-bid {
-    right: -120px;
+    right: -62px;
     bottom: 50%;
     transform: translate(50%, 50%);
 }
 
-table {
-    border-collapse: collapse;
-    margin: 0 auto;
+.bid-grid {
+    display: grid;
+    grid-template-columns: 54px repeat(5, minmax(0, 1fr));
+    grid-auto-rows: 64px;
+    gap: 6px;
+    align-items: stretch;
+    justify-items: stretch;
+}
+.bid-grid > :nth-child(-n + 6) {
+    height: 46px;
+}
+.bid-head, .bid-rowlabel, .bid-corner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial, sans-serif;
+    font-size: 40px;
+    color: black;
+}
+.bid-head.red {
+    color: red;
+}
+.bid-head.small {
+    font-size: 18px;
+    font-weight: bold;
+}
+.bid-rowlabel {
+    font-size: 28px;
+}
+.bid-cell {
+    display: flex;
+    min-width: 0;
+    position: relative;
+}
+.bid-cell.partner .bid-amount-button {
+    outline: 4px solid #2ecc71;
+    outline-offset: -4px;
+}
+.bid-cell.opponent .bid-amount-button {
+    outline: 3px dashed #bdc3c7;
+    outline-offset: -3px;
+}
+.bid-cell.mine .bid-amount-button {
+    outline: 4px solid #3498db;
+    outline-offset: -4px;
+}
+.bid-badge {
+    position: absolute;
+    top: -9px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 96%;
+    box-sizing: border-box;
+    padding: 1px 8px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: #2ecc71;
+    color: #2c3e50;
+    pointer-events: none;
+    z-index: 1;
+}
+.bid-cell.opponent .bid-badge {
+    background: #bdc3c7;
+}
+.bid-cell.mine .bid-badge {
+    background: #3498db;
+    color: white;
+}
+:root[data-trump] .bid-head.trump-col {
+    background: var(--gold);
+    box-shadow: inset 0 0 0 2px var(--ink), 0 0 0 2px var(--gold-deep);
 }
 
 button.bid-amount-button {
-    width: 70px;
-    height: 50px;
-    font-size: 32px;
-    min-width: fit-content;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    padding: 0;
+    font-size: 38px;
+    line-height: 1;
+    box-sizing: border-box;
+    color: var(--ink);
+    background: var(--ivory-2);
+    border: 2px solid var(--ivory-3);
+    cursor: pointer;
+}
+button.bid-amount-button:hover:not(:disabled) {
+    background: var(--gold-bright);
+    border-color: var(--gold);
+}
+button.bid-amount-button:disabled {
+    color: var(--ink-soft);
+    opacity: 0.45;
+    cursor: default;
 }
 button.bid-amount-button.selected {
-    outline: 3px solid #2ecc71;
+    outline: 3px solid var(--gold);
+    outline-offset: -3px;
+    background: var(--gold-bright);
+}
+.bid-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
 }
 button.pass-button, button.submit-bid-button {
-    margin-top: 10px;
-    width: 45%;
+    flex: 1;
+    height: 56px;
+    font-size: 34px;
 }
 
 .portrait .bidbox {
     top: 600px;
-    transform: translate(-50%, -50%) scale(1.15);
+    width: 527px;
+    padding: 14px;
+}
+.portrait .bid-grid {
+    grid-template-columns: 44px repeat(5, minmax(0, 1fr));
+    grid-auto-rows: 62px;
+    gap: 5px;
+}
+.portrait .bid-grid > :nth-child(-n + 6) {
+    height: 44px;
+}
+.portrait .bid-head {
+    font-size: 36px;
+}
+.portrait .bid-head.small {
+    font-size: 16px;
+}
+.portrait .bid-rowlabel {
+    font-size: 26px;
+}
+.portrait button.bid-amount-button {
+    font-size: 34px;
+}
+.portrait .bid-badge {
+    font-size: 17px;
+    top: -11px;
+}
+.portrait button.pass-button, .portrait button.submit-bid-button {
+    font-size: 30px;
 }
 .portrait .bid-banner {
     top: 56px;
     right: 20px;
 }
 .portrait .bid-big {
-    font-size: 84px;
-}
-.portrait .bid-big .bid-suit {
-    font-size: 76px;
+    font-size: 100px;
 }
 .portrait .bidtable-toggle {
     top: 12px;
@@ -438,10 +578,20 @@ button.pass-button, button.submit-bid-button {
     bottom: auto;
     top: -110px;
 }
+.portrait .top-bid {
+    left: 50%;
+}
+.portrait .top-bid .bid-prefix {
+    display: block;
+    margin-right: 0;
+}
 .portrait .left-bid {
-    left: 18%;
+    left: 22%;
 }
 .portrait .right-bid {
-    right: 18%;
+    right: 22%;
+}
+.portrait .bottom-bid {
+    bottom: -60px;
 }
 </style>

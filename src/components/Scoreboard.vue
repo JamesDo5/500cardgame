@@ -8,7 +8,8 @@ const scores = computed(() => store.state.scores);
 </script>
 
 <template>
-    <table class="scoreboard">
+    <div class="scoreboard">
+    <table class="score-table">
         <tbody id="scoreBoardTbody">
             <tr>
                 <th id="team0name">Us</th>
@@ -24,15 +25,16 @@ const scores = computed(() => store.state.scores);
             </tr>
         </tbody>
     </table>
+    </div>
 </template>
 
 <style scoped>
 table td + td, table th + th {
-    border-left: 2px solid white;
+    border-left: 2px solid var(--ink);
 }
 
 th {
-    color: white;
+    color: var(--card-red);
     text-decoration: underline;
     text-underline-offset: 3px;
 }
@@ -45,20 +47,57 @@ th, tr {
 }
 
 .total {
-    border-top: 1px dashed lightslategray;
+    border-top: 1px dashed var(--ink-soft);
+    font-weight: bold;
 }
 
 .scoreboard {
-    color: gainsboro;
-    outline-color: gainsboro;
-    outline-style: solid;
+    color: var(--ink);
+    background: var(--ivory);
+    outline: 2px solid var(--trump-ink, var(--ink));
+    box-shadow: 0 0 0 4px var(--gold), 0 6px 16px var(--shadow);
     position: absolute;
     top: 75px;
     left: 75px;
     text-align: center;
     transform: scale(1.5);
+}
+.score-table {
     overflow-y: auto;
     max-height: 150px;
+}
+:root[data-trump][data-theme-level="full"] .scoreboard th {
+    color: var(--trump-ink);
+}
+:root[data-trump][data-theme-level="full"] .scoreboard::before {
+    content: var(--trump-glyph);
+    position: absolute;
+    top: -11px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ivory);
+    color: var(--trump-ink);
+    border: 2px solid var(--trump-ink);
+    padding: 0 5px;
+    font-size: 12px;
+    line-height: 14px;
+    font-weight: 800;
+    z-index: 1;
+}
+:root[data-trump][data-theme-level="full"] .scoreboard::after {
+    content: var(--trump-glyph);
+    position: absolute;
+    bottom: -11px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ivory);
+    color: var(--trump-ink);
+    border: 2px solid var(--trump-ink);
+    padding: 0 5px;
+    font-size: 12px;
+    line-height: 14px;
+    font-weight: 800;
+    z-index: 1;
 }
 
 .portrait .scoreboard {

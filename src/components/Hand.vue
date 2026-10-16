@@ -1,91 +1,46 @@
 <template>
     <button v-if="canSort" class="sort-button" type="button" @click="sortNow">Sort hand</button>
     <div class="card-row" id="bottomCards">
-        <div v-for="n in 10" :key="n" class="card-back hand-card"><img draggable="false" :src="CARD_BACK_URL"></div>
+        <div v-for="n in 10" :key="n" class="card-back hand-card"><img draggable="false" :src="backUrl"></div>
     </div>
 </template>
 
 <script setup>
-import { onMounted, computed } from 'vue';
+import { onMounted, computed, watch } from 'vue';
 import { useStore } from 'vuex'
-import Sortable from 'sortablejs';
-import { CARD_BACK_URL, elem2CardStr, isValidCardStr, produceCardHtml } from '../game/cards.js';
+import { cardBackUrl, elem2CardStr, isValidCardStr, preloadCardImages, produceCardHtml } from '../game/cards.js';
 import { sortHand } from '../game/rules.js';
+import { saveHandOrder } from '../session.js';
+import { activeTrump } from '../theme.js';
+import { cardDrag } from '../drag.js';
 
 const emit = defineEmits(['hand-rendered'])
 const store = useStore()
 
-let sortableHandCards;
-const dragEndHandlers = [];
-function onDragEnd(fn) {
-    dragEndHandlers.push(fn);
-}
+const backUrl = computed(() => cardBackUrl(activeTrump(store.state)));
 const canSort = computed(() => store.state.gameState >= 1 && store.state.gameState <= 5 && !store.state.firstCardPlayed && store.state.handCards.length > 1);
 
 function sortNow() {
     replaceHand(sortHand(store.getters.getSharedHandCards(), store.state.trumpSuit));
 }
 
-function initSortable() {
-    const bottomCardsElem = document.getElementById('bottomCards');
-    if (!bottomCardsElem) {
-        console.error("initSortable() -- Did not find bottom cards");
-        return 1;
-    }
-    sortableHandCards = new Sortable(bottomCardsElem, {
-        disabled: false,
-        group: 'shared',
-        animation: 0,
-        forceFallback: true,
-        fallbackOnBody: true,
-        fallbackTolerance: 3,
-        emptyInsertThreshold: 60,
-        filter: '.illegal',
-        onAdd: (evt) => {
-            if (store.getters.getGameTable()?.dropHeld) return;
-            const card = elem2CardStr(evt.item);
-            const hcs = store.getters.getSharedHandCards();
-            if (hcs.includes(card)) {
-                console.error("Hand onAdd -- card already in hand, dropping duplicate element:", card, hcs);
-                evt.item.remove();
-                return;
-            }
-            store.commit('setSharedHandCards', hcs.concat(card));
-        },
-        onRemove: (evt) => {
-            if (store.getters.getGameTable()?.dropHeld) return;
-            const card = elem2CardStr(evt.item);
-            const hcs = store.getters.getSharedHandCards();
-            const ind = hcs.indexOf(card);
-            if (ind === -1) {
-                console.error("Hand onRemove -- card not in hand:", card, hcs);
-                return;
-            }
-            store.commit('setSharedHandCards', hcs.filter((_, i) => i !== ind));
-        },
-        onStart: (evt) => evt.item.classList.remove('spun'),
-        onChange: (evt) => {
-            if (evt.to.id === "bottomCards") {
-                handifyCard(evt.item);
-            } else {
-                unHandifyCard(evt.item);
-            }
-        },
-        onEnd: (evt) => dragEndHandlers.forEach(fn => fn(evt.item)),
-    });
-
-    bottomCardsElem.addEventListener("click", (evt) => {
-        const card = evt.target.closest(".hand-card");
-        if (card && bottomCardsElem.contains(card)) card.classList.toggle("spun");
-    });
-    return 0;
+function syncOrder() {
+    const cardsElement = document.getElementById('bottomCards');
+    if (!cardsElement) return;
+    store.commit('setSharedHandCards', Array.from(cardsElement.children).map(elem2CardStr));
 }
+
+watch(() => store.state.handCards, (cards) => {
+    const gameId = store.state.session.gameId;
+    if (gameId && cards.length) saveHandOrder(gameId, cards);
+});
 
 function incomingHandCards(cards) {
     if (!Array.isArray(cards) || cards.length !== 10 || !cards.every(isValidCardStr)) {
         console.error("incomingHandCards() -- expected 10 valid cards, got:", cards);
         return 1;
     }
+    preloadCardImages(cards);
     store.commit('setSharedHandCards', cards.slice());
     renderHand(cards);
     emit('hand-rendered');
@@ -97,25 +52,15 @@ function replaceHand(cards) {
         console.error("replaceHand() -- invalid cards:", cards);
         return 1;
     }
+    preloadCardImages(cards);
     store.commit('setSharedHandCards', cards.slice());
     renderHand(cards);
     return 0;
 }
 
-function unHandifyCard(ele) {
-    ele.classList.add("real-card");
-    ele.classList.remove("bouncy", "hand-card", "spun", "illegal");
-}
-
 function handifyCard(ele) {
     ele.classList.remove("real-card");
-    ele.classList.add("bouncy", "hand-card");
-}
-
-function handifyAllHandCards() {
-    Array.from(document.getElementsByClassName("hand-card")).forEach((ele, i) => {
-        setTimeout(() => handifyCard(ele), 75 * i);
-    });
+    ele.classList.add("hand-card");
 }
 
 function renderHand(cards) {
@@ -124,8 +69,9 @@ function renderHand(cards) {
         console.error("renderHand() -- Bottom cards not found");
         return 1;
     }
+    cardDrag.abort();
     cardsElement.innerHTML = cards.map(card => produceCardHtml(card, false, 'hand-card')).join('');
-    handifyAllHandCards();
+    store.getters.getGameTable()?.updateLegalHighlights();
     return 0;
 }
 
@@ -133,20 +79,17 @@ function markLegal(legalCards) {
     const cardsElement = document.getElementById('bottomCards');
     if (!cardsElement) return;
     for (const ele of cardsElement.children) {
-        const illegal = legalCards !== null && !legalCards.includes(elem2CardStr(ele));
-        ele.classList.toggle("illegal", illegal);
+        const marked = legalCards !== null && ele.classList.contains('hand-card');
+        const legal = marked && legalCards.includes(elem2CardStr(ele));
+        ele.classList.toggle("illegal", marked && !legal);
+        ele.classList.toggle("legal", legal);
     }
 }
 
-function setEnabled(enabled) {
-    sortableHandCards?.option("disabled", !enabled);
-}
-
-defineExpose({ renderHand, incomingHandCards, unHandifyCard, handifyCard, markLegal, setEnabled })
+defineExpose({ renderHand, incomingHandCards, handifyCard, markLegal, syncOrder })
 
 onMounted(() => {
-    initSortable();
-    store.commit('setSharedHand', { renderHand, incomingHandCards, replaceHand, markLegal, setEnabled, handifyCard, unHandifyCard, onDragEnd });
+    store.commit('setSharedHand', { renderHand, incomingHandCards, replaceHand, markLegal, handifyCard, syncOrder });
 });
 </script>
 
@@ -165,18 +108,31 @@ onMounted(() => {
     gap: 7px;
     perspective: 1000px;
     transform-style: preserve-3d;
-    min-height: 214px;
+    min-height: 257px;
     justify-content: center;
+}
+#bottomCards:has(> :nth-child(9)) :deep(.hand-card) {
+    margin-right: -32px;
+}
+#bottomCards:has(> :nth-child(11)) :deep(.hand-card) {
+    margin-right: -62px;
+}
+#bottomCards:has(> :nth-child(13)) :deep(.hand-card) {
+    margin-right: -90px;
+}
+#bottomCards :deep(.hand-card:last-child) {
+    margin-right: 0;
 }
 
 #bottomCards :deep(.hand-card) {
+    position: relative;
     transition: transform 0.15s, opacity 0.2s, filter 0.2s;
 }
 
 #bottomCards :deep(.hand-card > *) {
-    width: 150px;
-    height: 214px;
-    background-color: white;
+    width: 180px;
+    height: 257px;
+    background-color: var(--ivory);
     border-radius: 0;
     display: flex;
     justify-content: center;
@@ -192,13 +148,13 @@ onMounted(() => {
 
 .sort-button {
     position: absolute;
-    bottom: 232px;
+    bottom: 275px;
     right: 300px;
     padding: 8px 18px;
     font-size: 15px;
     font-weight: bold;
-    color: #2c3e50;
-    background: #ecf0f1;
+    color: var(--ink);
+    background: var(--ivory);
     border: none;
     border-radius: 0;
     cursor: pointer;
@@ -206,13 +162,12 @@ onMounted(() => {
     z-index: 6;
 }
 .sort-button:hover {
-    background: #f1c40f;
+    background: var(--gold);
 }
 
 #bottomCards :deep(.illegal) {
     opacity: 0.45;
     filter: grayscale(0.7);
-    cursor: not-allowed;
 }
 
 .portrait #bottomCards {
@@ -221,15 +176,39 @@ onMounted(() => {
     gap: 6px 0;
     min-height: 0;
 }
-.portrait #bottomCards :deep(.hand-card) {
+.portrait #bottomCards :deep(.hand-card), .portrait #bottomCards:has(> :nth-child(9)) :deep(.hand-card) {
     margin-right: -50px;
+}
+.portrait #bottomCards:has(> :nth-child(11)) :deep(.hand-card), .portrait #bottomCards:has(> :nth-child(13)) :deep(.hand-card) {
+    margin-right: -50px;
+}
+.portrait #bottomCards :deep(.hand-card:last-child), .portrait #bottomCards :deep(.hand-card:nth-child(5n)) {
+    margin-right: 0;
 }
 .portrait #bottomCards :deep(.hand-card > *) {
     width: 190px;
     height: 271px;
 }
+.portrait #bottomCards :deep(.illegal) {
+    opacity: 1;
+    filter: grayscale(0.65) brightness(0.78);
+    transform: translateY(6px);
+}
+.portrait #bottomCards :deep(.illegal.spun) {
+    transform: translateY(6px) rotate(0.5turn);
+}
+.portrait #bottomCards :deep(.legal) {
+    z-index: 1;
+    transform: translateY(-6px);
+    outline: 3px solid var(--gold-bright);
+    outline-offset: -1px;
+}
+.portrait #bottomCards :deep(.legal.spun) {
+    transform: translateY(-6px) rotate(0.5turn);
+}
 .portrait .sort-button {
-    bottom: 565px;
+    bottom: calc(565px - var(--hand-shift, 0px));
     right: 20px;
+    transition: bottom 0.3s ease;
 }
 </style>

@@ -1,5 +1,6 @@
 import Vuex from 'vuex'
 import { DEFAULT_PACE } from './config.js';
+import { loadThemeLevel } from './session.js';
 
 const FEED_MAX = 30;
 
@@ -16,20 +17,23 @@ export default new Vuex.Store({
         playerNames: ['Me', 'Left', 'Top', 'Right'],
         scores: [0, 0],
         handScores: [],
+        handScored: false,
         turn: { pos: -1, deadlineMs: 0, startedMs: 0 },
         cardCounts: [10, 10, 10, 10],
         trickCards: ['', '', '', ''],
+        jokerSuit: '',
         firstCardPlayed: false,
         gameWinner: -1,
         connection: 'idle',
         session: { gameId: '', seat: -1, token: '', name: '' },
         lobby: { seats: [], hostPos: -1, canStart: false },
         pace: DEFAULT_PACE,
+        themeLevel: loadThemeLevel(),
         joinError: '',
         rematchAtMs: 0,
         autoBots: true,
         timersEnabled: true,
-        stagedCount: 0,
+        stagedCards: [],
         blindFaceDown: false,
         notice: '',
         feed: [],
@@ -46,27 +50,39 @@ export default new Vuex.Store({
         setTrumpSuit(state, s) { state.trumpSuit = s; },
         setPlayerName(state, { pos, name }) { state.playerNames[pos] = name; },
         addHandScore(state, deltas) {
-            state.handScores.push(deltas);
+            if (state.handScored) return;
+            state.handScores.push(deltas.slice());
             state.scores = [state.scores[0] + deltas[0], state.scores[1] + deltas[1]];
+            state.handScored = true;
         },
         setScores(state, { scores, handScores }) {
             state.scores = scores.slice();
             state.handScores = handScores.map(d => d.slice());
+            state.handScored = false;
         },
-        reconcileScores(state, scores) {
+        setHandScored(state, b) { state.handScored = b; },
+        reconcileHandScore(state, { deltas, scores }) {
             if (!Array.isArray(scores) || scores.length !== 2) return;
-            if (scores[0] === state.scores[0] && scores[1] === state.scores[1]) return;
-            console.warn('reconcileScores -- server', scores, 'disagrees with client', state.scores, '. Believing server.');
-            state.scores = scores.slice();
-            if (state.handScores.length) {
-                const last = state.handScores[state.handScores.length - 1];
-                const prior = [state.scores[0] - last[0], state.scores[1] - last[1]];
-                state.handScores[state.handScores.length - 1] = [scores[0] - prior[0], scores[1] - prior[1]];
+            const serverDeltas = Array.isArray(deltas) && deltas.length === 2 ? deltas.slice() : null;
+            if (!state.handScored) {
+                state.handScores.push(serverDeltas ?? [scores[0] - state.scores[0], scores[1] - state.scores[1]]);
+                state.scores = scores.slice();
+                state.handScored = true;
+                return;
             }
+            if (scores[0] === state.scores[0] && scores[1] === state.scores[1]) return;
+            console.warn('reconcileHandScore -- server', scores, 'disagrees with client', state.scores, '. Believing server.');
+            const last = state.handScores.length - 1;
+            if (last >= 0) {
+                const prev = state.handScores[last];
+                state.handScores[last] = serverDeltas ?? [prev[0] + scores[0] - state.scores[0], prev[1] + scores[1] - state.scores[1]];
+            }
+            state.scores = scores.slice();
         },
         resetGame(state) {
             state.scores = [0, 0];
             state.handScores = [];
+            state.handScored = false;
             state.winningBid = -1;
             state.trumpSuit = '';
             state.turn = { pos: -1, deadlineMs: 0, startedMs: 0 };
@@ -74,23 +90,26 @@ export default new Vuex.Store({
             state.rematchAtMs = 0;
             state.handCards = [];
             state.trickCards = ['', '', '', ''];
+            state.jokerSuit = '';
             state.feed = [];
         },
         setTurn(state, turn) { state.turn = { startedMs: Date.now(), ...turn }; },
         setCardCount(state, { pos, n }) { state.cardCounts[pos] = Math.max(0, n); },
         resetCardCounts(state) { state.cardCounts = [10, 10, 10, 10]; },
         setTrickCards(state, arr) { state.trickCards = arr.slice(); },
+        setJokerSuit(state, s) { state.jokerSuit = s; },
         setFirstCardPlayed(state, b) { state.firstCardPlayed = b; },
         setGameWinner(state, t) { state.gameWinner = t; },
         setConnection(state, s) { state.connection = s; },
         setSession(state, patch) { state.session = { ...state.session, ...patch }; },
         setLobby(state, lobby) { state.lobby = lobby; },
         setPace(state, pace) { state.pace = pace; },
+        setThemeLevel(state, level) { state.themeLevel = level; },
         setJoinError(state, msg) { state.joinError = msg; },
         setRematchAt(state, ms) { state.rematchAtMs = ms; },
         setAutoBots(state, b) { state.autoBots = b; },
         setTimersEnabled(state, b) { state.timersEnabled = b; },
-        setStagedCount(state, n) { state.stagedCount = n; },
+        setStagedCards(state, arr) { state.stagedCards = arr.slice(); },
         setBlindFaceDown(state, b) { state.blindFaceDown = b; },
         notify(state, msg) { state.notice = msg; },
         clearNotice(state) { state.notice = ''; },

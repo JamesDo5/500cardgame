@@ -24,8 +24,10 @@ watch(notice, (msg) => {
     top: 18%;
     left: 50%;
     transform: translateX(-50%);
-    background-color: rgba(44, 62, 80, 0.95);
-    color: #ecf0f1;
+    background-color: var(--ivory);
+    color: var(--ink);
+    border: 2px solid var(--ink);
+    outline: 2px solid var(--gold);
     padding: 12px 24px;
     border-radius: 0;
     font-family: Arial, sans-serif;

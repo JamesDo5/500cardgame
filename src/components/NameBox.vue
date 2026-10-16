@@ -38,7 +38,7 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
         <div class="namecard-bg"></div>
         <div class="namecard"></div>
         <div class="player-name">
-            {{ name }}
+            <span class="name-text">{{ name }}</span>
             <span v-if="isDealer" class="dealer-chip" title="Dealer">D</span>
             <span v-if="secondsLeft !== null" class="cat-clock" :class="{ urgent }">
                 <svg viewBox="0 0 28 28" class="clock-ring">
@@ -80,12 +80,22 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
     left: 1420px;
 }
 #nameboxMe .player-name::before {
-    content: '👤';
+    content: var(--me-glyph);
+    color: var(--trump-ink, var(--ink));
+    font-size: 20px;
+    line-height: 1;
+}
+:root[data-trump="n"][data-theme-level="full"] #nameboxMe .player-name::before {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 4px;
+    border: 2px solid var(--trump-ink);
+    color: var(--trump-ink);
 }
 
 .namecard-bg {
     position: absolute;
-    background: linear-gradient(45deg, #3498db, #2ecc71);
+    background: linear-gradient(45deg, var(--ivory-3), var(--ink-soft));
     top: -4px;
     left: -4px;
     right: -4px;
@@ -100,17 +110,17 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
     z-index: 2;
 }
 .namecard-wrapper.dealer .namecard-bg {
-    background: linear-gradient(90deg, #f1c40f, #f39c12, #f1c40f, #f39c12);
+    background: linear-gradient(90deg, var(--gold), var(--gold-deep), var(--gold), var(--gold-deep));
     background-size: 300% 100%;
     opacity: 0.95;
     animation: dealerShimmer 3s linear infinite;
 }
 .namecard-wrapper.turn .namecard-bg {
-    background: linear-gradient(45deg, #f1c40f, #e67e22);
+    background: linear-gradient(45deg, var(--gold-bright), var(--gold));
     opacity: 0.9;
 }
 .namecard-wrapper.dealer.turn .namecard-bg {
-    background: linear-gradient(90deg, #f1c40f, #e74c3c, #f1c40f, #e74c3c);
+    background: linear-gradient(90deg, var(--gold), var(--card-red), var(--gold), var(--card-red));
     background-size: 300% 100%;
     animation: dealerShimmer 1.5s linear infinite;
 }
@@ -125,7 +135,7 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #2c3e50;
+    background-color: var(--ivory);
     border-radius: 0;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     z-index: 1;
@@ -134,7 +144,7 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
 .player-name {
     position: relative;
     padding: 12px 24px;
-    color: #ecf0f1;
+    color: var(--ink);
     letter-spacing: 1px;
     font-weight: 600;
     font-family: Arial, sans-serif;
@@ -148,8 +158,8 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
     display: inline-block;
     padding: 0 7px;
     border-radius: 0;
-    background-color: #f1c40f;
-    color: #2c3e50;
+    background-color: var(--card-red);
+    color: var(--ivory);
     font-size: 12px;
     font-weight: 800;
 }
@@ -169,19 +179,19 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
     transform: rotate(-90deg);
 }
 .ring-bg {
-    fill: #2c3e50;
-    stroke: rgba(255, 255, 255, 0.25);
+    fill: var(--ivory-2);
+    stroke: rgba(0, 0, 0, 0.2);
     stroke-width: 3;
 }
 .ring-fg {
     fill: none;
-    stroke: #f1c40f;
+    stroke: var(--gold-deep);
     stroke-width: 3;
     stroke-linecap: round;
     transition: stroke-dashoffset 0.25s linear, stroke 0.3s;
 }
 .cat-clock.urgent .ring-fg {
-    stroke: #e74c3c;
+    stroke: var(--card-red);
 }
 .cat-face {
     position: absolute;
@@ -196,15 +206,15 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
     position: absolute;
     bottom: -6px;
     right: -8px;
-    background: #2c3e50;
+    background: var(--ink);
     border-radius: 0;
     padding: 0 4px;
     font-size: 10px;
     line-height: 12px;
-    color: #f1c40f;
+    color: var(--gold-bright);
 }
 .cat-clock.urgent .clock-seconds {
-    color: #e74c3c;
+    color: var(--card-red-bright);
 }
 @keyframes catTick {
     from { transform: rotate(-10deg); }
@@ -212,21 +222,44 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
 }
 
 .portrait #nameboxLeftCards {
-    top: 565px;
+    top: calc(565px + var(--hand-shift, 0px));
     left: 90px;
 }
 .portrait #nameboxTopCards {
-    top: 240px;
+    top: calc(240px + var(--hand-shift, 0px));
     left: 400px;
 }
 .portrait #nameboxRightCards {
-    top: 565px;
-    left: 710px;
+    top: calc(565px + var(--hand-shift, 0px));
+    left: auto;
+    right: 90px;
+    transform: translate(50%, -50%);
 }
 .portrait #nameboxMe {
     top: auto;
-    bottom: 565px;
+    bottom: calc(565px - var(--hand-shift, 0px));
     left: 110px;
     transform: translate(-50%, 0);
+}
+.portrait .player-name {
+    box-sizing: border-box;
+    max-width: 170px;
+    padding: 6px 10px;
+    gap: 6px;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    white-space: normal;
+}
+.portrait .name-text {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    min-width: 0;
+    line-height: 1.2;
+    overflow-wrap: break-word;
+}
+.portrait .dealer-chip, .portrait .cat-clock {
+    flex-shrink: 0;
 }
 </style>

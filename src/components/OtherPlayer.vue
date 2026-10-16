@@ -2,7 +2,8 @@
 import { computed } from 'vue';
 import { useStore } from 'vuex'
 import NameBox from './NameBox.vue'
-import { CARD_BACK_URL, hiddenHand } from '../game/cards.js'
+import { cardBackUrl, hiddenHand } from '../game/cards.js'
+import { activeTrump } from '../theme.js'
 
 const props = defineProps(['playerpos']);
 const store = useStore();
@@ -10,6 +11,7 @@ const nameplate_pos = "namebox" + props.playerpos[0].toUpperCase() + props.playe
 const posIndex = { leftCards: 1, topCards: 2, rightCards: 3 }[props.playerpos];
 const isTop = props.playerpos === "topCards";
 const cards = computed(() => hiddenHand(store.state.cardCounts[posIndex]));
+const backUrl = computed(() => cardBackUrl(activeTrump(store.state)));
 const firstRow = computed(() => cards.value.slice(0, 5));
 const secondRow = computed(() => cards.value.slice(5));
 </script>
@@ -17,14 +19,14 @@ const secondRow = computed(() => cards.value.slice(5));
 <template>
     <div :class="isTop ? 'card-row' : 'card-halfrow'" :id="playerpos">
         <template v-if="isTop">
-            <img v-for="(c, n) in cards" :key="n" class="fake-card card-back" :data-card="c" :src="CARD_BACK_URL">
+            <img v-for="(c, n) in cards" :key="n" class="fake-card card-back" draggable="false" :data-card="c" :src="backUrl">
         </template>
         <template v-else>
             <div class="section">
-                <img v-for="(c, n) in firstRow" :key="n" class="fake-card card-back section-member" :data-card="c" :src="CARD_BACK_URL">
+                <img v-for="(c, n) in firstRow" :key="n" class="fake-card card-back section-member" draggable="false" :data-card="c" :src="backUrl">
             </div>
             <div class="section">
-                <img v-for="(c, n) in secondRow" :key="n" class="fake-card card-back section-member" :data-card="c" :src="CARD_BACK_URL">
+                <img v-for="(c, n) in secondRow" :key="n" class="fake-card card-back section-member" draggable="false" :data-card="c" :src="backUrl">
             </div>
         </template>
     </div>
@@ -80,13 +82,13 @@ const secondRow = computed(() => cards.value.slice(5));
 }
 .portrait #leftCards {
     left: 90px;
-    top: 565px;
+    top: calc(565px + var(--hand-shift, 0px));
 }
 .portrait #rightCards {
     right: 90px;
-    top: 565px;
+    top: calc(565px + var(--hand-shift, 0px));
 }
 .portrait #topCards {
-    top: 240px;
+    top: calc(240px + var(--hand-shift, 0px));
 }
 </style>

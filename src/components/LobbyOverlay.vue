@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { useStore } from 'vuex'
 import { socket } from '../net/socket.js';
 import { C2S, PACE } from '../net/messages.js';
-import { gameLink } from '../session.js';
+import { gameLink, saveThemeLevel, THEME_LEVELS } from '../session.js';
 import { mode, WIKIPEDIA_URL, RELAXED_MULTIPLIER } from '../config.js';
 
 const props = defineProps(['gameId']);
@@ -28,8 +28,13 @@ const LAYOUT = [
 const connection = computed(() => store.state.connection);
 const pace = computed(() => store.state.lobby.pace ?? store.state.pace);
 const PACES = [
-    { value: PACE.COMPETITIVE, label: 'Competitive', hint: 'Standard time per turn' },
-    { value: PACE.RELAXED, label: 'Relaxed', hint: `${RELAXED_MULTIPLIER}x the time per turn` },
+    { value: PACE.COMPETITIVE, label: 'Competitive', hint: 'Normal timers' },
+    { value: PACE.RELAXED, label: 'Relaxed', hint: `Timers ${RELAXED_MULTIPLIER}x longer` },
+];
+const themeLevel = computed(() => store.state.themeLevel);
+const THEMES = [
+    { value: THEME_LEVELS.LIGHT, label: 'Light', hint: 'Tab icon and card backs' },
+    { value: THEME_LEVELS.FULL, label: 'Full', hint: 'Table, colors and more' },
 ];
 
 function seatClick(pos) {
@@ -44,6 +49,11 @@ function setPace(value) {
     if (value === pace.value) return;
     if (mode.standalone) { store.commit('setPace', value); return; }
     socket.send(C2S.SET_PACE, { pace: value });
+}
+function setThemeLevel(value) {
+    if (value === themeLevel.value) return;
+    saveThemeLevel(value);
+    store.commit('setThemeLevel', value);
 }
 async function share() {
     const link = gameLink(props.gameId);
@@ -91,13 +101,24 @@ async function share() {
                 </div>
             </div>
 
-            <div class="pace-row">
-                <div class="pace-label">Pace</div>
-                <div class="pace-toggle">
-                    <button v-for="p in PACES" :key="p.value" class="pace-option" :class="{ active: pace === p.value }" type="button" :aria-pressed="pace === p.value" @click="setPace(p.value)">
-                        <span class="pace-name">{{ p.label }}</span>
-                        <span class="pace-hint">{{ p.hint }}</span>
-                    </button>
+            <div class="option-rows">
+                <div class="pace-row">
+                    <div class="pace-label">Pace</div>
+                    <div class="pace-toggle">
+                        <button v-for="p in PACES" :key="p.value" class="pace-option" :class="{ active: pace === p.value }" type="button" :aria-pressed="pace === p.value" @click="setPace(p.value)">
+                            <span class="pace-name">{{ p.label }}</span>
+                            <span class="pace-hint">{{ p.hint }}</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="pace-row theme-row">
+                    <div class="pace-label">Trump theme</div>
+                    <div class="pace-toggle">
+                        <button v-for="t in THEMES" :key="t.value" class="pace-option theme-option" :class="{ active: themeLevel === t.value }" type="button" :aria-pressed="themeLevel === t.value" @click="setThemeLevel(t.value)">
+                            <span class="pace-name">{{ t.label }}</span>
+                            <span class="pace-hint">{{ t.hint }}</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -121,18 +142,19 @@ async function share() {
 .lobby-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(20, 30, 40, 0.88);
+    background: rgba(8, 24, 14, 0.88);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 70;
     font-family: Arial, sans-serif;
-    color: #ecf0f1;
+    color: var(--ivory);
 }
 .lobby {
     width: 900px;
-    background: #2c3e50;
-    border: 3px solid #ecf0f1;
+    background: var(--felt-deep);
+    border: 3px solid var(--ivory);
+    outline: 3px solid var(--gold-deep);
     padding: 28px 36px;
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
 }
@@ -146,7 +168,7 @@ async function share() {
     font-size: 13px;
     letter-spacing: 3px;
     text-transform: uppercase;
-    color: #bdc3c7;
+    color: var(--muted);
 }
 .lobby-id {
     font-size: 56px;
@@ -167,17 +189,17 @@ async function share() {
     margin: 28px 0;
 }
 .seat {
-    border: 2px solid #95a5a6;
+    border: 2px solid var(--muted);
     padding: 14px 18px;
-    background: #34495e;
+    background: var(--felt);
     min-height: 92px;
 }
-.seat.team0 { border-color: #2ecc71; }
-.seat.team1 { border-color: #e67e22; }
-.seat.empty { border-style: dashed; background: rgba(52, 73, 94, 0.5); }
+.seat.team0 { border-color: var(--gold); }
+.seat.team1 { border-color: var(--card-red-bright); }
+.seat.empty { border-style: dashed; background: rgba(0, 0, 0, 0.2); }
 .seat.swappable { cursor: pointer; }
-.seat.swappable:hover { background: #3d566e; }
-.seat.me { outline: 3px solid #f1c40f; outline-offset: -3px; }
+.seat.swappable:hover { background: var(--felt-deep); }
+.seat.me { outline: 3px solid var(--ivory); outline-offset: -3px; }
 .seat-top { grid-column: 2; grid-row: 1; }
 .seat-left { grid-column: 1; grid-row: 2; }
 .seat-right { grid-column: 3; grid-row: 2; }
@@ -190,14 +212,14 @@ async function share() {
     font-size: 15px;
     line-height: 1.6;
 }
-.teams-note .vs { display: block; color: #bdc3c7; letter-spacing: 2px; }
-.team0 { color: #2ecc71; }
-.team1 { color: #e67e22; }
+.teams-note .vs { display: block; color: var(--muted); letter-spacing: 2px; }
+.team0 { color: var(--gold-bright); }
+.team1 { color: var(--card-red-bright); }
 .seat-label {
     font-size: 12px;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: #bdc3c7;
+    color: var(--muted);
 }
 .seat-name {
     font-size: 24px;
@@ -207,38 +229,44 @@ async function share() {
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.seat.empty .seat-name { color: #95a5a6; font-weight: normal; }
+.seat.empty .seat-name { color: var(--muted); font-weight: normal; }
 .seat-flags { display: flex; gap: 8px; min-height: 18px; }
 .flag {
     font-size: 11px;
     letter-spacing: 1px;
     text-transform: uppercase;
     padding: 1px 6px;
-    border: 1px solid #bdc3c7;
-    color: #bdc3c7;
+    border: 1px solid var(--muted);
+    color: var(--muted);
 }
-.flag.host { border-color: #f1c40f; color: #f1c40f; }
-.flag.away { border-color: #e74c3c; color: #e74c3c; }
-.flag.hint { border: none; padding: 0; text-transform: none; letter-spacing: 0; color: #7f8c8d; }
-.lobby-status { font-size: 16px; color: #bdc3c7; }
+.flag.host { border-color: var(--gold); color: var(--gold-bright); }
+.flag.away { border-color: var(--card-red-bright); color: var(--card-red-bright); }
+.flag.hint { border: none; padding: 0; text-transform: none; letter-spacing: 0; color: var(--muted); }
+.lobby-status { font-size: 16px; color: var(--muted); }
 .pace-tag {
     margin-left: 10px;
     padding: 1px 6px;
-    border: 1px solid #7f8c8d;
-    color: #95a5a6;
+    border: 1px solid var(--muted);
+    color: var(--muted);
     letter-spacing: 1px;
+}
+.option-rows {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px 40px;
+    margin-bottom: 20px;
 }
 .pace-row {
     display: flex;
     align-items: center;
     gap: 16px;
-    margin-bottom: 20px;
 }
 .pace-label {
     font-size: 12px;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: #bdc3c7;
+    color: var(--muted);
 }
 .pace-toggle { display: flex; }
 .pace-option {
@@ -248,23 +276,27 @@ async function share() {
     align-items: flex-start;
     gap: 2px;
     padding: 8px 14px;
-    background: #34495e;
-    border: 2px solid #95a5a6;
-    color: #bdc3c7;
+    background: var(--felt);
+    border: 2px solid var(--muted);
+    color: var(--muted);
     cursor: pointer;
     text-align: left;
 }
 .pace-option + .pace-option { border-left: none; }
-.pace-option:hover { background: #3d566e; }
+.pace-option:hover { background: var(--felt-deep); }
 .pace-option.active {
-    background: #ecf0f1;
-    border-color: #ecf0f1;
-    color: #2c3e50;
+    background: var(--ivory);
+    border-color: var(--ivory);
+    color: var(--ink);
 }
 .pace-name { font-size: 15px; font-weight: 700; }
 .pace-hint { font-size: 11px; }
-.pace-option.active .pace-hint { color: #34495e; }
+.pace-option.active .pace-hint { color: var(--ink-soft); }
 
+.portrait .lobby-overlay {
+    overflow-y: auto;
+    touch-action: pan-y;
+}
 .portrait .lobby {
     width: 720px;
 }

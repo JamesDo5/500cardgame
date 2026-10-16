@@ -25,22 +25,26 @@ const stageStyle = ref({});
 const nameInput = ref(loadName());
 const needName = ref(!mode.standalone && !nameInput.value);
 const confirmLeave = ref(false);
+const confirmRestart = ref(false);
 
 const gameState = computed(() => store.state.gameState);
 const inLobby = computed(() => !mode.standalone && gameState.value === -1 && !store.state.joinError);
 const joinError = computed(() => store.state.joinError);
 const displayId = computed(() => store.state.session.gameId || (props.gameId === 'new' ? '····' : props.gameId));
-const showLeave = computed(() => !mode.standalone && gameState.value >= 0 && gameState.value !== 6);
+const showLeave = computed(() => gameState.value >= 0 && gameState.value !== 6);
+const iAmHost = computed(() => mode.standalone || !!store.state.lobby.seats?.[0]?.host);
 
 function fitStage() {
+    const vw = document.documentElement.clientWidth;
+    const vh = document.documentElement.clientHeight;
     const w = layout.portrait ? PORTRAIT_STAGE_WIDTH : STAGE_WIDTH;
-    const h = layout.portrait ? Math.max(PORTRAIT_STAGE_MIN_HEIGHT, Math.round(w * window.innerHeight / window.innerWidth)) : STAGE_HEIGHT;
-    const scale = Math.min(window.innerWidth / w, window.innerHeight / h);
+    const h = layout.portrait ? Math.max(PORTRAIT_STAGE_MIN_HEIGHT, Math.floor(w * vh / vw)) : STAGE_HEIGHT;
+    const scale = Math.min(vw / w, vh / h);
     stageStyle.value = {
         width: `${w}px`,
         height: `${h}px`,
-        left: `${(window.innerWidth - w * scale) / 2}px`,
-        top: `${(window.innerHeight - h * scale) / 2}px`,
+        left: `${(vw - w * scale) / 2}px`,
+        top: `${(vh - h * scale) / 2}px`,
         transform: `scale(${scale})`,
     };
 }
@@ -85,6 +89,17 @@ function requestLeave() {
     else leaveNow();
 }
 
+function requestRestart() {
+    confirmLeave.value = false;
+    confirmRestart.value = true;
+}
+
+function restartNow() {
+    confirmRestart.value = false;
+    if (mode.standalone) store.getters.getGameTable().newGame();
+    else socket.send(C2S.RESTART_GAME);
+}
+
 function backHome() {
     socket.close();
     if (props.gameId !== 'new') forgetToken(props.gameId);
@@ -103,24 +118,33 @@ store.commit('setLobby', { seats: [], hostPos: -1, canStart: false });
 store.commit('setPace', DEFAULT_PACE);
 store.commit('setConnection', mode.standalone ? 'standalone' : 'idle');
 
+const blockGesture = (evt) => evt.preventDefault();
+const blockPinch = (evt) => { if (evt.touches.length > 1) evt.preventDefault(); };
+const GESTURE_EVENTS = ['gesturestart', 'gesturechange', 'gestureend'];
+
 onMounted(() => {
     document.body.classList.add('in-game');
+    fitStage();
     window.addEventListener('resize', fitStage);
+    GESTURE_EVENTS.forEach(type => document.addEventListener(type, blockGesture));
+    document.addEventListener('touchmove', blockPinch, { passive: false });
 });
 onBeforeUnmount(() => {
     document.body.classList.remove('in-game');
     window.removeEventListener('resize', fitStage);
+    GESTURE_EVENTS.forEach(type => document.removeEventListener(type, blockGesture));
+    document.removeEventListener('touchmove', blockPinch);
     if (!mode.standalone) socket.close();
     mode.standalone = false;
 });
 </script>
 
 <template>
-    <div id="stage" :style="stageStyle">
+    <div id="stage" :style="stageStyle" @contextmenu.prevent>
         <GamePage @gametable-ready="tableReady" />
         <DevButtons v-if="mode.standalone" ref="devButtonsRef" />
 
-        <div v-if="showLeave" class="table-chrome">
+        <div v-if="showLeave" class="table-chrome" :class="{ standalone: mode.standalone }">
             <button class="ui-button small danger" type="button" @click="requestLeave">Leave</button>
             <button class="ui-button small" type="button" @click="rulesRef?.show()">Rules</button>
         </div>
@@ -155,7 +179,19 @@ onBeforeUnmount(() => {
                 <p class="gate-text">The game is in progress. Leaving ends it for everyone and sends the table back to the lobby.</p>
                 <div class="gate-actions">
                     <button class="ui-button" type="button" @click="confirmLeave = false">Stay</button>
+                    <button v-if="iAmHost" class="ui-button" type="button" @click="requestRestart">Restart game</button>
                     <button class="ui-button danger" type="button" @click="leaveNow">Leave anyway</button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="confirmRestart" class="gate">
+            <div class="gate-card">
+                <div class="gate-kicker">Start over?</div>
+                <p class="gate-text">Scores reset and everyone goes back to the lobby.</p>
+                <div class="gate-actions">
+                    <button class="ui-button" type="button" @click="confirmRestart = false">Back</button>
+                    <button class="ui-button danger" type="button" @click="restartNow">Restart</button>
                 </div>
             </div>
         </div>
@@ -173,21 +209,43 @@ onBeforeUnmount(() => {
     gap: 8px;
     z-index: 30;
 }
+.table-chrome.standalone {
+    top: 190px;
+}
+:root[data-trump][data-theme-level="full"] .table-chrome .ui-button {
+    border-color: var(--trump-ink);
+}
+:root[data-trump][data-theme-level="full"] .table-chrome .ui-button.danger {
+    border-color: var(--trump-on-felt);
+}
+:root[data-trump][data-theme-level="full"] .table-chrome .ui-button::before {
+    content: var(--trump-glyph);
+    color: var(--trump-ink);
+    margin-right: 6px;
+    font-size: 12px;
+}
+:root[data-trump][data-theme-level="full"] .table-chrome .ui-button.danger::before {
+    color: var(--trump-on-felt);
+}
+:root[data-trump][data-theme-level="full"] .table-chrome .ui-button.danger:hover::before {
+    color: var(--ivory);
+}
 .gate {
     position: absolute;
     inset: 0;
-    background: rgba(20, 30, 40, 0.9);
+    background: rgba(8, 24, 14, 0.9);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 80;
     font-family: Arial, sans-serif;
-    color: #ecf0f1;
+    color: var(--ink);
 }
 .gate-card {
     width: 480px;
-    background: #2c3e50;
-    border: 3px solid #ecf0f1;
+    background: var(--ivory);
+    border: 3px solid var(--ink);
+    outline: 3px solid var(--gold);
     padding: 28px 32px;
     display: flex;
     flex-direction: column;
@@ -197,8 +255,12 @@ onBeforeUnmount(() => {
     font-size: 13px;
     letter-spacing: 3px;
     text-transform: uppercase;
-    color: #bdc3c7;
+    color: var(--card-red);
 }
+.gate-card .ui-button { border-color: var(--ink); }
+.gate-card .ui-button.danger { color: var(--card-red); border-color: var(--card-red); }
+.gate-card .ui-button.danger:hover { color: var(--ivory); }
+.gate-card .ui-input { border-color: var(--ink); }
 .gate-label { font-size: 22px; font-weight: 700; }
 .gate-text { font-size: 17px; line-height: 1.5; margin: 0; }
 .gate-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }

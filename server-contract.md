@@ -76,7 +76,7 @@ Sequence for one hand:
 | `deal` | `{}` | only valid from the dealer in state 0 |
 | `bid` | `{ bid }` | only valid from the player whose bid it is |
 | `submitBlind` | `{ discards: [5 cards] }` | only valid from the bid winner in state 3; all five must be from their 15 cards |
-| `playCard` | `{ card }` | only valid from the player whose turn it is; must be in their hand and legal |
+| `playCard` | `{ card, suit? }` | only valid from the player whose turn it is; must be in their hand and legal; `suit` (`s c d h`) is required only when leading the joker in a no-trump hand, error `BAD_SUIT` otherwise |
 | `ping` | `{}` | heartbeat |
 
 Invalid frames should get an `error` reply and must not change state. The client keeps its optimistic local change
@@ -95,7 +95,7 @@ to that client so it snaps back.
 | `biddingResult` | `{ winner, bid, trump }` or `{ redeal: true }` | state 3 or state 0; client already predicted this and only acts if it disagrees |
 | `blind` | `{ cards: [5 cards] }` | only to bid winner; renders face down, winner flips it |
 | `blindDone` | `{ pos }` | hides blind, shows discard stack beside `pos`, enables play box, state 5 |
-| `cardPlayed` | `{ pos, card, auto }` | renders the card; `auto` true means the server played it on timeout |
+| `cardPlayed` | `{ pos, card, auto, suit }` | renders the card; `auto` true means the server played it on timeout; `suit` is the nominated suit when the joker leads in no trump, else empty |
 | `trickResult` | `{ winner }` | reconciles with the client prediction |
 | `handScore` | `{ deltas: [2], scores: [2] }` | reconciles with the client prediction |
 | `gameOver` | `{ winnerTeam, scores: [2] }` | state 6, winner screen |
@@ -126,6 +126,7 @@ action as idempotent: a card or bid already recorded for that position is a no-o
   playedCards,             // [4] current trick, '' for not yet played
   leader,                  // relative pos who led the current trick, -1 if none
   wonTricks,               // [4] tricks won per position this hand
+  jokerSuit,               // nominated suit for the current trick when the joker led in no trump, else ''
   turn: { pos, deadlineMs }
 }
 ```
@@ -141,8 +142,9 @@ The client enforces these locally for UX, so disagreement produces visible glitc
 - One round of bidding. Pass is 0. Any bid must beat the standing bid. All pass means same dealer redeals.
 - Trump ranking: joker highest, then right bower (jack of trump), left bower (jack of same colour), then A K Q 10 9 .. 4.
   In no trump the joker is the only trump and jacks are ordinary.
-- Joker is always a trump card. Leading the joker leads the trump suit. In no trump, leading the joker means the joker
-  wins and others may play anything.
+- Joker is always a trump card. Leading the joker leads the trump suit. In no trump the joker may be led at any time;
+  the leader nominates a suit, the others must follow that suit if they can, and the joker wins the trick. Otherwise in
+  no trump the joker can only be played when the holder cannot follow suit.
 - Follow suit is mandatory when possible, counting bowers and joker as trump suit. If trump is led and a player's only
   trump is the joker or a bower, they must play it. A player void in the led suit may play anything.
 - Trick winner: highest trump if any trump was played, else highest card of the led suit.
@@ -207,6 +209,7 @@ host presses Start.
 | C2S | `leave` | `{}` | frees the seat immediately; see below |
 | S2C | `playerLeft` | `{ pos, name, abandoned }` | to the remaining players; `abandoned` true when a game in progress was thrown away |
 | C2S | `rematch` | `{}` | after `gameOver`; schedules a restart with the same seats |
+| C2S | `restartGame` | `{}` | host only, any phase; the room returns to the lobby with scores cleared and the same seats, so everyone gets `syncState` with `gameState: -1` and `lobbyState`; error `NOT_HOST` |
 | S2C | `rematchCountdown` | `{ startsAtMs }` | broadcast after the first rematch request |
 
 ### Host

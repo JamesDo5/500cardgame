@@ -55,9 +55,9 @@ onMounted(() => emit('gametable-ready'));
 #gameState {
     position: absolute;
     padding: 10px 0px;
-    bottom: 232px;
+    bottom: 275px;
     left: 11px;
-    color: white;
+    color: var(--muted);
     font-family: Arial, sans-serif;
 }
 

@@ -22,14 +22,15 @@ watch(() => feed.value.length, async () => {
 .activity-feed {
     position: absolute;
     right: 20px;
-    bottom: 236px;
+    bottom: 275px;
     width: 260px;
     max-height: 180px;
     overflow-y: auto;
-    color: gainsboro;
+    color: var(--muted);
     font-family: Arial, sans-serif;
     font-size: 13px;
-    background-color: rgba(0, 0, 0, 0.25);
+    background-color: rgba(0, 0, 0, 0.3);
+    border-left: 2px solid var(--gold-deep);
     border-radius: 0;
     padding: 8px;
 }
@@ -40,8 +41,9 @@ watch(() => feed.value.length, async () => {
 .portrait .activity-feed {
     right: auto;
     left: 215px;
-    bottom: 565px;
+    bottom: calc(565px - var(--hand-shift, 0px));
     width: 330px;
     max-height: 70px;
+    transition: bottom 0.3s ease;
 }
 </style>

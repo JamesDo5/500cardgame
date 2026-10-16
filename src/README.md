@@ -13,7 +13,7 @@
 - [x] Cards get smaller when they go to the table. Or maybe everything on the table should be comically large too?
 - [x] Score tracking under the hood.
 - [x] Score tracking visually.
-- [x] Correctly update card arr states when cards move with sortable (this is so the states can be source of truth for blind and card submits)
+- [x] Correctly update card arr states when cards move between the hand, blind and play box (this is so the states can be source of truth for blind and card submits)
 - [x] Fix bidding to actually operate from callee func
 - [x] Move L,T,R bid displays to visually key off of bidbox and not be part of game table
 - [x] Re-deal when everyone passes
@@ -39,7 +39,7 @@
 - [x] Little trick animation for trick stack addition
 - [ ] Hand sort: dealt order is preserved, Sort button sorts trump first then alternating colors and hides after the first card is played. Consider auto-sort preference in a settings menu.
 - [ ] Play random button: plays a random legal card from hand.
-- [ ] Drag ghost sometimes starts half a card offset from the cursor. Cosmetic, likely the rect being captured mid transition on the hand card.
+- [x] Drag ghost sometimes starts half a card offset from the cursor. Fixed by the pointer-events drag in src/drag.js, which grabs the card where it was touched and swings it from that point.
 - [ ] Visually impaired mode setting: each player's most recent card fills their whole side of the table and overlaps their hand area.
 - [ ] Won-trick stacks are just a number on a blue block. Make them fun: fanned card backs, a little bounce when one lands, maybe a cat paw dragging them in.
 - [x] Make text show for user when they play a card
