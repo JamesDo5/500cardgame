@@ -105,8 +105,20 @@ onMounted(() => {
     gap: 7px;
     perspective: 1000px;
     transform-style: preserve-3d;
-    min-height: 214px;
+    min-height: 257px;
     justify-content: center;
+}
+#bottomCards:has(> :nth-child(9)) :deep(.hand-card) {
+    margin-right: -32px;
+}
+#bottomCards:has(> :nth-child(11)) :deep(.hand-card) {
+    margin-right: -62px;
+}
+#bottomCards:has(> :nth-child(13)) :deep(.hand-card) {
+    margin-right: -90px;
+}
+#bottomCards :deep(.hand-card:last-child) {
+    margin-right: 0;
 }
 
 #bottomCards :deep(.hand-card) {
@@ -115,8 +127,8 @@ onMounted(() => {
 }
 
 #bottomCards :deep(.hand-card > *) {
-    width: 150px;
-    height: 214px;
+    width: 180px;
+    height: 257px;
     background-color: var(--ivory);
     border-radius: 0;
     display: flex;
@@ -133,7 +145,7 @@ onMounted(() => {
 
 .sort-button {
     position: absolute;
-    bottom: 232px;
+    bottom: 275px;
     right: 300px;
     padding: 8px 18px;
     font-size: 15px;
@@ -161,8 +173,14 @@ onMounted(() => {
     gap: 6px 0;
     min-height: 0;
 }
-.portrait #bottomCards :deep(.hand-card) {
+.portrait #bottomCards :deep(.hand-card), .portrait #bottomCards:has(> :nth-child(9)) :deep(.hand-card) {
     margin-right: -50px;
+}
+.portrait #bottomCards:has(> :nth-child(11)) :deep(.hand-card), .portrait #bottomCards:has(> :nth-child(13)) :deep(.hand-card) {
+    margin-right: -50px;
+}
+.portrait #bottomCards :deep(.hand-card:last-child), .portrait #bottomCards :deep(.hand-card:nth-child(5n)) {
+    margin-right: 0;
 }
 .portrait #bottomCards :deep(.hand-card > *) {
     width: 190px;

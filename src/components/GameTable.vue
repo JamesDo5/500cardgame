@@ -6,7 +6,7 @@
             <img class="fake-card card-played card-played-right" id="playedCardRight" draggable="false" :src="backUrl">
             <img class="fake-card card-played card-played-bottom" id="playedCardBottom" draggable="false" :src="backUrl">
             <div v-if="jokerBadge" class="joker-badge" :class="[jokerBadge.posClass, jokerBadge.colorClass]">{{ jokerBadge.symbol }}</div>
-            <div class="card-row" id="submitCards" :class="{ parked: !showPlayButton }"></div>
+            <div class="card-row" id="submitCards" :class="{ parked: !showPlayButton, played: myCardPlayed }"></div>
             <div v-if="suitChooserOpen" class="suit-chooser">
                 <div class="suit-chooser-label">Joker leads as</div>
                 <button v-for="s in NOMINATABLE_SUITS" :key="s" class="suit-option" :class="[suitColorClass(s), { chosen: chosenSuit === s }]" type="button" :aria-pressed="chosenSuit === s" @click="chosenSuit = s">{{ SUIT_SYMBOLS[s] }}</button>
@@ -53,6 +53,7 @@ const iAmDealer = computed(() => store.state.dealer === 0);
 const showPlayButton = computed(() => store.state.gameState === 5);
 const showBlindStack = computed(() => store.state.gameState === 1 || store.state.gameState === 2);
 const myPlayTurn = computed(() => store.state.gameState === 5 && store.state.turn.pos === 0);
+const myCardPlayed = computed(() => store.state.gameState === 5 && !!store.state.trickCards[0]);
 const leading = computed(() => store.state.trickCards.every(c => !c));
 const NOMINATABLE_SUITS = SUITS;
 const chosenSuit = ref('');
@@ -78,7 +79,7 @@ const boardCaption = computed(() => {
     if (gs === 4) return pos === 0 ? '' : `${name} is exchanging the blind`;
     if (gs === 5) {
         if (leading.value) return pos === 0 ? 'Your lead' : `${name} is leading`;
-        return pos === 0 ? 'Your turn' : '';
+        return pos === 0 && !store.state.stagedCards.length ? 'Your turn' : '';
     }
     return '';
 });
@@ -938,22 +939,23 @@ onBeforeUnmount(() => {
 }
 
 .card-played-bottom {
-    top: 62%;
+    top: 77%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 4;
 }
 
 #submitCards {
-    top: 100%;
+    top: 77%;
     left: 50%;
-    transform: translate(-50%, -62%);
+    transform: translate(-50%, -50%);
     z-index: 2;
+    transition: opacity 0.4s ease, transform 0.4s ease;
     border: 3px dashed var(--gold);
     border-radius: 0;
-    padding: 16px;
-    min-width: 150px;
-    min-height: 214px;
+    padding: 10px;
+    min-width: 140px;
+    min-height: 200px;
     justify-content: center;
     align-items: center;
     background-color: var(--felt-edge);
@@ -963,6 +965,10 @@ onBeforeUnmount(() => {
 }
 #submitCards.parked {
     display: none;
+}
+#submitCards.played {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(0.92);
 }
 #submitCards[data-drop="hover"], #blindCards.active[data-drop="hover"] {
     border-color: var(--gold-bright);
@@ -974,8 +980,8 @@ onBeforeUnmount(() => {
     background-color: rgba(182, 28, 43, 0.25);
 }
 #submitCards :deep(.real-card > *), #submitCards :deep(.hand-card > *) {
-    width: 150px;
-    height: 214px;
+    width: 140px;
+    height: 200px;
     display: block;
 }
 
@@ -1061,9 +1067,10 @@ onBeforeUnmount(() => {
     box-shadow: none;
 }
 .play-button {
-    top: 100%;
+    --button-shift: translate(100px, -50%);
+    top: 71%;
     left: 50%;
-    transform: translateX(110px) translateY(30px);
+    transform: var(--button-shift);
     font-size: 24px;
     padding: 16px 44px;
     border-radius: 0;
@@ -1077,7 +1084,7 @@ onBeforeUnmount(() => {
 }
 .play-button.armed {
     background: linear-gradient(45deg, var(--gold-bright), var(--gold));
-    transform: translateX(110px) translateY(30px) scale(1.1);
+    transform: var(--button-shift) scale(1.1);
     box-shadow: 0 0 18px 4px rgba(212, 175, 55, 0.55), 0 3px 6px rgba(0, 0, 0, 0.3);
     animation: armedPulse 1.4s ease-in-out infinite;
 }
@@ -1085,8 +1092,8 @@ onBeforeUnmount(() => {
     filter: brightness(1.08);
 }
 @keyframes armedPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(110px) translateY(30px) scale(1.08); }
-    50% { box-shadow: 0 0 0 14px rgba(212, 175, 55, 0), 0 3px 6px rgba(0, 0, 0, 0.3); transform: translateX(110px) translateY(30px) scale(1.14); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7), 0 3px 6px rgba(0, 0, 0, 0.3); transform: var(--button-shift) scale(1.08); }
+    50% { box-shadow: 0 0 0 14px rgba(212, 175, 55, 0), 0 3px 6px rgba(0, 0, 0, 0.3); transform: var(--button-shift) scale(1.14); }
 }
 @media (prefers-reduced-motion: reduce) {
     .play-button.armed {
@@ -1150,9 +1157,10 @@ onBeforeUnmount(() => {
 }
 .board-caption {
     position: absolute;
-    top: 62%;
+    top: var(--caption-top, 77%);
     left: 50%;
     transform: translateX(-50%);
+    z-index: 3;
     color: var(--ivory);
     font-family: Arial, sans-serif;
     font-size: 20px;
@@ -1184,7 +1192,7 @@ onBeforeUnmount(() => {
     max-width: 340px;
 }
 .board-caption.lead {
-    top: 42%;
+    top: 30%;
     transform: translate(-50%, -50%);
     width: 76%;
     font-size: 54px;
@@ -1221,16 +1229,16 @@ onBeforeUnmount(() => {
 }
 .joker-badge.suit-red { color: #c0392b; }
 .joker-badge.suit-black { color: #111111; }
-.badge-bottom { top: 62%; left: calc(50% + 92px); }
+.badge-bottom { top: 77%; left: calc(50% + 92px); }
 .badge-top { top: 22%; left: calc(50% - 92px); }
 .badge-left { top: calc(42% - 92px); left: 28%; }
 .badge-right { top: calc(42% + 92px); left: 72%; }
 
 .suit-chooser {
     position: absolute;
-    top: 100%;
+    top: 77%;
     left: 50%;
-    transform: translate(-50%, -300px);
+    transform: translate(-50%, calc(-50% - 150px));
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1298,8 +1306,27 @@ onBeforeUnmount(() => {
     height: 600px;
 }
 .portrait .play-button {
+    --button-shift: translateX(110px) translateY(30px);
+    top: 100%;
     font-size: 36px;
     padding: 24px 60px;
+}
+.portrait #gameTable {
+    --caption-top: 62%;
+}
+.portrait #submitCards {
+    top: 100%;
+    transform: translate(-50%, -62%);
+}
+.portrait #submitCards.played {
+    transform: translate(-50%, -62%) scale(0.92);
+}
+.portrait .board-caption.lead {
+    top: 42%;
+}
+.portrait .suit-chooser {
+    top: 100%;
+    transform: translate(-50%, -300px);
 }
 .portrait #blindCards {
     top: 25%;
