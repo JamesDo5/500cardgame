@@ -13,22 +13,20 @@
             <span v-else class="bid-none">---</span>
         </div>
         <span class="close-bidbox" id="closeBidBox" @click="hide">&times;</span>
-        <table>
-            <tbody>
-                <tr>
-                    <th></th>
-                    <th v-for="col in COLUMNS" :key="col.suit" :style="col.style">{{ col.label }}</th>
-                </tr>
-                <tr v-for="(tricks, row) in TRICK_ROWS" :key="tricks">
-                    <td style="font-size:24px">{{ tricks }}</td>
-                    <td v-for="(col, c) in COLUMNS" :key="col.suit">
-                        <button class="bid-amount-button" :value="bidAt(row, c)" :disabled="bidAt(row, c) <= highest || !myTurn" :class="{ selected: selected === bidAt(row, c) }" @click="select(bidAt(row, c))">{{ bidAt(row, c) }}</button>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-        <button class="bid-amount-button pass-button" type="button" id="passBidBtn" :class="{ selected: selected === PASS }" :disabled="!myTurn" @click="select(PASS)">Pass</button>
-        <button class="bid-amount-button submit-bid-button" type="button" id="submitBidBtn" :disabled="selected === -1 || !myTurn" @click="submit">Submit</button>
+        <div class="bid-grid">
+            <div class="bid-corner"></div>
+            <div v-for="col in COLUMNS" :key="col.suit" class="bid-head" :class="col.cls">{{ col.label }}</div>
+            <template v-for="(tricks, row) in TRICK_ROWS" :key="tricks">
+                <div class="bid-rowlabel">{{ tricks }}</div>
+                <div v-for="(col, c) in COLUMNS" :key="col.suit" class="bid-cell">
+                    <button class="bid-amount-button" :value="bidAt(row, c)" :disabled="bidAt(row, c) <= highest || !myTurn" :class="{ selected: selected === bidAt(row, c) }" @click="select(bidAt(row, c))">{{ bidAt(row, c) }}</button>
+                </div>
+            </template>
+        </div>
+        <div class="bid-actions">
+            <button class="bid-amount-button pass-button" type="button" id="passBidBtn" :class="{ selected: selected === PASS }" :disabled="!myTurn" @click="select(PASS)">Pass</button>
+            <button class="bid-amount-button submit-bid-button" type="button" id="submitBidBtn" :disabled="selected === -1 || !myTurn" @click="submit">Submit</button>
+        </div>
     </div>
 </template>
 
@@ -44,11 +42,11 @@ import { PASS, MIN_BID, MAX_BID, isValidBid, trumpSuitForBid, neededTricks, next
 const store = useStore()
 
 const COLUMNS = [
-    { suit: 's', label: '♠', style: 'font-size:32px' },
-    { suit: 'c', label: '♣', style: 'font-size:32px' },
-    { suit: 'd', label: '♦', style: 'color:red;font-size:32px' },
-    { suit: 'h', label: '♥', style: 'color:red;font-size:32px' },
-    { suit: 'n', label: 'NoTrmp', style: 'font-size:16px' },
+    { suit: 's', label: '♠', cls: '' },
+    { suit: 'c', label: '♣', cls: '' },
+    { suit: 'd', label: '♦', cls: 'red' },
+    { suit: 'h', label: '♥', cls: 'red' },
+    { suit: 'n', label: 'NoTrmp', cls: 'small' },
 ];
 const TRICK_ROWS = [6, 7, 8, 9, 10];
 const bidAt = (row, col) => 40 + row * 100 + col * 20;
@@ -265,10 +263,12 @@ onMounted(() => {
     left: 50%;
     transform: translate(-50%, -50%);
     background-color: white;
-    padding: 20px;
+    padding: 18px;
     border-radius: 0;
     text-align: center;
     z-index: 9;
+    box-sizing: border-box;
+    width: 660px;
 }
 
 .close-bidbox {
@@ -369,52 +369,118 @@ onMounted(() => {
 .bid-display {
     position: absolute;
     transform: translate(-50%, 50%);
-    font-size: 40px;
+    font-size: 36px;
     color: white;
     font-family: Arial, sans-serif;
     text-align: center;
     white-space: nowrap;
 }
 .bottom-bid {
-    bottom: -60px;
+    bottom: -45px;
     left: 50%;
 }
 .left-bid {
-    left: -120px;
+    left: -62px;
     bottom: 50%;
 }
 .top-bid {
-    top: -125px;
-    left: 50%;
+    top: -70px;
+    left: calc(50% + 190px);
+}
+.top-bid .bid-prefix, .bottom-bid .bid-prefix {
+    display: inline;
+    margin-right: 10px;
 }
 .right-bid {
-    right: -120px;
+    right: -62px;
     bottom: 50%;
     transform: translate(50%, 50%);
 }
 
-table {
-    border-collapse: collapse;
-    margin: 0 auto;
+.bid-grid {
+    display: grid;
+    grid-template-columns: 54px repeat(5, minmax(0, 1fr));
+    grid-auto-rows: 64px;
+    gap: 6px;
+    align-items: stretch;
+    justify-items: stretch;
 }
-
+.bid-grid > :nth-child(-n + 6) {
+    height: 46px;
+}
+.bid-head, .bid-rowlabel, .bid-corner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial, sans-serif;
+    font-size: 40px;
+    color: black;
+}
+.bid-head.red {
+    color: red;
+}
+.bid-head.small {
+    font-size: 18px;
+    font-weight: bold;
+}
+.bid-rowlabel {
+    font-size: 28px;
+}
+.bid-cell {
+    display: flex;
+    min-width: 0;
+}
 button.bid-amount-button {
-    width: 70px;
-    height: 50px;
-    font-size: 32px;
-    min-width: fit-content;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    padding: 0;
+    font-size: 38px;
+    line-height: 1;
+    box-sizing: border-box;
 }
 button.bid-amount-button.selected {
     outline: 3px solid #2ecc71;
+    outline-offset: -3px;
+}
+.bid-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
 }
 button.pass-button, button.submit-bid-button {
-    margin-top: 10px;
-    width: 45%;
+    flex: 1;
+    height: 56px;
+    font-size: 34px;
 }
 
 .portrait .bidbox {
     top: 600px;
-    transform: translate(-50%, -50%) scale(1.15);
+    width: 527px;
+    padding: 14px;
+}
+.portrait .bid-grid {
+    grid-template-columns: 44px repeat(5, minmax(0, 1fr));
+    grid-auto-rows: 62px;
+    gap: 5px;
+}
+.portrait .bid-grid > :nth-child(-n + 6) {
+    height: 44px;
+}
+.portrait .bid-head {
+    font-size: 36px;
+}
+.portrait .bid-head.small {
+    font-size: 16px;
+}
+.portrait .bid-rowlabel {
+    font-size: 26px;
+}
+.portrait button.bid-amount-button {
+    font-size: 34px;
+}
+.portrait button.pass-button, .portrait button.submit-bid-button {
+    font-size: 30px;
 }
 .portrait .bid-banner {
     top: 56px;
@@ -438,10 +504,20 @@ button.pass-button, button.submit-bid-button {
     bottom: auto;
     top: -110px;
 }
+.portrait .top-bid {
+    left: 50%;
+}
+.portrait .top-bid .bid-prefix {
+    display: block;
+    margin-right: 0;
+}
 .portrait .left-bid {
-    left: 18%;
+    left: 22%;
 }
 .portrait .right-bid {
-    right: 18%;
+    right: 22%;
+}
+.portrait .bottom-bid {
+    bottom: -60px;
 }
 </style>
