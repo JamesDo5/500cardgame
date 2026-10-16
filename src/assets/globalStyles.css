@@ -6,6 +6,7 @@ body.in-game {
   height: 100vh;
   overflow: hidden;
   user-select: none;
+  touch-action: manipulation;
 }
 
 #stage {
@@ -15,8 +16,9 @@ body.in-game {
   align-items: center;
   transform-origin: top left;
   overflow: hidden;
+  touch-action: none;
 }
-.portrait #stage {
+.fake-card, .hand-card, .real-card {
   touch-action: none;
 }
 

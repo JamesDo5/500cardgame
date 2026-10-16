@@ -265,6 +265,10 @@ async function share() {
 .pace-hint { font-size: 11px; }
 .pace-option.active .pace-hint { color: #34495e; }
 
+.portrait .lobby-overlay {
+    overflow-y: auto;
+    touch-action: pan-y;
+}
 .portrait .lobby {
     width: 720px;
 }

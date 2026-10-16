@@ -116,13 +116,21 @@ store.commit('setLobby', { seats: [], hostPos: -1, canStart: false });
 store.commit('setPace', DEFAULT_PACE);
 store.commit('setConnection', mode.standalone ? 'standalone' : 'idle');
 
+const blockGesture = (evt) => evt.preventDefault();
+const blockPinch = (evt) => { if (evt.touches.length > 1) evt.preventDefault(); };
+const GESTURE_EVENTS = ['gesturestart', 'gesturechange', 'gestureend'];
+
 onMounted(() => {
     document.body.classList.add('in-game');
     window.addEventListener('resize', fitStage);
+    GESTURE_EVENTS.forEach(type => document.addEventListener(type, blockGesture));
+    document.addEventListener('touchmove', blockPinch, { passive: false });
 });
 onBeforeUnmount(() => {
     document.body.classList.remove('in-game');
     window.removeEventListener('resize', fitStage);
+    GESTURE_EVENTS.forEach(type => document.removeEventListener(type, blockGesture));
+    document.removeEventListener('touchmove', blockPinch);
     if (!mode.standalone) socket.close();
     mode.standalone = false;
 });
