@@ -107,12 +107,12 @@ function dealNow() {
 }
 
 const PARTNER_JOKES = [
-    "Partner: \"I had that the whole time.\"",
-    "Partner: \"You're welcome.\"",
-    "Partner: \"Don't worry, I'll carry us.\"",
-    "Partner: \"That one was looking rough.\"",
-    "Partner: \"Teamwork. Mostly me, but teamwork.\"",
-    "Partner: \"I saw that coming three tricks ago.\"",
+    "Your partner had that the whole time.",
+    "Your partner swoops in!",
+    "Carried, this time.",
+    "Your lead, your partner's trick.",
+    "Teamwork. Mostly your partner.",
+    "Your partner saw that coming three tricks ago.",
 ];
 const SOURCE_ELEMENT_IDS = ['submitCards', 'leftCards', 'topCards', 'rightCards'];
 
