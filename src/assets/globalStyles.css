@@ -273,7 +273,7 @@ body.dragging-card, body.dragging-card * {
 .ui-button.primary:hover { background: var(--gold-bright); border-color: var(--gold-bright); }
 .ui-button.danger { background: transparent; color: var(--ivory); border-color: var(--card-red-bright); }
 .ui-button.danger:hover { background: var(--card-red); border-color: var(--card-red); color: var(--ivory); }
-.ui-button.small { padding: 6px 14px; font-size: 13px; }
+.ui-button.small { padding: 7px 16px; font-size: 15px; }
 .ui-input {
   width: 100%;
   box-sizing: border-box;

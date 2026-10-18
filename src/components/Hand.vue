@@ -151,9 +151,9 @@ onMounted(() => {
 .sort-button {
     position: absolute;
     bottom: 275px;
-    right: 300px;
-    padding: 8px 18px;
-    font-size: 15px;
+    right: 330px;
+    padding: 10px 22px;
+    font-size: 20px;
     font-weight: bold;
     color: var(--ink);
     background: var(--ivory);
@@ -226,6 +226,8 @@ onMounted(() => {
 .portrait .sort-button {
     bottom: calc(565px - var(--hand-shift, 0px));
     right: 20px;
+    padding: 8px 18px;
+    font-size: 15px;
     transition: bottom 0.3s ease;
 }
 </style>

@@ -322,7 +322,7 @@ onMounted(() => {
     line-height: 0;
 }
 .bid-points-big {
-    font-size: 20px;
+    font-size: 24px;
     font-weight: normal;
     color: var(--ivory);
     margin-left: 10px;
@@ -363,10 +363,10 @@ onMounted(() => {
 }
 .bidtable-toggle {
     position: absolute;
-    top: 80px;
-    left: 300px;
-    padding: 8px 16px;
-    font-size: 14px;
+    top: 72px;
+    left: 380px;
+    padding: 10px 20px;
+    font-size: 18px;
     font-weight: bold;
     color: var(--ink);
     background: var(--ivory);
@@ -466,7 +466,7 @@ onMounted(() => {
     box-sizing: border-box;
     padding: 1px 8px;
     font-family: Arial, sans-serif;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: bold;
     line-height: 1.2;
     white-space: nowrap;
@@ -570,6 +570,8 @@ button.pass-button, button.submit-bid-button {
     top: 12px;
     left: auto;
     right: 12px;
+    padding: 8px 16px;
+    font-size: 14px;
 }
 .portrait .bid-display {
     font-size: 30px;

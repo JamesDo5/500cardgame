@@ -23,12 +23,12 @@ watch(() => feed.value.length, async () => {
     position: absolute;
     right: 20px;
     bottom: 275px;
-    width: 260px;
-    max-height: 180px;
+    width: 290px;
+    max-height: 190px;
     overflow-y: auto;
     color: var(--muted);
     font-family: Arial, sans-serif;
-    font-size: 13px;
+    font-size: 16px;
     background-color: rgba(0, 0, 0, 0.3);
     border-left: 2px solid var(--gold-deep);
     border-radius: 0;
@@ -44,6 +44,7 @@ watch(() => feed.value.length, async () => {
     bottom: calc(565px - var(--hand-shift, 0px));
     width: 330px;
     max-height: 70px;
+    font-size: 13px;
     transition: bottom 0.3s ease;
 }
 </style>

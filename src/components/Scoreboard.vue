@@ -57,10 +57,11 @@ th, tr {
     outline: 2px solid var(--trump-ink, var(--ink));
     box-shadow: 0 0 0 4px var(--gold), 0 6px 16px var(--shadow);
     position: absolute;
-    top: 75px;
-    left: 75px;
+    top: 60px;
+    left: 30px;
     text-align: center;
-    transform: scale(1.5);
+    transform-origin: top left;
+    transform: scale(1.8);
 }
 .score-table {
     overflow-y: auto;

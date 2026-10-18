@@ -1174,8 +1174,8 @@ onBeforeUnmount(() => {
 
 .table-button {
     position: absolute;
-    padding: 8px 22px;
-    font-size: 16px;
+    padding: 10px 26px;
+    font-size: 20px;
     font-weight: bold;
     color: var(--ink);
     background: var(--ivory);
@@ -1199,8 +1199,8 @@ onBeforeUnmount(() => {
     top: 71%;
     left: 50%;
     transform: var(--button-shift);
-    font-size: 24px;
-    padding: 16px 44px;
+    font-size: 28px;
+    padding: 18px 46px;
     border-radius: 0;
 }
 .play-button:disabled, .play-button:disabled:hover {
@@ -1306,7 +1306,7 @@ onBeforeUnmount(() => {
     z-index: 3;
     color: var(--on-felt);
     font-family: Arial, sans-serif;
-    font-size: 20px;
+    font-size: 26px;
     letter-spacing: 1px;
     white-space: nowrap;
     pointer-events: none;
@@ -1323,22 +1323,22 @@ onBeforeUnmount(() => {
     text-overflow: ellipsis;
 }
 .board-caption.mine {
-    font-size: 30px;
+    font-size: 38px;
     font-weight: bold;
     color: var(--gold-bright);
     text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 .board-caption.corner.mine {
-    top: 8px;
-    font-size: 44px;
+    top: 4px;
+    font-size: 48px;
     line-height: 1;
-    max-width: 340px;
+    max-width: 380px;
 }
 .board-caption.lead {
     top: 30%;
     transform: translate(-50%, -50%);
     width: 76%;
-    font-size: 54px;
+    font-size: 62px;
     font-weight: bold;
     letter-spacing: 3px;
     line-height: 1.1;
@@ -1347,7 +1347,7 @@ onBeforeUnmount(() => {
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 .board-caption.lead.mine {
-    font-size: 62px;
+    font-size: 76px;
 }
 .caption-fade-enter-active, .caption-fade-leave-active {
     transition: opacity 0.35s ease;
@@ -1485,7 +1485,7 @@ onBeforeUnmount(() => {
 .suit-chooser-label {
     color: #ecf0f1;
     font-family: Arial, sans-serif;
-    font-size: 14px;
+    font-size: 16px;
     letter-spacing: 1px;
     text-transform: uppercase;
     margin-right: 6px;
@@ -1544,6 +1544,22 @@ onBeforeUnmount(() => {
     top: 100%;
     font-size: 36px;
     padding: 24px 60px;
+}
+.portrait .board-caption {
+    font-size: 20px;
+}
+.portrait .board-caption.mine {
+    font-size: 30px;
+}
+.portrait .board-caption.corner.mine {
+    font-size: 44px;
+    max-width: 340px;
+}
+.portrait .board-caption.lead {
+    font-size: 54px;
+}
+.portrait .board-caption.lead.mine {
+    font-size: 62px;
 }
 .portrait #gameTable {
     --caption-top: 62%;
