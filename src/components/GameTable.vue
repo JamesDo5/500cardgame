@@ -1107,7 +1107,7 @@ onBeforeUnmount(() => {
     width: 800px;
     height: 560px;
     background-color: var(--felt);
-    background-image: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.07), rgba(0, 0, 0, 0.22));
+    background-image: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.16));
     border: 4px solid var(--felt-edge);
     box-sizing: border-box;
     box-shadow: inset 0 0 0 2px var(--gold-deep), 0 10px 30px var(--shadow);
@@ -1205,7 +1205,7 @@ onBeforeUnmount(() => {
 }
 .play-button:disabled, .play-button:disabled:hover {
     background: var(--felt-deep);
-    color: var(--muted);
+    color: var(--on-felt-soft);
     cursor: not-allowed;
     box-shadow: none;
     opacity: 0.7;
@@ -1304,7 +1304,7 @@ onBeforeUnmount(() => {
     left: 50%;
     transform: translateX(-50%);
     z-index: 3;
-    color: var(--ivory);
+    color: var(--on-felt);
     font-family: Arial, sans-serif;
     font-size: 20px;
     letter-spacing: 1px;
@@ -1326,7 +1326,7 @@ onBeforeUnmount(() => {
     font-size: 30px;
     font-weight: bold;
     color: var(--gold-bright);
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+    text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 .board-caption.corner.mine {
     top: 8px;
@@ -1344,7 +1344,7 @@ onBeforeUnmount(() => {
     line-height: 1.1;
     white-space: normal;
     text-align: center;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 .board-caption.lead.mine {
     font-size: 62px;

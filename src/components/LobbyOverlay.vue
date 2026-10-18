@@ -150,12 +150,12 @@ async function share() {
     justify-content: center;
     z-index: 70;
     font-family: Arial, sans-serif;
-    color: var(--ivory);
+    color: var(--on-felt);
 }
 .lobby {
     width: 1240px;
     font-size: 22px;
-    background: var(--felt-deep);
+    background: var(--felt);
     border: 3px solid var(--ivory);
     outline: 3px solid var(--gold-deep);
     padding: 1.75em 2.25em;
@@ -165,6 +165,14 @@ async function share() {
 .lobby .ui-button {
     font-size: 1em;
     padding: 0.625em 1.375em;
+    border-color: var(--ink);
+}
+.lobby .ui-button.danger {
+    color: var(--card-red);
+    border-color: var(--card-red);
+}
+.lobby .ui-button.danger:hover {
+    color: var(--ivory);
 }
 .lobby-top, .lobby-bottom {
     display: flex;
@@ -176,7 +184,7 @@ async function share() {
     font-size: 0.8125em;
     letter-spacing: 0.23em;
     text-transform: uppercase;
-    color: var(--muted);
+    color: var(--on-felt-soft);
 }
 .lobby-id {
     font-size: 3.5em;
@@ -197,18 +205,19 @@ async function share() {
     margin: 1.75em 0;
 }
 .seat {
-    border: 2px solid var(--muted);
+    border: 2px solid var(--on-felt-soft);
     padding: 0.875em 1.125em;
-    background: var(--felt);
+    background: var(--felt-deep);
     min-height: 5.75em;
     min-width: 0;
     box-sizing: border-box;
 }
-.seat.team0 { border-color: var(--gold); }
-.seat.team1 { border-color: var(--card-red-bright); }
-.seat.empty { border-style: dashed; background: rgba(0, 0, 0, 0.2); }
+.seat.team0 { border-color: var(--gold-deep); }
+.seat.team1 { border-color: var(--card-red); }
+.seat.empty { border-style: dashed; background: rgba(0, 0, 0, 0.08); }
 .seat.swappable { cursor: pointer; }
-.seat.swappable:hover { background: var(--felt-deep); }
+.seat.swappable:hover { background: var(--felt-edge); color: var(--ivory); }
+.seat.swappable:hover .seat-label, .seat.swappable:hover .flag { color: var(--ivory-2); border-color: var(--ivory-2); }
 .seat.me { outline: 3px solid var(--ivory); outline-offset: -3px; }
 .seat-top { grid-column: 2; grid-row: 1; }
 .seat-left { grid-column: 1; grid-row: 2; }
@@ -222,14 +231,14 @@ async function share() {
     font-size: 0.9375em;
     line-height: 1.6;
 }
-.teams-note .vs { display: block; color: var(--muted); letter-spacing: 0.13em; }
-.team0 { color: var(--gold-bright); }
-.team1 { color: var(--card-red-bright); }
+.teams-note .vs { display: block; color: var(--on-felt-soft); letter-spacing: 0.13em; }
+.team0 { color: var(--gold-ink); }
+.team1 { color: var(--card-red); }
 .seat-label {
     font-size: 0.75em;
     letter-spacing: 0.17em;
     text-transform: uppercase;
-    color: var(--muted);
+    color: var(--on-felt-soft);
 }
 .seat-name {
     font-size: 1.5em;
@@ -239,25 +248,25 @@ async function share() {
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.seat.empty .seat-name { color: var(--muted); font-weight: normal; }
+.seat.empty .seat-name { color: var(--on-felt-soft); font-weight: normal; }
 .seat-flags { display: flex; gap: 0.5em; min-height: 1.125em; }
 .flag {
     font-size: 0.6875em;
     letter-spacing: 0.09em;
     text-transform: uppercase;
     padding: 1px 0.55em;
-    border: 1px solid var(--muted);
-    color: var(--muted);
+    border: 1px solid var(--on-felt-soft);
+    color: var(--on-felt-soft);
 }
-.flag.host { border-color: var(--gold); color: var(--gold-bright); }
-.flag.away { border-color: var(--card-red-bright); color: var(--card-red-bright); }
-.flag.hint { border: none; padding: 0; text-transform: none; letter-spacing: 0; color: var(--muted); }
-.lobby-status { font-size: 1em; color: var(--muted); }
+.flag.host { border-color: var(--gold-ink); color: var(--gold-ink); }
+.flag.away { border-color: var(--card-red); color: var(--card-red); }
+.flag.hint { border: none; padding: 0; text-transform: none; letter-spacing: 0; color: var(--on-felt-soft); }
+.lobby-status { font-size: 1em; color: var(--on-felt); }
 .pace-tag {
     margin-left: 0.625em;
     padding: 1px 0.375em;
-    border: 1px solid var(--muted);
-    color: var(--muted);
+    border: 1px solid var(--on-felt-soft);
+    color: var(--on-felt-soft);
     letter-spacing: 0.08em;
 }
 .option-rows {
@@ -276,7 +285,7 @@ async function share() {
     font-size: 0.75em;
     letter-spacing: 0.17em;
     text-transform: uppercase;
-    color: var(--muted);
+    color: var(--on-felt-soft);
 }
 .pace-toggle { display: flex; }
 .pace-option {
@@ -287,14 +296,14 @@ async function share() {
     align-items: flex-start;
     gap: 2px;
     padding: 0.5em 0.875em;
-    background: var(--felt);
-    border: 2px solid var(--muted);
-    color: var(--muted);
+    background: var(--felt-deep);
+    border: 2px solid var(--on-felt-soft);
+    color: var(--on-felt);
     cursor: pointer;
     text-align: left;
 }
 .pace-option + .pace-option { border-left: none; }
-.pace-option:hover { background: var(--felt-deep); }
+.pace-option:hover { background: var(--felt-edge); color: var(--ivory); }
 .pace-option.active {
     background: var(--ivory);
     border-color: var(--ivory);

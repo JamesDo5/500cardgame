@@ -80,7 +80,7 @@ function joinGame() {
     letter-spacing: 6px;
     font-weight: 800;
     color: var(--gold-bright);
-    text-shadow: 0 6px 0 var(--felt-edge);
+    text-shadow: 0 6px 0 var(--panel);
 }
 .home-sub { font-size: 18px; color: var(--muted); margin: 12px 0 20px; }
 .home-links { display: flex; gap: 12px; justify-content: center; }
@@ -94,7 +94,7 @@ function joinGame() {
     .home-forms { grid-template-columns: 300px; }
 }
 .panel {
-    background: var(--felt-deep);
+    background: var(--panel);
     border: 3px solid var(--ivory);
     outline: 3px solid var(--gold-deep);
     padding: 22px 24px;
