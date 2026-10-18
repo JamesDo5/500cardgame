@@ -1313,7 +1313,7 @@ onBeforeUnmount(() => {
     pointer-events: none;
 }
 .board-caption.low {
-    top: 90%;
+    top: 91%;
 }
 .board-caption.deal {
     top: 70%;
