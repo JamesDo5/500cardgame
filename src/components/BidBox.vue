@@ -5,13 +5,15 @@
         <div class="bid-sub">{{ bigBid.sub }}</div>
     </div>
     <button v-if="showToggle" class="bidtable-toggle" type="button" @click="toggle">Bid table</button>
-    <div class="bidbox" id="bidbox">
+    <div v-show="tableOpen" class="bid-readouts">
         <div v-for="(d, i) in displayBids" :key="i" class="bid-display" :class="[POS_CLASSES[i], { placed: d.placed }]" :id="POS_IDS[i]">
             <span class="bid-prefix">{{ i === 0 ? 'My bid:' : 'Bid:' }}</span>
             <span v-if="d.pass" class="bid-pass">Pass</span>
             <span v-else-if="d.tricks" class="bid-value" :class="d.colorClass">{{ d.tricks }}<span class="bid-suit">{{ d.symbol }}</span><small class="bid-points">({{ d.points }})</small></span>
             <span v-else class="bid-none">---</span>
         </div>
+    </div>
+    <div class="bidbox" id="bidbox">
         <span class="close-bidbox" id="closeBidBox" @click="hide">&times;</span>
         <div class="bid-grid">
             <div class="bid-corner"></div>
@@ -53,6 +55,7 @@ const TRICK_ROWS = [6, 7, 8, 9, 10];
 const bidAt = (row, col) => 40 + row * 100 + col * 20;
 
 const selected = ref(-1);
+const tableOpen = ref(false);
 const highest = ref(PASS);
 const myTurn = ref(false);
 const highestBy = ref(-1);
@@ -107,11 +110,13 @@ class BidBox {
 
     show() {
         document.getElementById("bidbox").style.display = "inline";
+        tableOpen.value = true;
         this.updateBidDisplays();
     }
 
     hide() {
         document.getElementById("bidbox").style.display = "none";
+        tableOpen.value = false;
     }
 
     toggle() {
@@ -295,7 +300,7 @@ onMounted(() => {
 
 .bid-banner {
     position: absolute;
-    top: 72px;
+    top: 108px;
     right: 25px;
     color: var(--ivory);
     font-family: Arial, sans-serif;
@@ -359,7 +364,7 @@ onMounted(() => {
 }
 .bid-prefix {
     font-size: 0.6em;
-    display: block;
+    margin-right: 10px;
 }
 .bidtable-toggle {
     position: absolute;
@@ -380,35 +385,39 @@ onMounted(() => {
     background: var(--gold);
 }
 
+.bid-readouts {
+    display: contents;
+}
 .bid-display {
     position: absolute;
-    transform: translate(-50%, 50%);
-    font-size: 36px;
+    font-size: 32px;
+    line-height: 1.2;
+    padding: 3px 14px;
     color: var(--ivory);
+    background: rgba(8, 18, 12, 0.7);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
     font-family: Arial, sans-serif;
     text-align: center;
     white-space: nowrap;
+    z-index: 8;
 }
 .bottom-bid {
-    bottom: -45px;
-    left: 50%;
+    top: 60px;
+    right: 25px;
 }
 .left-bid {
-    left: -62px;
-    bottom: 50%;
+    left: 200px;
+    top: 482px;
+    transform: translateX(-50%);
 }
 .top-bid {
-    top: -70px;
-    left: calc(50% + 190px);
-}
-.top-bid .bid-prefix, .bottom-bid .bid-prefix {
-    display: inline;
-    margin-right: 10px;
+    left: 1010px;
+    top: 106px;
 }
 .right-bid {
-    right: -62px;
-    bottom: 50%;
-    transform: translate(50%, 50%);
+    left: 1400px;
+    top: 482px;
+    transform: translateX(-50%);
 }
 
 .bid-grid {
@@ -528,17 +537,18 @@ button.pass-button, button.submit-bid-button {
 }
 
 .portrait .bidbox {
-    top: 600px;
+    top: 640px;
+    transform: translateX(-50%);
     width: 527px;
     padding: 14px;
 }
 .portrait .bid-grid {
     grid-template-columns: 44px repeat(5, minmax(0, 1fr));
-    grid-auto-rows: 62px;
+    grid-auto-rows: 50px;
     gap: 5px;
 }
 .portrait .bid-grid > :nth-child(-n + 6) {
-    height: 44px;
+    height: 40px;
 }
 .portrait .bid-head {
     font-size: 36px;
@@ -574,26 +584,27 @@ button.pass-button, button.submit-bid-button {
     font-size: 14px;
 }
 .portrait .bid-display {
-    font-size: 30px;
-}
-.portrait .left-bid, .portrait .top-bid, .portrait .right-bid {
-    bottom: auto;
-    top: -110px;
-}
-.portrait .top-bid {
-    left: 50%;
-}
-.portrait .top-bid .bid-prefix {
-    display: block;
-    margin-right: 0;
+    font-size: 26px;
+    padding: 2px 10px;
 }
 .portrait .left-bid {
-    left: 22%;
+    left: 90px;
+    top: 596px;
 }
 .portrait .right-bid {
-    right: 22%;
+    left: 710px;
+    top: 596px;
+}
+.portrait .top-bid {
+    left: 400px;
+    top: 262px;
+    transform: translateX(-50%);
 }
 .portrait .bottom-bid {
-    bottom: -60px;
+    top: auto;
+    right: auto;
+    left: 110px;
+    bottom: 612px;
+    transform: translateX(-50%);
 }
 </style>
