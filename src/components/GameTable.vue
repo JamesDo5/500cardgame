@@ -1577,14 +1577,14 @@ onBeforeUnmount(() => {
     transform: translate(-50%, -62%) scale(0.92);
 }
 .portrait .board-caption.lead {
-    top: 42%;
+    top: 36%;
 }
 .portrait .suit-chooser {
     top: 100%;
     transform: translate(-50%, -300px);
 }
 .portrait #blindCards {
-    top: 25%;
+    top: 23%;
 }
 .portrait #blindCards :deep(.real-card), .portrait #blindCards :deep(.hand-card) {
     margin-right: -20px;

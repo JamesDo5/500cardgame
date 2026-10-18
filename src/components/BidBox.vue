@@ -411,7 +411,7 @@ onMounted(() => {
     transform: translateX(-50%);
 }
 .top-bid {
-    left: 1010px;
+    left: 1030px;
     top: 106px;
 }
 .right-bid {
@@ -573,8 +573,14 @@ button.pass-button, button.submit-bid-button {
     top: 56px;
     right: 20px;
 }
+.portrait .bid-caption {
+    font-size: 32px;
+}
 .portrait .bid-big {
-    font-size: 100px;
+    font-size: 90px;
+}
+.portrait .bid-sub {
+    margin-top: 4px;
 }
 .portrait .bidtable-toggle {
     top: 12px;
@@ -588,23 +594,23 @@ button.pass-button, button.submit-bid-button {
     padding: 2px 10px;
 }
 .portrait .left-bid {
-    left: 90px;
+    left: 118px;
     top: 596px;
 }
 .portrait .right-bid {
-    left: 710px;
+    left: 682px;
     top: 596px;
 }
 .portrait .top-bid {
     left: 400px;
-    top: 262px;
+    top: 274px;
     transform: translateX(-50%);
 }
 .portrait .bottom-bid {
     top: auto;
     right: auto;
-    left: 110px;
-    bottom: 612px;
-    transform: translateX(-50%);
+    left: 20px;
+    bottom: 600px;
+    transform: none;
 }
 </style>

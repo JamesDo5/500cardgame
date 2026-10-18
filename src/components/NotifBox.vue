@@ -35,6 +35,9 @@ watch(notice, (msg) => {
     z-index: 50;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
+.portrait .notif-box {
+    font-size: 20px;
+}
 .notif-enter-active, .notif-leave-active {
     transition: opacity 0.3s, transform 0.3s;
 }
