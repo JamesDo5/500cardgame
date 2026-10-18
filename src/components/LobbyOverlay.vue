@@ -3,7 +3,8 @@ import { computed, ref } from 'vue';
 import { useStore } from 'vuex'
 import { socket } from '../net/socket.js';
 import { C2S, PACE } from '../net/messages.js';
-import { gameLink, saveThemeLevel, THEME_LEVELS } from '../session.js';
+import { gameLink } from '../session.js';
+import { THEME_OPTIONS, CARD_ART_OPTIONS, chooseThemeLevel, chooseCardArt } from '../settings.js';
 import { mode, WIKIPEDIA_URL, RELAXED_MULTIPLIER } from '../config.js';
 
 const props = defineProps(['gameId']);
@@ -32,10 +33,7 @@ const PACES = [
     { value: PACE.RELAXED, label: 'Relaxed', hint: `Timers ${RELAXED_MULTIPLIER}x longer` },
 ];
 const themeLevel = computed(() => store.state.themeLevel);
-const THEMES = [
-    { value: THEME_LEVELS.LIGHT, label: 'Light', hint: 'Tab icon and card backs' },
-    { value: THEME_LEVELS.FULL, label: 'Full', hint: 'Table, colors and more' },
-];
+const cardArt = computed(() => store.state.cardArt);
 
 function seatClick(pos) {
     if (pos === 0 || mode.standalone) return;
@@ -49,11 +47,6 @@ function setPace(value) {
     if (value === pace.value) return;
     if (mode.standalone) { store.commit('setPace', value); return; }
     socket.send(C2S.SET_PACE, { pace: value });
-}
-function setThemeLevel(value) {
-    if (value === themeLevel.value) return;
-    saveThemeLevel(value);
-    store.commit('setThemeLevel', value);
 }
 async function share() {
     const link = gameLink(props.gameId);
@@ -114,9 +107,18 @@ async function share() {
                 <div class="pace-row theme-row">
                     <div class="pace-label">Trump theme</div>
                     <div class="pace-toggle">
-                        <button v-for="t in THEMES" :key="t.value" class="pace-option theme-option" :class="{ active: themeLevel === t.value }" type="button" :aria-pressed="themeLevel === t.value" @click="setThemeLevel(t.value)">
+                        <button v-for="t in THEME_OPTIONS" :key="t.value" class="pace-option theme-option" :class="{ active: themeLevel === t.value }" type="button" :aria-pressed="themeLevel === t.value" @click="chooseThemeLevel(store, t.value)">
                             <span class="pace-name">{{ t.label }}</span>
                             <span class="pace-hint">{{ t.hint }}</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="pace-row art-row">
+                    <div class="pace-label">Card art</div>
+                    <div class="pace-toggle">
+                        <button v-for="a in CARD_ART_OPTIONS" :key="a.value" class="pace-option art-option" :class="{ active: cardArt === a.value }" type="button" :aria-pressed="cardArt === a.value" @click="chooseCardArt(store, a.value)">
+                            <span class="pace-name">{{ a.label }}</span>
+                            <span class="pace-hint">{{ a.hint }}</span>
                         </button>
                     </div>
                 </div>
@@ -148,57 +150,74 @@ async function share() {
     justify-content: center;
     z-index: 70;
     font-family: Arial, sans-serif;
-    color: var(--ivory);
+    color: var(--on-felt);
 }
 .lobby {
-    width: 900px;
-    background: var(--felt-deep);
+    width: 1240px;
+    font-size: 22px;
+    background: var(--felt);
     border: 3px solid var(--ivory);
     outline: 3px solid var(--gold-deep);
-    padding: 28px 36px;
+    padding: 1.75em 2.25em;
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    box-sizing: border-box;
+}
+.lobby .ui-button {
+    font-size: 1em;
+    padding: 0.625em 1.375em;
+    border-color: var(--ink);
+}
+.lobby .ui-button.danger {
+    color: var(--card-red);
+    border-color: var(--card-red);
+}
+.lobby .ui-button.danger:hover {
+    color: var(--ivory);
 }
 .lobby-top, .lobby-bottom {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 16px;
+    gap: 1em;
 }
 .lobby-kicker {
-    font-size: 13px;
-    letter-spacing: 3px;
+    font-size: 0.8125em;
+    letter-spacing: 0.23em;
     text-transform: uppercase;
-    color: var(--muted);
+    color: var(--on-felt-soft);
 }
 .lobby-id {
-    font-size: 56px;
+    font-size: 3.5em;
     font-weight: 800;
-    letter-spacing: 10px;
+    letter-spacing: 0.18em;
     line-height: 1;
 }
 .lobby-actions {
     display: flex;
-    gap: 10px;
+    gap: 0.625em;
 }
 .seat-grid {
     position: relative;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-template-rows: auto auto auto;
-    gap: 12px;
-    margin: 28px 0;
+    gap: 0.75em;
+    margin: 1.75em 0;
 }
 .seat {
-    border: 2px solid var(--muted);
-    padding: 14px 18px;
-    background: var(--felt);
-    min-height: 92px;
+    border: 2px solid var(--on-felt-soft);
+    padding: 0.875em 1.125em;
+    background: var(--felt-deep);
+    min-height: 5.75em;
+    min-width: 0;
+    box-sizing: border-box;
 }
-.seat.team0 { border-color: var(--gold); }
-.seat.team1 { border-color: var(--card-red-bright); }
-.seat.empty { border-style: dashed; background: rgba(0, 0, 0, 0.2); }
+.seat.team0 { border-color: var(--gold-deep); }
+.seat.team1 { border-color: var(--card-red); }
+.seat.empty { border-style: dashed; background: rgba(0, 0, 0, 0.08); }
 .seat.swappable { cursor: pointer; }
-.seat.swappable:hover { background: var(--felt-deep); }
+.seat.swappable:hover { background: var(--felt-edge); color: var(--ivory); }
+.seat.swappable:hover .seat-label, .seat.swappable:hover .flag { color: var(--ivory-2); border-color: var(--ivory-2); }
 .seat.me { outline: 3px solid var(--ivory); outline-offset: -3px; }
 .seat-top { grid-column: 2; grid-row: 1; }
 .seat-left { grid-column: 1; grid-row: 2; }
@@ -209,88 +228,89 @@ async function share() {
     grid-row: 2;
     align-self: center;
     text-align: center;
-    font-size: 15px;
+    font-size: 0.9375em;
     line-height: 1.6;
 }
-.teams-note .vs { display: block; color: var(--muted); letter-spacing: 2px; }
-.team0 { color: var(--gold-bright); }
-.team1 { color: var(--card-red-bright); }
+.teams-note .vs { display: block; color: var(--on-felt-soft); letter-spacing: 0.13em; }
+.team0 { color: var(--gold-ink); }
+.team1 { color: var(--card-red); }
 .seat-label {
-    font-size: 12px;
-    letter-spacing: 2px;
+    font-size: 0.75em;
+    letter-spacing: 0.17em;
     text-transform: uppercase;
-    color: var(--muted);
+    color: var(--on-felt-soft);
 }
 .seat-name {
-    font-size: 24px;
+    font-size: 1.5em;
     font-weight: 700;
-    margin: 4px 0;
+    margin: 0.17em 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.seat.empty .seat-name { color: var(--muted); font-weight: normal; }
-.seat-flags { display: flex; gap: 8px; min-height: 18px; }
+.seat.empty .seat-name { color: var(--on-felt-soft); font-weight: normal; }
+.seat-flags { display: flex; gap: 0.5em; min-height: 1.125em; }
 .flag {
-    font-size: 11px;
-    letter-spacing: 1px;
+    font-size: 0.6875em;
+    letter-spacing: 0.09em;
     text-transform: uppercase;
-    padding: 1px 6px;
-    border: 1px solid var(--muted);
-    color: var(--muted);
+    padding: 1px 0.55em;
+    border: 1px solid var(--on-felt-soft);
+    color: var(--on-felt-soft);
 }
-.flag.host { border-color: var(--gold); color: var(--gold-bright); }
-.flag.away { border-color: var(--card-red-bright); color: var(--card-red-bright); }
-.flag.hint { border: none; padding: 0; text-transform: none; letter-spacing: 0; color: var(--muted); }
-.lobby-status { font-size: 16px; color: var(--muted); }
+.flag.host { border-color: var(--gold-ink); color: var(--gold-ink); }
+.flag.away { border-color: var(--card-red); color: var(--card-red); }
+.flag.hint { border: none; padding: 0; text-transform: none; letter-spacing: 0; color: var(--on-felt-soft); }
+.lobby-status { font-size: 1em; color: var(--on-felt); }
 .pace-tag {
-    margin-left: 10px;
-    padding: 1px 6px;
-    border: 1px solid var(--muted);
-    color: var(--muted);
-    letter-spacing: 1px;
+    margin-left: 0.625em;
+    padding: 1px 0.375em;
+    border: 1px solid var(--on-felt-soft);
+    color: var(--on-felt-soft);
+    letter-spacing: 0.08em;
 }
 .option-rows {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 16px 40px;
-    margin-bottom: 20px;
+    gap: 1em 2.5em;
+    margin-bottom: 1.25em;
 }
 .pace-row {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 1em;
 }
 .pace-label {
-    font-size: 12px;
-    letter-spacing: 2px;
+    font-size: 0.75em;
+    letter-spacing: 0.17em;
     text-transform: uppercase;
-    color: var(--muted);
+    color: var(--on-felt-soft);
 }
 .pace-toggle { display: flex; }
 .pace-option {
     font-family: inherit;
+    font-size: 1em;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 2px;
-    padding: 8px 14px;
-    background: var(--felt);
-    border: 2px solid var(--muted);
-    color: var(--muted);
+    padding: 0.5em 0.875em;
+    background: var(--felt-deep);
+    border: 2px solid var(--on-felt-soft);
+    color: var(--on-felt);
     cursor: pointer;
     text-align: left;
 }
 .pace-option + .pace-option { border-left: none; }
-.pace-option:hover { background: var(--felt-deep); }
+.pace-option:hover { background: var(--felt-edge); color: var(--ivory); }
 .pace-option.active {
     background: var(--ivory);
     border-color: var(--ivory);
     color: var(--ink);
 }
-.pace-name { font-size: 15px; font-weight: 700; }
-.pace-hint { font-size: 11px; }
+.pace-name { font-size: 0.9375em; font-weight: 700; }
+.pace-hint { font-size: 0.6875em; }
 .pace-option.active .pace-hint { color: var(--ink-soft); }
 
 .portrait .lobby-overlay {
@@ -298,6 +318,12 @@ async function share() {
     touch-action: pan-y;
 }
 .portrait .lobby {
-    width: 720px;
+    width: 780px;
+    font-size: 16px;
+    padding: 1.5em 1.75em;
+}
+.portrait .lobby .ui-button {
+    font-size: 0.875em;
+    padding: 0.5em 0.9em;
 }
 </style>

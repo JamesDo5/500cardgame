@@ -21,8 +21,15 @@ export function isValidBid(bid) {
 }
 
 const FACE_VALUES = { J: 11, Q: 12, K: 13, A: 14 };
-const LEFT_BOWER_OF = { s: 'Jc', c: 'Js', d: 'Jh', h: 'Jd' };
-const RIGHT_BOWER_OF = { s: 'Js', c: 'Jc', d: 'Jd', h: 'Jh' };
+export const LEFT_BOWER_OF = { s: 'Jc', c: 'Js', d: 'Jh', h: 'Jd' };
+export const RIGHT_BOWER_OF = { s: 'Js', c: 'Jc', d: 'Jd', h: 'Jh' };
+
+export function bowerOf(cardStr, trump) {
+    if (!trump || trump === NO_TRUMP) return '';
+    if (cardStr === RIGHT_BOWER_OF[trump]) return 'right';
+    if (cardStr === LEFT_BOWER_OF[trump]) return 'left';
+    return '';
+}
 
 export function effectiveSuit(cardStr, trump) {
     if (cardStr === JOKER) return trump;
@@ -139,21 +146,22 @@ export function gameOutcome(scores, bidTeam, made) {
     return -1;
 }
 
-const SUIT_ORDER = ['s', 'c', 'd', 'h'];
-export function sortHand(hand, trump) {
+const SUIT_ORDER = ['h', 'd', 'c', 's'];
+export function sortHand(hand, trump, descending = true) {
     const order = trump && trump !== NO_TRUMP ? [trump, ...SUIT_ORDER.filter(s => s !== trump)] : SUIT_ORDER.slice();
     const t = trump || NO_TRUMP;
+    const dir = descending ? -1 : 1;
     const rank = (card) => {
-        if (card === JOKER) return [-1, -100];
+        if (card === JOKER) return [-1, 0];
         const suit = effectiveSuit(card, t);
         const strength = cardStrength(card, t);
         const jackBoost = cardStr2CardObj(card).v === 'J' && strength === 11 ? 14.5 : strength;
-        return [order.indexOf(suit), -jackBoost];
+        return [order.indexOf(suit), dir * jackBoost];
     };
     return hand.slice().sort((a, b) => {
         const [sa, va] = rank(a), [sb, vb] = rank(b);
         return sa - sb || va - vb;
-    }).reverse();
+    });
 }
 
 const NAIVE_SUIT_ORDER = ['s', 'c', 'd', 'h'];

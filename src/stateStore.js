@@ -1,6 +1,6 @@
 import Vuex from 'vuex'
 import { DEFAULT_PACE } from './config.js';
-import { loadThemeLevel } from './session.js';
+import { loadThemeLevel, loadCardArt } from './session.js';
 
 const FEED_MAX = 30;
 
@@ -21,6 +21,7 @@ export default new Vuex.Store({
         turn: { pos: -1, deadlineMs: 0, startedMs: 0 },
         cardCounts: [10, 10, 10, 10],
         trickCards: ['', '', '', ''],
+        trickLeader: -1,
         jokerSuit: '',
         firstCardPlayed: false,
         gameWinner: -1,
@@ -29,11 +30,13 @@ export default new Vuex.Store({
         lobby: { seats: [], hostPos: -1, canStart: false },
         pace: DEFAULT_PACE,
         themeLevel: loadThemeLevel(),
+        cardArt: loadCardArt(),
         joinError: '',
         rematchAtMs: 0,
         autoBots: true,
         timersEnabled: true,
         stagedCards: [],
+        blindBoxCount: 0,
         blindFaceDown: false,
         notice: '',
         feed: [],
@@ -90,6 +93,7 @@ export default new Vuex.Store({
             state.rematchAtMs = 0;
             state.handCards = [];
             state.trickCards = ['', '', '', ''];
+            state.trickLeader = -1;
             state.jokerSuit = '';
             state.feed = [];
         },
@@ -97,6 +101,7 @@ export default new Vuex.Store({
         setCardCount(state, { pos, n }) { state.cardCounts[pos] = Math.max(0, n); },
         resetCardCounts(state) { state.cardCounts = [10, 10, 10, 10]; },
         setTrickCards(state, arr) { state.trickCards = arr.slice(); },
+        setTrickLeader(state, pos) { state.trickLeader = pos; },
         setJokerSuit(state, s) { state.jokerSuit = s; },
         setFirstCardPlayed(state, b) { state.firstCardPlayed = b; },
         setGameWinner(state, t) { state.gameWinner = t; },
@@ -105,11 +110,13 @@ export default new Vuex.Store({
         setLobby(state, lobby) { state.lobby = lobby; },
         setPace(state, pace) { state.pace = pace; },
         setThemeLevel(state, level) { state.themeLevel = level; },
+        setCardArt(state, art) { state.cardArt = art; },
         setJoinError(state, msg) { state.joinError = msg; },
         setRematchAt(state, ms) { state.rematchAtMs = ms; },
         setAutoBots(state, b) { state.autoBots = b; },
         setTimersEnabled(state, b) { state.timersEnabled = b; },
         setStagedCards(state, arr) { state.stagedCards = arr.slice(); },
+        setBlindBoxCount(state, n) { state.blindBoxCount = n; },
         setBlindFaceDown(state, b) { state.blindFaceDown = b; },
         notify(state, msg) { state.notice = msg; },
         clearNotice(state) { state.notice = ''; },

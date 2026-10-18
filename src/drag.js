@@ -334,9 +334,15 @@ function finishDrag(tap, cancelled) {
         place(d, d.zone, d.index);
     } else if (tap) {
         const want = cfg.onTap(d.el, d.zone);
-        spin = want === 'spin';
-        to = want && !spin && want !== d.zone && zoneOf(want)?.el() ? want : d.zone;
-        place(d, to, to === d.zone ? d.index : -1);
+        if (!d.el.isConnected) {
+            d.clone.remove();
+            stopIfIdle();
+            return;
+        }
+        const wantZone = typeof want === 'string' ? want : want?.zone ?? '';
+        spin = wantZone === 'spin';
+        to = wantZone && !spin && wantZone !== d.zone && zoneOf(wantZone)?.el() ? wantZone : d.zone;
+        place(d, to, to === d.zone ? d.index : typeof want === 'string' ? -1 : want.index ?? -1);
         d.omega = 0;
     }
     if (!zoneOf(to)?.el() || !d.el.isConnected) {

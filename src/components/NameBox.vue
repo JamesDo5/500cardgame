@@ -54,18 +54,19 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
 
 <style scoped>
 .namecard-wrapper {
+    --plate-shift: translate(-50%, -50%);
     position: absolute;
     display: inline-block;
     z-index: 5;
     transition: all 0.3s ease;
-    transform: translate(-50%, -50%);
+    transform: var(--plate-shift);
 }
 .namecard-wrapper:hover {
-    transform: translate(-50%, -50%) scale(1.05);
+    transform: var(--plate-shift) scale(1.05);
 }
 #nameboxLeftCards {
     top: 440px;
-    left: 200px;
+    left: 206px;
 }
 #nameboxTopCards {
     top: 125px;
@@ -73,24 +74,43 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
 }
 #nameboxRightCards {
     top: 440px;
-    left: 1400px;
+    left: 1394px;
 }
 #nameboxMe {
+    --plate-shift: translateY(-50%);
     top: 32px;
-    left: 1420px;
+    right: 20px;
+}
+#nameboxMe .namecard-bg, #nameboxMe .namecard {
+    display: none;
+}
+#nameboxMe .player-name {
+    padding: 6px 0;
+    gap: 12px;
+    color: var(--ivory);
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+#nameboxMe .name-text {
+    max-width: 250px;
+}
+#nameboxTopCards .name-text {
+    max-width: 180px;
 }
 #nameboxMe .player-name::before {
     content: var(--me-glyph);
-    color: var(--trump-ink, var(--ink));
-    font-size: 20px;
+    color: var(--trump-on-felt, var(--ivory));
+    font-size: 26px;
     line-height: 1;
 }
 :root[data-trump="n"][data-theme-level="full"] #nameboxMe .player-name::before {
-    font-size: 11px;
+    font-size: 14px;
     font-weight: 800;
-    padding: 2px 4px;
-    border: 2px solid var(--trump-ink);
-    color: var(--trump-ink);
+    padding: 2px 5px;
+    border: 2px solid var(--trump-on-felt);
+    color: var(--trump-on-felt);
 }
 
 .namecard-bg {
@@ -109,24 +129,29 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
     opacity: 0.8;
     z-index: 2;
 }
-.namecard-wrapper.dealer .namecard-bg {
-    background: linear-gradient(90deg, var(--gold), var(--gold-deep), var(--gold), var(--gold-deep));
-    background-size: 300% 100%;
-    opacity: 0.95;
-    animation: dealerShimmer 3s linear infinite;
-}
 .namecard-wrapper.turn .namecard-bg {
     background: linear-gradient(45deg, var(--gold-bright), var(--gold));
-    opacity: 0.9;
+    opacity: 1;
+    box-shadow: 0 0 14px 3px rgba(241, 209, 106, 0.7);
+    animation: turnPulse 1.4s ease-in-out infinite;
 }
-.namecard-wrapper.dealer.turn .namecard-bg {
-    background: linear-gradient(90deg, var(--gold), var(--card-red), var(--gold), var(--card-red));
-    background-size: 300% 100%;
-    animation: dealerShimmer 1.5s linear infinite;
+#nameboxMe.turn .player-name {
+    color: var(--gold-bright);
+    text-shadow: 0 0 14px rgba(241, 209, 106, 0.9), 0 2px 6px rgba(0, 0, 0, 0.6);
+    animation: turnTextPulse 1.4s ease-in-out infinite;
 }
-@keyframes dealerShimmer {
-    0% { background-position: 0% 50%; }
-    100% { background-position: 300% 50%; }
+@keyframes turnPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(241, 209, 106, 0.85), 0 0 10px 2px rgba(241, 209, 106, 0.5); }
+    50% { box-shadow: 0 0 0 8px rgba(241, 209, 106, 0), 0 0 24px 6px rgba(241, 209, 106, 0.8); }
+}
+@keyframes turnTextPulse {
+    0%, 100% { text-shadow: 0 0 6px rgba(241, 209, 106, 0.5), 0 2px 6px rgba(0, 0, 0, 0.6); }
+    50% { text-shadow: 0 0 18px rgba(241, 209, 106, 1), 0 0 32px rgba(241, 209, 106, 0.6), 0 2px 6px rgba(0, 0, 0, 0.6); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .namecard-wrapper.turn .namecard-bg, #nameboxMe.turn .player-name {
+        animation: none;
+    }
 }
 
 .namecard {
@@ -143,39 +168,45 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
 
 .player-name {
     position: relative;
-    padding: 12px 24px;
+    padding: 14px 24px;
     color: var(--ink);
+    font-size: 22px;
     letter-spacing: 1px;
     font-weight: 600;
     font-family: Arial, sans-serif;
     z-index: 2;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     white-space: nowrap;
+}
+.name-text {
+    max-width: 270px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .dealer-chip {
     display: inline-block;
-    padding: 0 7px;
+    padding: 1px 9px;
     border-radius: 0;
     background-color: var(--card-red);
     color: var(--ivory);
-    font-size: 12px;
+    font-size: 16px;
     font-weight: 800;
 }
 
 .cat-clock {
     position: relative;
-    width: 34px;
-    height: 34px;
+    width: 44px;
+    height: 44px;
     display: inline-block;
     animation: catTick 1s ease-in-out infinite alternate;
 }
 .clock-ring {
     position: absolute;
     inset: 0;
-    width: 34px;
-    height: 34px;
+    width: 44px;
+    height: 44px;
     transform: rotate(-90deg);
 }
 .ring-bg {
@@ -199,18 +230,18 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 15px;
+    font-size: 19px;
     line-height: 1;
 }
 .clock-seconds {
     position: absolute;
-    bottom: -6px;
-    right: -8px;
+    bottom: -7px;
+    right: -9px;
     background: var(--ink);
     border-radius: 0;
-    padding: 0 4px;
-    font-size: 10px;
-    line-height: 12px;
+    padding: 0 5px;
+    font-size: 13px;
+    line-height: 16px;
     color: var(--gold-bright);
 }
 .cat-clock.urgent .clock-seconds {
@@ -222,35 +253,46 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
 }
 
 .portrait #nameboxLeftCards {
-    top: calc(565px + var(--hand-shift, 0px));
-    left: 90px;
+    top: 565px;
+    left: 118px;
 }
 .portrait #nameboxTopCards {
-    top: calc(240px + var(--hand-shift, 0px));
+    top: 248px;
     left: 400px;
 }
 .portrait #nameboxRightCards {
-    top: calc(565px + var(--hand-shift, 0px));
+    --plate-shift: translate(50%, -50%);
+    top: 565px;
     left: auto;
-    right: 90px;
-    transform: translate(50%, -50%);
+    right: 118px;
 }
 .portrait #nameboxMe {
+    --plate-shift: none;
     top: auto;
-    bottom: calc(565px - var(--hand-shift, 0px));
-    left: 110px;
-    transform: translate(-50%, 0);
+    right: auto;
+    bottom: 565px;
+    left: 20px;
+}
+.portrait #nameboxMe:hover {
+    transform: scale(1.05);
 }
 .portrait .player-name {
     box-sizing: border-box;
-    max-width: 170px;
-    padding: 6px 10px;
-    gap: 6px;
-    font-size: 14px;
+    max-width: 220px;
+    padding: 8px 12px;
+    gap: 8px;
+    font-size: 18px;
     letter-spacing: 0.5px;
     white-space: normal;
 }
+.portrait #nameboxMe .player-name {
+    max-width: 210px;
+    padding: 4px 0;
+    font-size: 20px;
+    white-space: nowrap;
+}
 .portrait .name-text {
+    max-width: none;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
@@ -258,6 +300,11 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
     min-width: 0;
     line-height: 1.2;
     overflow-wrap: break-word;
+}
+.portrait #nameboxMe .name-text {
+    display: block;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .portrait .dealer-chip, .portrait .cat-clock {
     flex-shrink: 0;

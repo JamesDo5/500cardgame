@@ -1,4 +1,6 @@
 
+import { CARD_ARTS } from '../session.js';
+
 export const SUITS = ['s', 'c', 'd', 'h'];
 export const VALUES = ['4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 export const JOKER = 'j';
@@ -58,6 +60,21 @@ export function cardImageUrl(cardStr) {
 }
 export const CARD_BACK_URL = `${ASSET_BASE}cards/cat_cardback.jpeg`;
 
+let simpleArt = false;
+export function cardFaceUrl(cardStr) {
+    return simpleArt ? cardPlaceholderSvg(cardStr) : cardImageUrl(cardStr);
+}
+
+export function applyCardArt(art) {
+    simpleArt = art === CARD_ARTS.SIMPLE;
+    document.querySelectorAll('[data-card]:not(.card-back)').forEach(ele => {
+        const card = ele.dataset.card;
+        if (!isValidCardStr(card)) return;
+        const img = ele instanceof HTMLImageElement ? ele : ele.querySelector('img');
+        if (img) img.src = cardFaceUrl(card);
+    });
+}
+
 const preloaded = new Set();
 export function preloadCardImages(cards) {
     cards.forEach(card => {
@@ -99,9 +116,10 @@ export function cardPlaceholderSvg(cardStr) {
         const label = joker ? 'JOKER' : v;
         const sym = joker ? '★' : SUIT_SYMBOLS[s];
         const color = RED_SUITS.has(s) ? '#c0392b' : '#111111';
-        const size = joker ? 9 : 16;
-        const corner = `<text x="5" y="18" font-size="${size}" font-weight="bold" font-family="Arial, sans-serif" fill="${color}">${label}</text><text x="5" y="36" font-size="17" font-family="Arial, sans-serif" fill="${color}">${sym}</text>`;
-        svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 100"><rect width="70" height="100" fill="#ffffff" stroke="#2c3e50" stroke-width="2"/>${corner}<g transform="rotate(180 35 50)">${corner}</g></svg>`;
+        const size = joker ? 9 : v === '10' ? 16 : 19;
+        const corner = `<text x="5" y="19" font-size="${size}" font-weight="bold" font-family="Arial, sans-serif" fill="${color}">${label}</text><text x="5" y="35" font-size="15" font-family="Arial, sans-serif" fill="${color}">${sym}</text>`;
+        const centre = `<text x="35" y="51" font-size="${joker ? 42 : 38}" font-family="Arial, sans-serif" fill="${color}" text-anchor="middle" dominant-baseline="central">${sym}</text>`;
+        svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 100"><rect width="70" height="100" fill="#ffffff" stroke="#2c3e50" stroke-width="2"/>${corner}<g transform="rotate(180 35 50)">${corner}</g>${centre}</svg>`;
     }
     return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
 }
@@ -131,7 +149,7 @@ export function elem2CardStr(elem) {
 export function produceCardHtml(cardStr, faceDown, outerClass, backUrl = CARD_BACK_URL) {
     const { s } = cardStr2CardObj(cardStr);
     const faceClass = faceDown ? 'card-back' : `card-front ${getSuitClass(s)}`;
-    const src = faceDown ? backUrl : cardImageUrl(cardStr);
+    const src = faceDown ? backUrl : cardFaceUrl(cardStr);
     const placeholder = cardPlaceholderSvg(faceDown ? HIDDEN_CARD : cardStr);
     return `<div class="${outerClass} ${faceClass}" data-card="${cardStr}"><img draggable="false" src="${src}" style="background-image:url('${placeholder}')"></div>`;
 }

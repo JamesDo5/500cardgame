@@ -31,9 +31,12 @@ watch(notice, (msg) => {
     padding: 12px 24px;
     border-radius: 0;
     font-family: Arial, sans-serif;
-    font-size: 20px;
+    font-size: 26px;
     z-index: 50;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+.portrait .notif-box {
+    font-size: 20px;
 }
 .notif-enter-active, .notif-leave-active {
     transition: opacity 0.3s, transform 0.3s;

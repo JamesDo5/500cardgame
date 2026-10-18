@@ -6,7 +6,7 @@
 </template>
 
 <script setup>
-import { onMounted, computed, watch } from 'vue';
+import { onMounted, computed, ref, watch } from 'vue';
 import { useStore } from 'vuex'
 import { cardBackUrl, elem2CardStr, isValidCardStr, preloadCardImages, produceCardHtml } from '../game/cards.js';
 import { sortHand } from '../game/rules.js';
@@ -20,8 +20,10 @@ const store = useStore()
 const backUrl = computed(() => cardBackUrl(activeTrump(store.state)));
 const canSort = computed(() => store.state.gameState >= 1 && store.state.gameState <= 5 && !store.state.firstCardPlayed && store.state.handCards.length > 1);
 
+const sortDescending = ref(true);
 function sortNow() {
-    replaceHand(sortHand(store.getters.getSharedHandCards(), store.state.trumpSuit));
+    replaceHand(sortHand(store.getters.getSharedHandCards(), store.state.trumpSuit, sortDescending.value));
+    sortDescending.value = !sortDescending.value;
 }
 
 function syncOrder() {
@@ -149,9 +151,9 @@ onMounted(() => {
 .sort-button {
     position: absolute;
     bottom: 275px;
-    right: 300px;
-    padding: 8px 18px;
-    font-size: 15px;
+    right: 330px;
+    padding: 10px 22px;
+    font-size: 20px;
     font-weight: bold;
     color: var(--ink);
     background: var(--ivory);
@@ -166,8 +168,23 @@ onMounted(() => {
 }
 
 #bottomCards :deep(.illegal) {
-    opacity: 0.45;
-    filter: grayscale(0.7);
+    filter: grayscale(0.75) brightness(0.7) contrast(0.9);
+    transform: translateY(6px);
+}
+#bottomCards :deep(.illegal.spun) {
+    transform: translateY(6px) rotate(0.5turn);
+}
+#bottomCards :deep(.legal) {
+    z-index: 1;
+    transform: translateY(-8px);
+}
+#bottomCards :deep(.legal.spun) {
+    transform: translateY(-8px) rotate(0.5turn);
+}
+#bottomCards :deep(.legal > *) {
+    outline: 2px solid var(--gold-bright);
+    outline-offset: -1px;
+    box-shadow: -10px 0 18px rgba(0, 0, 0, 0.5), 10px 0 18px rgba(0, 0, 0, 0.5), 0 6px 10px rgba(0, 0, 0, 0.35);
 }
 
 .portrait #bottomCards {
@@ -207,8 +224,9 @@ onMounted(() => {
     transform: translateY(-6px) rotate(0.5turn);
 }
 .portrait .sort-button {
-    bottom: calc(565px - var(--hand-shift, 0px));
+    bottom: 565px;
     right: 20px;
-    transition: bottom 0.3s ease;
+    padding: 8px 18px;
+    font-size: 15px;
 }
 </style>

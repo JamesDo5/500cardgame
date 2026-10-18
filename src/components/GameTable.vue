@@ -1,18 +1,19 @@
 <template>
     <div id="gameTableContainer">
         <div id="gameTable">
-            <img class="fake-card card-played card-played-left" id="playedCardLeft" draggable="false" :src="backUrl">
-            <img class="fake-card card-played card-played-top" id="playedCardTop" draggable="false" :src="backUrl">
-            <img class="fake-card card-played card-played-right" id="playedCardRight" draggable="false" :src="backUrl">
-            <img class="fake-card card-played card-played-bottom" id="playedCardBottom" draggable="false" :src="backUrl">
+            <img class="fake-card card-played card-played-left" id="playedCardLeft" draggable="false">
+            <img class="fake-card card-played card-played-top" id="playedCardTop" draggable="false">
+            <img class="fake-card card-played card-played-right" id="playedCardRight" draggable="false">
+            <img class="fake-card card-played card-played-bottom" id="playedCardBottom" draggable="false">
             <div v-if="jokerBadge" class="joker-badge" :class="[jokerBadge.posClass, jokerBadge.colorClass]">{{ jokerBadge.symbol }}</div>
+            <div v-if="trumpCue" class="trump-cue" :class="[trumpCue.posClass, trumpCue.colorClass, trumpCue.kind]" aria-hidden="true">{{ trumpCue.symbol }}</div>
             <div class="card-row" id="submitCards" :class="{ parked: !showPlayButton, played: myCardPlayed }"></div>
             <div v-if="suitChooserOpen" class="suit-chooser">
                 <div class="suit-chooser-label">Joker leads as</div>
                 <button v-for="s in NOMINATABLE_SUITS" :key="s" class="suit-option" :class="[suitColorClass(s), { chosen: chosenSuit === s }]" type="button" :aria-pressed="chosenSuit === s" @click="chosenSuit = s">{{ SUIT_SYMBOLS[s] }}</button>
             </div>
             <button v-if="showPlayButton" class="table-button play-button" :class="{ armed: playArmed }" type="button" :disabled="!myPlayTurn || suitNeeded" @click="playNow">{{ suitNeeded ? 'Choose' : playArmed ? 'Play card?' : 'Play card' }}</button>
-            <button v-if="showBlindButton" class="table-button blind-button" type="button" :disabled="blindFaceDown" :title="blindFaceDown ? 'Flip the blind over first' : ''" @click="submitBlindNow">{{ blindFaceDown ? 'Flip the blind over first' : 'Submit blind' }}</button>
+            <button v-if="showBlindButton" class="table-button blind-button" type="button" :disabled="!!blindBlocker" :title="blindBlocker" @click="submitBlindNow" @pointerenter="previewBlind($event.pointerType === 'mouse')" @pointerleave="previewBlind(false)" @focus="previewBlind($event.target.matches(':focus-visible'))" @blur="previewBlind(false)">{{ blindBlocker || 'Submit blind' }}</button>
             <div class="card-stack won-tricks-bottom" id="wonTricksBottom"></div>
             <div class="card-stack won-tricks-left" id="wonTricksLeft"></div>
             <div class="card-stack won-tricks-top" id="wonTricksTop"></div>
@@ -20,6 +21,7 @@
             <div class="card-stack discard-blind" id="blindDiscard"></div>
             <div v-if="showBlindStack" class="blind-stack">
                 <img v-for="n in 5" :key="n" class="fake-card card-back blind-stack-card" :src="CARD_BACK_URL">
+                <span class="blind-label">Blind</span>
             </div>
             <div v-if="dealing" class="shuffle">
                 <img v-for="n in 7" :key="n" class="fake-card card-back shuffle-card" draggable="false" :style="{ animationDelay: `${(n - 1) * 0.12}s` }" :src="backUrl">
@@ -27,21 +29,24 @@
             <Transition name="caption-fade">
                 <div v-if="boardCaption" class="board-caption" :class="captionClass">{{ boardCaption }}</div>
             </Transition>
+            <Transition name="announce-fade">
+                <div v-if="handAnnouncement" class="hand-announcement" :class="handAnnouncement.made ? 'made' : 'missed'">{{ handAnnouncement.text }}</div>
+            </Transition>
             <button v-if="dealing && iAmDealer" class="deal-button" type="button" @click="dealNow">Deal</button>
         </div>
-        <div class="card-row" id="blindCards" :class="{ active: showBlindButton }"></div>
+        <div class="card-row" id="blindCards" :class="{ active: showBlindButton, discarding: blindPreview }"></div>
     </div>
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, computed, ref, toRaw, watch } from 'vue';
+import { onMounted, onBeforeUnmount, computed, ref, shallowRef, toRaw, watch } from 'vue';
 import { useStore } from 'vuex'
 import { cardDrag } from '../drag.js';
 import { mode, TURN_TIMEOUT_MS, BID_TIMEOUT_MS, BLIND_TIMEOUT_MS, DEAL_TIMEOUT_MS, TABLE_WIDTH, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS, TRICK_HOLD_MS, CARD_FLY_MS, TRICK_SWEEP_MS, paceMultiplier } from '../config.js';
 import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
-import { CARD_BACK_URL, cardBackUrl, HIDDEN_CARD, JOKER, SUITS, SUIT_SYMBOLS, suitColorClass, cardImageUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, preloadCardImages, dealMock, teamOf } from '../game/cards.js';
-import { NO_TRUMP, trickWinner, trickWinnerWithout, legalPlays, lowestCards, nextToPlay, nextToBid, scoreHand, gameOutcome, nominatesSuit, isNominatableSuit, longestSuit } from '../game/rules.js';
+import { CARD_BACK_URL, cardBackUrl, HIDDEN_CARD, JOKER, SUITS, SUIT_SYMBOLS, suitColorClass, cardFaceUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, preloadCardImages, dealMock, teamOf } from '../game/cards.js';
+import { NO_TRUMP, bowerOf, trickWinner, trickWinnerWithout, legalPlays, lowestCards, nextToPlay, nextToBid, scoreHand, gameOutcome, nominatesSuit, isNominatableSuit, longestSuit, neededTricks, trumpSuitForBid } from '../game/rules.js';
 import { activeTrump } from '../theme.js';
 
 const store = useStore()
@@ -67,6 +72,17 @@ const jokerBadge = computed(() => {
     if (!isNominatableSuit(suit) || pos === -1) return null;
     return { posClass: BADGE_POS_CLASSES[pos], colorClass: suitColorClass(suit), symbol: SUIT_SYMBOLS[suit] };
 });
+const CUE_POS_CLASSES = ['cue-bottom', 'cue-left', 'cue-top', 'cue-right'];
+const trumpCue = computed(() => {
+    const trump = store.state.trumpSuit;
+    const leader = store.state.trickLeader;
+    if (store.state.gameState !== 5 || trump === NO_TRUMP || leader < 0) return null;
+    const card = store.state.trickCards[leader];
+    if (!card) return null;
+    const kind = card === JOKER ? 'joker' : bowerOf(card, trump);
+    if (!kind) return null;
+    return { posClass: CUE_POS_CLASSES[leader], colorClass: suitColorClass(trump), kind, symbol: SUIT_SYMBOLS[trump] };
+});
 const myAction = computed(() => dealing.value ? iAmDealer.value : store.state.turn.pos === 0);
 const boardCaption = computed(() => {
     const gs = store.state.gameState;
@@ -87,14 +103,39 @@ const captionClass = computed(() => {
     const gs = store.state.gameState;
     return {
         mine: myAction.value,
+        deal: gs === 0,
         lead: gs === 5 && leading.value,
         corner: gs === 1 || gs === 2,
         low: gs === 3 || gs === 4,
     };
 });
 const playArmed = computed(() => myPlayTurn.value && store.state.stagedCards.length > 0);
+const HAND_ANNOUNCE_MS = 5000;
+const handResult = shallowRef(null);
+const handAnnouncement = computed(() => {
+    const r = handResult.value;
+    const deltas = store.state.handScores[store.state.handScores.length - 1];
+    if (!r || !deltas || !store.state.handScored) return null;
+    const made = deltas[r.team] > 0;
+    const mine = r.team === 0;
+    const who = mine ? `You and ${names()[2]}` : `${names()[1]} and ${names()[3]}`;
+    const whose = mine ? 'your' : 'their';
+    const label = `${neededTricks(r.bid)}${SUIT_SYMBOLS[trumpSuitForBid(r.bid)]}`;
+    return { made, text: made ? `${who} made ${whose} bid of ${label}!` : `${who} missed ${whose} bid of ${label} :(` };
+});
+function announceHand(team, bid) {
+    const r = { team, bid };
+    handResult.value = r;
+    setTimeout(() => { if (handResult.value === r) handResult.value = null; }, HAND_ANNOUNCE_MS);
+}
 const showBlindButton = computed(() => store.state.gameState === 3 && store.getters.getBidBox()?.winningBidder === 0 && store.state.turn.pos === 0);
 const blindFaceDown = computed(() => store.state.blindFaceDown);
+const blindBlocker = computed(() => blindFaceDown.value ? 'Flip the blind over first' : store.state.blindBoxCount !== 5 ? 'Discard exactly 5 cards to the blind.' : '');
+const blindHover = ref(false);
+const blindPreview = computed(() => blindHover.value && showBlindButton.value && !blindBlocker.value);
+function previewBlind(on) {
+    blindHover.value = on;
+}
 function playNow() {
     store.getters.getGameTable().submitTrick();
 }
@@ -109,9 +150,9 @@ function dealNow() {
 const PARTNER_JOKES = [
     "Your partner had that the whole time.",
     "Your partner swoops in!",
-    "Carried, this time.",
+    "Your partner carried this time.",
     "Your lead, your partner's trick.",
-    "Teamwork. Mostly your partner.",
+    "Teamwork, mostly your partner's.",
     "Your partner saw that coming three tricks ago.",
 ];
 const SOURCE_ELEMENT_IDS = ['submitCards', 'leftCards', 'topCards', 'rightCards'];
@@ -130,6 +171,7 @@ class GameTable {
         this.resolving = false;
         this.resolveTarget = -1;
         this.pendingCards = [];
+        this.stagedFrom = -1;
         this.initDrag();
         this.ticker = setInterval(() => this.tickTurn(), 200);
     }
@@ -164,7 +206,6 @@ class GameTable {
         if (to === 'blind') {
             if (store.state.gameState !== 3 || store.getters.getBidBox()?.winningBidder !== 0) return "That blind isn't yours.";
             if (store.state.blindFaceDown) return "Flip the blind over first.";
-            if (this.domCards('blindCards').filter(c => c !== card).length >= 5) return "Discard exactly 5 cards to the blind.";
             return '';
         }
         return '';
@@ -173,13 +214,47 @@ class GameTable {
     moveCard(card, from, to, fromIndex) {
         if (to === 'play') {
             const box = document.getElementById('submitCards');
-            Array.from(box.children).filter(ele => ele.dataset.card !== card).forEach(ele => cardDrag.flyTo(ele, 'hand', from === 'hand' ? fromIndex : -1));
+            Array.from(box.children).filter(ele => ele.dataset.card !== card).forEach(ele => cardDrag.flyTo(ele, 'hand', this.stagedFrom));
+            this.stagedFrom = from === 'hand' ? fromIndex : -1;
         }
         store.getters.getHand().syncOrder();
         this.submitCards = this.domCards('submitCards');
         this.syncStaged();
-        if (from === 'blind' || to === 'blind') this.blindCards = this.domCards('blindCards');
+        if (from === 'blind' || to === 'blind') this.syncBlindBox();
         this.updateLegalHighlights();
+        if (to === 'play') this.playIfForced();
+    }
+
+    needsNomination(card) {
+        return nominatesSuit(card, this.playedCards, this.lastTrickWinner, store.state.trumpSuit) && !isNominatableSuit(chosenSuit.value);
+    }
+
+    forcedCard(hand) {
+        const legal = this.legal(hand);
+        return legal.length === 1 && !this.needsNomination(legal[0]) ? legal[0] : '';
+    }
+
+    playIfForced() {
+        if (this.submitCards.length !== 1 || store.state.gameState !== 5 || this.resolving || nextToPlay(this.playedCards, this.lastTrickWinner) !== 0) return;
+        const card = this.submitCards[0];
+        if (this.forcedCard(store.getters.getSharedHandCards().concat(card)) === card) this.submitTrick();
+    }
+
+    playFromHand(card) {
+        const hand = store.getters.getSharedHandCards();
+        const rest = hand.filter(c => c !== card);
+        const suit = this.nominationFor(card, rest);
+        cardDrag.abort();
+        document.querySelectorAll(`#bottomCards [data-card="${card}"]`).forEach(ele => ele.remove());
+        store.commit('setSharedHandCards', rest);
+        store.commit('setFirstCardPlayed', true);
+        this.incomingTrickCard(0, card, false, suit);
+        this.sendPlay(card, suit);
+    }
+
+    syncBlindBox() {
+        this.blindCards = this.domCards('blindCards');
+        store.commit('setBlindBoxCount', this.blindCards.length);
     }
 
     myBlindOpen() {
@@ -195,10 +270,18 @@ class GameTable {
             }
             return this.myBlindOpen() ? 'hand' : '';
         }
+        if (zone === 'play') return { zone: 'hand', index: this.stagedFrom };
         if (zone !== 'hand') return '';
         const myTurn = store.state.gameState === 5 && !this.resolving && nextToPlay(this.playedCards, this.lastTrickWinner) === 0;
-        if (myTurn && this.submitCards.length === 0 && this.legal(store.getters.getSharedHandCards()).includes(card)) return 'play';
-        if (this.myBlindOpen() && this.domCards('blindCards').length < 5) return 'blind';
+        if (myTurn && this.submitCards.length === 0) {
+            const hand = store.getters.getSharedHandCards();
+            if (this.forcedCard(hand) === card) {
+                this.playFromHand(card);
+                return '';
+            }
+            if (this.legal(hand).includes(card)) return 'play';
+        }
+        if (this.myBlindOpen()) return 'blind';
         return 'spin';
     }
 
@@ -222,6 +305,7 @@ class GameTable {
 
     syncPlayed() {
         store.commit('setTrickCards', this.playedCards);
+        store.commit('setTrickLeader', this.lastTrickWinner);
     }
 
     unHandify(item) {
@@ -317,11 +401,13 @@ class GameTable {
         store.commit('resetCardCounts');
         store.commit('setFirstCardPlayed', false);
         store.commit('setHandScored', false);
+        handResult.value = null;
         cardDrag.abort();
         document.getElementById('submitCards').innerHTML = "";
         this.syncStaged();
         document.getElementById('blindCards').innerHTML = "";
         document.getElementById('blindCards').style.display = "flex";
+        store.commit('setBlindBoxCount', 0);
         document.getElementById('blindDiscard').style.display = "none";
         store.commit('setBlindFaceDown', false);
         this.clearPlayedCards();
@@ -368,6 +454,7 @@ class GameTable {
         cardsElement.style.display = "flex";
         cardDrag.abort();
         cardsElement.innerHTML = this.blindCards.map(card => produceCardHtml(card, faceDown, 'real-card', backUrl.value)).join('');
+        store.commit('setBlindBoxCount', this.blindCards.length);
         store.commit('setBlindFaceDown', faceDown);
     }
 
@@ -436,6 +523,7 @@ class GameTable {
         cardDrag.abort();
         document.getElementById('blindCards').style.display = "none";
         document.getElementById('blindCards').innerHTML = "";
+        store.commit('setBlindBoxCount', 0);
         const discard = document.getElementById('blindDiscard');
         discard.className = `card-stack discard-blind discard-blind-${getPosName(pos).toLowerCase()}`;
         discard.style.display = "flex";
@@ -473,14 +561,13 @@ class GameTable {
                 return 1;
             }
             const only = legalInHand[0];
-            const rest = hand.filter(c => c !== only);
-            const suit = this.nominationFor(only, rest);
-            cardDrag.abort();
-            document.querySelectorAll(`#bottomCards [data-card="${only}"]`).forEach(ele => ele.remove());
-            store.commit('setSharedHandCards', rest);
-            store.commit('setFirstCardPlayed', true);
-            this.incomingTrickCard(0, only, false, suit);
-            this.sendPlay(only, suit);
+            if (this.needsNomination(only)) {
+                const ele = document.querySelector(`#bottomCards [data-card="${only}"]`);
+                if (ele) cardDrag.flyTo(ele, 'play');
+                store.commit('notify', "Choose a suit!");
+                return 1;
+            }
+            this.playFromHand(only);
             return 0;
         }
         if (submitBoxElement.children.length !== 1) {
@@ -568,7 +655,7 @@ class GameTable {
         store.commit('setCardCount', { pos, n: store.state.cardCounts[pos] - 1 });
         const ele = document.getElementById('playedCard' + getPosName(pos));
         ele.dataset.card = card;
-        ele.src = cardImageUrl(card);
+        ele.src = cardFaceUrl(card);
         ele.className = `fake-card card-played card-played-${getPosName(pos).toLowerCase()} ${getSuitClass(cardStr2CardObj(card).s)}`;
         ele.style.display = "inline";
         this.flyIn(ele, pos);
@@ -656,7 +743,7 @@ class GameTable {
             this.endHand();
             return;
         }
-        this.setTurn(winner);
+        if (store.state.turn.pos !== winner || !store.state.turn.deadlineMs) this.setTurn(winner);
         this.updateLegalHighlights();
         const pending = this.pendingCards;
         this.pendingCards = [];
@@ -699,16 +786,17 @@ class GameTable {
     restoreTrick(playedCards, leader, wonTricks, jokerSuit = '') {
         this.playedCards = playedCards.slice();
         this.playedThisHand = new Set(playedCards.filter(Boolean));
+        this.lastTrickWinner = leader;
         this.syncPlayed();
         store.commit('setJokerSuit', isNominatableSuit(jokerSuit) ? jokerSuit : '');
-        this.lastTrickWinner = leader;
         this.wonTricks = wonTricks.slice();
         this.clearPlayedCards();
         playedCards.forEach((card, pos) => {
             if (!card) return;
             const ele = document.getElementById('playedCard' + getPosName(pos));
             ele.dataset.card = card;
-            ele.src = cardImageUrl(card);
+            ele.src = cardFaceUrl(card);
+            ele.className = `fake-card card-played card-played-${getPosName(pos).toLowerCase()} ${getSuitClass(cardStr2CardObj(card).s)}`;
             ele.style.display = "inline";
         });
         this.renderStacks();
@@ -724,7 +812,8 @@ class GameTable {
     }
 
     renderStacks() {
-        this.wonTricks.forEach((count, pos) => {
+        this.wonTricks.forEach((won, pos) => {
+            const count = dealing.value ? 0 : won;
             const ele = document.getElementById('wonTricks' + getPosName(pos));
             ele.style.visibility = count > 0 ? "visible" : "hidden";
             const cards = Array.from({ length: count }, (_, i) => `<img class="stack-card" src="${CARD_BACK_URL}" style="--i:${i}">`).join('');
@@ -763,6 +852,7 @@ class GameTable {
         const teamTricks = [this.wonTricks[0] + this.wonTricks[2], this.wonTricks[1] + this.wonTricks[3]];
         const { deltas, made } = scoreHand(bid, bidTeam, teamTricks);
         store.commit('addHandScore', deltas);
+        announceHand(bidTeam, bid);
         store.commit('feedPush', `${bidTeam === 0 ? 'We' : 'They'} ${made ? 'made' : 'missed'} ${bid}. Score ${store.state.scores[0]} to ${store.state.scores[1]}.`);
 
         store.commit('setCardCount', { pos: 0, n: 10 });
@@ -794,6 +884,7 @@ class GameTable {
 }
 
 let instance = null;
+watch(dealing, (d) => { if (d) instance?.renderStacks(); });
 onMounted(() => {
     instance = new GameTable();
     store.commit('setSharedGameTable', instance);
@@ -832,11 +923,13 @@ onBeforeUnmount(() => {
     width: 70px;
     height: 100px;
     --s: 1;
-    transform: translate(calc(var(--i) * var(--s) * 2px), calc(var(--i) * -4px)) rotate(calc(var(--s) * 3deg));
+    --q: 0deg;
+    transform: translate(calc(var(--i) * var(--s) * 2px), calc(var(--i) * -4px)) rotate(calc(var(--s) * 3deg + var(--q)));
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45);
 }
 .card-stack :deep(.stack-card:nth-child(even)) {
     --s: -1;
+    --q: 90deg;
 }
 .card-stack :deep(.stack-count) {
     position: relative;
@@ -867,7 +960,7 @@ onBeforeUnmount(() => {
 
 .won-tricks-top {
     top: 10%;
-    left: 35%;
+    left: 24%;
     transform: translate(-50%, -50%) rotate(180deg);
 }
 
@@ -1015,7 +1108,7 @@ onBeforeUnmount(() => {
     width: 800px;
     height: 560px;
     background-color: var(--felt);
-    background-image: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.07), rgba(0, 0, 0, 0.22));
+    background-image: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.16));
     border: 4px solid var(--felt-edge);
     box-sizing: border-box;
     box-shadow: inset 0 0 0 2px var(--gold-deep), 0 10px 30px var(--shadow);
@@ -1043,11 +1136,50 @@ onBeforeUnmount(() => {
     align-items: center;
     background-color: rgba(0, 0, 0, 0.18);
 }
+#blindCards.active {
+    transition: filter 0.25s ease, translate 0.25s ease;
+}
+#blindCards.discarding {
+    filter: grayscale(0.85) brightness(0.8);
+    translate: 0 -10px;
+    animation: blindShake 0.6s ease-in-out infinite;
+}
+#blindCards.discarding :deep(.real-card), #blindCards.discarding :deep(.hand-card) {
+    position: relative;
+}
+#blindCards.discarding :deep(.real-card::after), #blindCards.discarding :deep(.hand-card::after) {
+    content: '';
+    position: absolute;
+    inset: 18%;
+    pointer-events: none;
+    background:
+        linear-gradient(45deg, transparent 46%, rgba(255, 255, 255, 0.55) 46%, rgba(255, 255, 255, 0.55) 54%, transparent 54%),
+        linear-gradient(-45deg, transparent 46%, rgba(255, 255, 255, 0.55) 46%, rgba(255, 255, 255, 0.55) 54%, transparent 54%);
+}
+@keyframes blindShake {
+    0%, 100% { translate: 0 -10px; }
+    25% { translate: -3px -11px; }
+    75% { translate: 3px -9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    #blindCards.discarding {
+        animation: none;
+    }
+}
+#blindCards.active:has(> :nth-child(5)) :deep(:not(:last-child)) {
+    margin-right: -14px;
+}
+#blindCards.active:has(> :nth-child(6)) :deep(:not(:last-child)) {
+    margin-right: -66px;
+}
+#blindCards.active:has(> :nth-child(8)) :deep(:not(:last-child)) {
+    margin-right: -90px;
+}
 
 .table-button {
     position: absolute;
-    padding: 8px 22px;
-    font-size: 16px;
+    padding: 10px 26px;
+    font-size: 20px;
     font-weight: bold;
     color: var(--ink);
     background: var(--ivory);
@@ -1071,13 +1203,13 @@ onBeforeUnmount(() => {
     top: 71%;
     left: 50%;
     transform: var(--button-shift);
-    font-size: 24px;
-    padding: 16px 44px;
+    font-size: 28px;
+    padding: 18px 46px;
     border-radius: 0;
 }
 .play-button:disabled, .play-button:disabled:hover {
     background: var(--felt-deep);
-    color: var(--muted);
+    color: var(--on-felt-soft);
     cursor: not-allowed;
     box-shadow: none;
     opacity: 0.7;
@@ -1106,6 +1238,7 @@ onBeforeUnmount(() => {
     transform: translate(-50%, 140px);
     font-size: 30px;
     padding: 18px 56px;
+    white-space: nowrap;
 }
 .won-tricks-bottom {
     top: 88%;
@@ -1135,6 +1268,20 @@ onBeforeUnmount(() => {
 .blind-stack-card:nth-child(3) { transform: translate(4px, -4px) rotate(2deg); }
 .blind-stack-card:nth-child(4) { transform: translate(6px, -6px) rotate(-1deg); }
 .blind-stack-card:nth-child(5) { transform: translate(8px, -8px) rotate(1deg); }
+.blind-label {
+    position: absolute;
+    left: 4px;
+    top: -4px;
+    transform: translate(-50%, -50%);
+    padding: 0 8px;
+    color: var(--ivory);
+    background: rgba(44, 62, 80, 0.85);
+    font-weight: bold;
+    font-size: 26px;
+    line-height: 1.2;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+    white-space: nowrap;
+}
 
 .shuffle {
     position: absolute;
@@ -1161,15 +1308,20 @@ onBeforeUnmount(() => {
     left: 50%;
     transform: translateX(-50%);
     z-index: 3;
-    color: var(--ivory);
+    color: var(--on-felt);
     font-family: Arial, sans-serif;
-    font-size: 20px;
+    font-size: 26px;
     letter-spacing: 1px;
     white-space: nowrap;
     pointer-events: none;
+    animation: captionBreathe 2.4s ease-in-out infinite;
 }
 .board-caption.low {
-    top: 90%;
+    top: 91%;
+}
+.board-caption.deal {
+    top: 70%;
+    transform: translate(-50%, calc(-100% - 18px));
 }
 .board-caption.corner {
     top: 14px;
@@ -1180,37 +1332,114 @@ onBeforeUnmount(() => {
     text-overflow: ellipsis;
 }
 .board-caption.mine {
-    font-size: 30px;
+    font-size: 38px;
     font-weight: bold;
     color: var(--gold-bright);
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+    text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 2px 8px rgba(0, 0, 0, 0.5);
+    animation: captionGlow 1.8s ease-in-out infinite;
 }
 .board-caption.corner.mine {
-    top: 8px;
-    font-size: 44px;
+    top: 4px;
+    font-size: 48px;
     line-height: 1;
-    max-width: 340px;
+    max-width: 380px;
 }
 .board-caption.lead {
     top: 30%;
     transform: translate(-50%, -50%);
     width: 76%;
-    font-size: 54px;
+    font-size: 62px;
     font-weight: bold;
     letter-spacing: 3px;
     line-height: 1.1;
     white-space: normal;
     text-align: center;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+.board-caption.lead {
+    animation: leadPulse 1.6s ease-in-out infinite;
 }
 .board-caption.lead.mine {
-    font-size: 62px;
+    font-size: 76px;
+    animation: leadGlowPulse 1.6s ease-in-out infinite;
+}
+@keyframes captionBreathe {
+    0%, 100% { color: var(--on-felt-soft); }
+    50% { color: var(--on-felt); }
+}
+@keyframes captionGlow {
+    0%, 100% { text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 2px 8px rgba(0, 0, 0, 0.5); }
+    50% { text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 0 18px rgba(241, 209, 106, 0.9), 0 0 32px rgba(241, 209, 106, 0.6); }
+}
+@keyframes leadPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); color: var(--on-felt-soft); }
+    50% { transform: translate(-50%, -50%) scale(1.05); color: var(--on-felt); }
+}
+@keyframes leadGlowPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 2px 8px rgba(0, 0, 0, 0.5); }
+    50% { transform: translate(-50%, -50%) scale(1.06); text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 0 24px rgba(241, 209, 106, 1), 0 0 48px rgba(241, 209, 106, 0.7); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .board-caption, .board-caption.mine, .board-caption.lead, .board-caption.lead.mine {
+        animation: none;
+    }
 }
 .caption-fade-enter-active, .caption-fade-leave-active {
     transition: opacity 0.35s ease;
 }
 .caption-fade-enter-from, .caption-fade-leave-to {
     opacity: 0;
+}
+.hand-announcement {
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    z-index: 8;
+    padding: 18px 28px;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    font-size: 40px;
+    font-weight: bold;
+    line-height: 1.2;
+    letter-spacing: 1px;
+    color: var(--ivory);
+    background: rgba(20, 32, 44, 0.82);
+    border: 3px solid var(--gold);
+    pointer-events: none;
+    animation: announceGlow 1.6s ease-in-out infinite;
+}
+.hand-announcement.made {
+    --glow: rgba(212, 175, 55, 0.85);
+    color: var(--gold-bright);
+}
+.hand-announcement.missed {
+    --glow: rgba(182, 28, 43, 0.8);
+    border-color: var(--card-red-bright);
+}
+@keyframes announceGlow {
+    0%, 100% { box-shadow: 0 0 12px 2px var(--glow), 0 8px 24px rgba(0, 0, 0, 0.5); text-shadow: 0 0 8px var(--glow); }
+    50% { box-shadow: 0 0 34px 10px var(--glow), 0 8px 24px rgba(0, 0, 0, 0.5); text-shadow: 0 0 22px var(--glow); }
+}
+.announce-fade-enter-active {
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.announce-fade-leave-active {
+    transition: opacity 1.2s ease;
+}
+.announce-fade-enter-from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+}
+.announce-fade-leave-to {
+    opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+    .hand-announcement {
+        animation: none;
+        box-shadow: 0 0 20px 6px var(--glow), 0 8px 24px rgba(0, 0, 0, 0.5);
+    }
 }
 .joker-badge {
     position: absolute;
@@ -1229,10 +1458,50 @@ onBeforeUnmount(() => {
 }
 .joker-badge.suit-red { color: #c0392b; }
 .joker-badge.suit-black { color: #111111; }
-.badge-bottom { top: 77%; left: calc(50% + 92px); }
+.badge-bottom { top: 77%; left: calc(50% + 72px); }
 .badge-top { top: 22%; left: calc(50% - 92px); }
 .badge-left { top: calc(42% - 92px); left: 28%; }
 .badge-right { top: calc(42% + 92px); left: 72%; }
+
+.trump-cue {
+    position: absolute;
+    width: 86px;
+    height: 86px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, sans-serif;
+    font-size: 64px;
+    font-weight: bold;
+    line-height: 1;
+    border-radius: 50%;
+    background: var(--ivory);
+    box-shadow: 0 0 0 3px currentColor, 0 0 0 7px rgba(255, 255, 255, 0.85), 0 0 22px 10px rgba(255, 255, 255, 0.6), 0 8px 16px rgba(0, 0, 0, 0.45);
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    pointer-events: none;
+    animation: cue-breathe 2s ease-in-out infinite;
+}
+.trump-cue.suit-red { color: var(--card-red); }
+.trump-cue.suit-black { color: var(--card-black); }
+.trump-cue.right {
+    width: 56px;
+    height: 56px;
+    font-size: 42px;
+    opacity: 0.8;
+    animation-duration: 2.6s;
+}
+.cue-bottom { top: 77%; left: 50%; }
+.cue-top { top: 22%; left: 50%; }
+.cue-left { top: 42%; left: 28%; }
+.cue-right { top: 42%; left: 72%; }
+@keyframes cue-breathe {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, calc(-50% - 9px)) scale(1.1); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .trump-cue { animation: none; }
+}
 
 .suit-chooser {
     position: absolute;
@@ -1251,7 +1520,7 @@ onBeforeUnmount(() => {
 .suit-chooser-label {
     color: #ecf0f1;
     font-family: Arial, sans-serif;
-    font-size: 14px;
+    font-size: 16px;
     letter-spacing: 1px;
     text-transform: uppercase;
     margin-right: 6px;
@@ -1297,50 +1566,95 @@ onBeforeUnmount(() => {
 }
 
 .portrait #gameTableContainer {
-    top: calc(265px + var(--hand-shift, 0px));
+    top: 265px;
     width: 800px;
     height: 600px;
-    transition: top 0.3s ease;
 }
 .portrait #gameTable {
     height: 600px;
 }
 .portrait .play-button {
-    --button-shift: translateX(110px) translateY(30px);
+    --button-shift: translateY(30px);
     top: 100%;
+    left: auto;
+    right: 30px;
     font-size: 36px;
     padding: 24px 60px;
 }
-.portrait #gameTable {
-    --caption-top: 62%;
+.portrait .board-caption {
+    font-size: 20px;
 }
-.portrait #submitCards {
-    top: 100%;
-    transform: translate(-50%, -62%);
+.portrait .board-caption.mine {
+    font-size: 30px;
 }
-.portrait #submitCards.played {
-    transform: translate(-50%, -62%) scale(0.92);
+.portrait .board-caption.corner.mine {
+    font-size: 44px;
+    max-width: 340px;
 }
 .portrait .board-caption.lead {
-    top: 42%;
+    font-size: 54px;
+}
+.portrait .board-caption.lead.mine {
+    font-size: 62px;
+}
+.portrait #gameTable {
+    --caption-top: 80%;
+}
+.portrait #submitCards {
+    top: 80%;
+    transform: translate(-50%, -50%);
+}
+.portrait #submitCards.played {
+    transform: translate(-50%, -50%) scale(0.92);
+}
+.portrait .card-played-bottom {
+    top: 80%;
+}
+.portrait .badge-bottom {
+    top: 80%;
+}
+.portrait .board-caption.lead {
+    top: 33%;
+}
+.portrait .hand-announcement {
+    top: 27%;
 }
 .portrait .suit-chooser {
     top: 100%;
     transform: translate(-50%, -300px);
 }
 .portrait #blindCards {
-    top: 25%;
+    top: 23%;
 }
 .portrait #blindCards :deep(.real-card), .portrait #blindCards :deep(.hand-card) {
     margin-right: -20px;
+}
+.portrait #blindCards.active {
+    transition: filter 0.25s ease, translate 0.25s ease;
+}
+.portrait #blindCards.active:has(> :nth-child(6)) :deep(:not(:last-child)) {
+    margin-right: -70px;
+}
+.portrait #blindCards.active:has(> :nth-child(8)) :deep(:not(:last-child)) {
+    margin-right: -100px;
 }
 .portrait .blind-button {
     transform: translate(-50%, 40px);
 }
 .portrait .card-played-left {
+    top: 32%;
     left: 35%;
 }
 .portrait .card-played-right {
+    top: 32%;
+    left: 65%;
+}
+.portrait .cue-left {
+    top: 32%;
+    left: 35%;
+}
+.portrait .cue-right {
+    top: 32%;
     left: 65%;
 }
 </style>

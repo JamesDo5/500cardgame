@@ -1,7 +1,10 @@
 :root {
-  --felt: #1f5f3b;
-  --felt-deep: #16452b;
-  --felt-edge: #0e2f1c;
+  --felt: #a7c3b1;
+  --felt-deep: #8fae9b;
+  --felt-edge: #4d7560;
+  --on-felt: #17281f;
+  --on-felt-soft: #3f5449;
+  --panel: #16452b;
   --page: #11271a;
   --ivory: #f6efdb;
   --ivory-2: #eadfc3;
@@ -14,6 +17,7 @@
   --gold: #d4af37;
   --gold-bright: #f1d16a;
   --gold-deep: #9a7a1f;
+  --gold-ink: #6e5410;
   --muted: #cfc5a6;
   --shadow: rgba(0, 0, 0, 0.35);
   --card-back: #1d4e89;
@@ -45,9 +49,9 @@
   --trump-glyph: '♠';
   --trump-ink: var(--card-black);
   --trump-on-felt: var(--ivory);
-  --felt: color-mix(in srgb, #1f5f3b 82%, #161616 18%);
-  --felt-deep: color-mix(in srgb, #16452b 82%, #161616 18%);
-  --felt-edge: #071a10;
+  --felt: color-mix(in srgb, #a7c3b1 88%, #161616 12%);
+  --felt-deep: color-mix(in srgb, #8fae9b 88%, #161616 12%);
+  --felt-edge: #35503f;
   --page: color-mix(in srgb, #11271a 80%, #000000 20%);
   --wallpaper: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><text x='30' y='30' font-size='26' font-weight='bold' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='central' fill='%23f6efdb' fill-opacity='0.07'>&%239824;</text><text x='90' y='90' font-size='26' font-weight='bold' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='central' fill='%23f6efdb' fill-opacity='0.07'>&%239824;</text></svg>");
 }
@@ -55,9 +59,9 @@
   --trump-glyph: '♣';
   --trump-ink: var(--card-black);
   --trump-on-felt: var(--ivory);
-  --felt: color-mix(in srgb, #1f5f3b 86%, #161616 14%);
-  --felt-deep: color-mix(in srgb, #16452b 86%, #161616 14%);
-  --felt-edge: #081d12;
+  --felt: color-mix(in srgb, #a7c3b1 91%, #161616 9%);
+  --felt-deep: color-mix(in srgb, #8fae9b 91%, #161616 9%);
+  --felt-edge: #3c5a48;
   --page: color-mix(in srgb, #11271a 84%, #000000 16%);
   --wallpaper: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><text x='30' y='30' font-size='26' font-weight='bold' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='central' fill='%23f6efdb' fill-opacity='0.07'>&%239827;</text><text x='90' y='90' font-size='26' font-weight='bold' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='central' fill='%23f6efdb' fill-opacity='0.07'>&%239827;</text></svg>");
 }
@@ -65,9 +69,9 @@
   --trump-glyph: '♦';
   --trump-ink: var(--card-red);
   --trump-on-felt: var(--card-red-bright);
-  --felt: color-mix(in srgb, #1f5f3b 84%, #b61c2b 16%);
-  --felt-deep: color-mix(in srgb, #16452b 84%, #b61c2b 16%);
-  --felt-edge: color-mix(in srgb, #0e2f1c 84%, #b61c2b 16%);
+  --felt: color-mix(in srgb, #a7c3b1 86%, #b61c2b 14%);
+  --felt-deep: color-mix(in srgb, #8fae9b 86%, #b61c2b 14%);
+  --felt-edge: color-mix(in srgb, #4d7560 84%, #b61c2b 16%);
   --page: color-mix(in srgb, #11271a 70%, #7f1220 30%);
   --wallpaper: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><text x='30' y='30' font-size='26' font-weight='bold' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='central' fill='%23e2343f' fill-opacity='0.12'>&%239830;</text><text x='90' y='90' font-size='26' font-weight='bold' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='central' fill='%23e2343f' fill-opacity='0.12'>&%239830;</text></svg>");
 }
@@ -75,9 +79,9 @@
   --trump-glyph: '♥';
   --trump-ink: var(--card-red);
   --trump-on-felt: var(--card-red-bright);
-  --felt: color-mix(in srgb, #1f5f3b 82%, #7f1220 18%);
-  --felt-deep: color-mix(in srgb, #16452b 82%, #7f1220 18%);
-  --felt-edge: color-mix(in srgb, #0e2f1c 82%, #7f1220 18%);
+  --felt: color-mix(in srgb, #a7c3b1 84%, #7f1220 16%);
+  --felt-deep: color-mix(in srgb, #8fae9b 84%, #7f1220 16%);
+  --felt-edge: color-mix(in srgb, #4d7560 82%, #7f1220 18%);
   --page: color-mix(in srgb, #11271a 66%, #7f1220 34%);
   --wallpaper: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><text x='30' y='30' font-size='26' font-weight='bold' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='central' fill='%23e2343f' fill-opacity='0.12'>&%239829;</text><text x='90' y='90' font-size='26' font-weight='bold' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='central' fill='%23e2343f' fill-opacity='0.12'>&%239829;</text></svg>");
 }
@@ -85,9 +89,9 @@
   --trump-glyph: 'NT';
   --trump-ink: #1c2f5a;
   --trump-on-felt: var(--gold-bright);
-  --felt: color-mix(in srgb, #1f5f3b 55%, #1c2f5a 45%);
-  --felt-deep: color-mix(in srgb, #16452b 55%, #1c2f5a 45%);
-  --felt-edge: color-mix(in srgb, #0e2f1c 55%, #0d1733 45%);
+  --felt: color-mix(in srgb, #a7c3b1 62%, #8ea2c6 38%);
+  --felt-deep: color-mix(in srgb, #8fae9b 62%, #7a8fb5 38%);
+  --felt-edge: color-mix(in srgb, #4d7560 55%, #1c2f5a 45%);
   --page: color-mix(in srgb, #11271a 55%, #0d1733 45%);
   --wallpaper: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><text x='30' y='30' font-size='26' font-weight='bold' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='central' fill='%23d4af37' fill-opacity='0.09'>NT</text><text x='90' y='90' font-size='26' font-weight='bold' font-family='Arial, sans-serif' text-anchor='middle' dominant-baseline='central' fill='%23d4af37' fill-opacity='0.09'>NT</text></svg>");
 }
@@ -105,13 +109,6 @@ body.in-game {
   overscroll-behavior: none;
   user-select: none;
   touch-action: manipulation;
-}
-
-.portrait {
-  --hand-shift: 0px;
-}
-.portrait.hand-one-row {
-  --hand-shift: 277px;
 }
 
 #stage {
@@ -178,6 +175,48 @@ body.dragging-card, body.dragging-card * {
   color: var(--card-black);
 }
 
+.hand-card.card-front, .drag-card.card-front {
+  position: relative;
+}
+.hand-card.card-front::after, .drag-card.card-front::after {
+  position: absolute;
+  top: 74px;
+  left: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--ivory);
+  border: 2px solid currentColor;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+  font: bold 26px/36px Arial, sans-serif;
+  text-align: center;
+  pointer-events: none;
+  z-index: 1;
+}
+.hand-card.spun::after {
+  transform: rotate(180deg);
+}
+[data-trump="s"] .hand-card[data-card="Js"]::after, [data-trump="s"] .hand-card[data-card="Jc"]::after,
+[data-trump="s"] .drag-card[data-card="Js"]::after, [data-trump="s"] .drag-card[data-card="Jc"]::after {
+  content: '♠';
+  color: var(--card-black);
+}
+[data-trump="c"] .hand-card[data-card="Jc"]::after, [data-trump="c"] .hand-card[data-card="Js"]::after,
+[data-trump="c"] .drag-card[data-card="Jc"]::after, [data-trump="c"] .drag-card[data-card="Js"]::after {
+  content: '♣';
+  color: var(--card-black);
+}
+[data-trump="d"] .hand-card[data-card="Jd"]::after, [data-trump="d"] .hand-card[data-card="Jh"]::after,
+[data-trump="d"] .drag-card[data-card="Jd"]::after, [data-trump="d"] .drag-card[data-card="Jh"]::after {
+  content: '♦';
+  color: var(--card-red);
+}
+[data-trump="h"] .hand-card[data-card="Jh"]::after, [data-trump="h"] .hand-card[data-card="Jd"]::after,
+[data-trump="h"] .drag-card[data-card="Jh"]::after, [data-trump="h"] .drag-card[data-card="Jd"]::after {
+  content: '♥';
+  color: var(--card-red);
+}
+
 
 
 .drag-layer {
@@ -227,7 +266,7 @@ body.dragging-card, body.dragging-card * {
 .ui-button.primary:hover { background: var(--gold-bright); border-color: var(--gold-bright); }
 .ui-button.danger { background: transparent; color: var(--ivory); border-color: var(--card-red-bright); }
 .ui-button.danger:hover { background: var(--card-red); border-color: var(--card-red); color: var(--ivory); }
-.ui-button.small { padding: 6px 14px; font-size: 13px; }
+.ui-button.small { padding: 7px 16px; font-size: 15px; }
 .ui-input {
   width: 100%;
   box-sizing: border-box;

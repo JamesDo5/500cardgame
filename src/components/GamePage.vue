@@ -1,5 +1,5 @@
 <template>
-    <div class="stateBanner" id="gameState">{{ stateLabel }}</div>
+    <div v-if="mode.standalone" class="stateBanner" id="gameState">{{ stateLabel }}</div>
     <Hand />
     <GameTable />
     <BidBox />
@@ -28,6 +28,7 @@ import BigCountdown from './BigCountdown.vue'
 
 import { computed, onMounted } from 'vue';
 import { useStore } from 'vuex'
+import { mode } from '../config.js';
 
 const store = useStore()
 

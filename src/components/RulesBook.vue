@@ -1,7 +1,10 @@
 <script setup>
 import { ref, computed, reactive } from 'vue';
+import { useStore } from 'vuex';
 import { WIKIPEDIA_URL } from '../config.js';
+import { THEME_OPTIONS, CARD_ART_OPTIONS, chooseThemeLevel, chooseCardArt } from '../settings.js';
 
+const store = useStore();
 const open = ref(false);
 const page = ref(0);
 const collapsed = reactive({});
@@ -82,6 +85,18 @@ const PAGES = [
             'If you are holding a card when time runs out, that card is played.',
         ]},
     ]},
+    { label: 'Settings', sections: [
+        { heading: 'Settings — Trump theme', setting: 'themeLevel', options: THEME_OPTIONS, choose: chooseThemeLevel, lines: [
+            'Light keeps the table green and shows the trump suit on the tab icon and card backs. Full tints the table and accents to match the trump suit.',
+        ]},
+        { heading: 'Settings — Card art', setting: 'cardArt', options: CARD_ART_OPTIONS, choose: chooseCardArt, lines: [
+            'Pictures shows the illustrated deck. Simple shows plain high-contrast faces with a big rank and suit, easier to read at a glance.',
+        ]},
+        { heading: 'Settings — Saved here', bullets: true, lines: [
+            'These choices only affect your screen and are remembered on this device.',
+            'Changes apply straight away, even mid-hand.',
+        ]},
+    ]},
 ];
 const current = computed(() => PAGES[page.value]);
 const key = (i) => `${page.value}:${i}`;
@@ -118,6 +133,12 @@ defineExpose({ show });
                             <template v-else>
                                 <p v-for="(line, j) in sec.lines ?? []" :key="j" class="book-line" v-html="line"></p>
                             </template>
+                            <div v-if="sec.setting" class="setting-toggle" role="group" :aria-label="sec.heading">
+                                <button v-for="o in sec.options" :key="o.value" type="button" class="setting-option" :class="{ active: store.state[sec.setting] === o.value }" :aria-pressed="store.state[sec.setting] === o.value" @click="sec.choose(store, o.value)">
+                                    <span class="setting-name">{{ o.label }}</span>
+                                    <span class="setting-hint">{{ o.hint }}</span>
+                                </button>
+                            </div>
                             <table v-if="sec.bidTable" class="bid-table">
                                 <thead>
                                     <tr><th>Tricks</th><th v-for="c in BID_COLS" :key="c.label" :class="c.cls">{{ c.label }}</th></tr>
@@ -282,6 +303,28 @@ defineExpose({ show });
     line-height: 1;
 }
 .trump-chip :deep(sub) { font-size: 11px; }
+.setting-toggle { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
+.setting-option {
+    font-family: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 10px 18px;
+    background: #fff;
+    border: 2px solid #2c3e50;
+    color: #2c3e50;
+    cursor: pointer;
+    text-align: left;
+}
+.setting-option:hover:not(.active) { background: #e6dcc3; }
+.setting-option.active {
+    background: #7b241c;
+    border-color: #7b241c;
+    color: #f4ecd8;
+}
+.setting-name { font-size: 18px; font-weight: bold; }
+.setting-hint { font-size: 13px; font-family: Arial, sans-serif; }
 .book-footer {
     display: flex;
     justify-content: space-between;
@@ -321,4 +364,32 @@ defineExpose({ show });
 }
 .book-enter-active, .book-leave-active { transition: opacity 0.25s; }
 .book-enter-from, .book-leave-to { opacity: 0; }
+
+.portrait .book {
+    width: 92%;
+    max-height: 92%;
+}
+.portrait .book-page { padding: 28px 30px; }
+.portrait .book-kicker { font-size: 22px; }
+.portrait .book-close { width: 72px; height: 72px; font-size: 46px; }
+.portrait .book-heading { font-size: 40px; }
+.portrait .chev { font-size: 32px; }
+.portrait .book-line, .portrait .book-list { font-size: 27px; }
+.portrait .book-list { padding-left: 34px; }
+.portrait .bid-table { font-size: 26px; }
+.portrait .bid-table th, .portrait .bid-table td { padding: 8px 16px; }
+.portrait .bid-table thead th { font-size: 28px; }
+.portrait .trump-order-label { font-size: 24px; margin-bottom: 30px; }
+.portrait .trump-chips { gap: 32px 10px; }
+.portrait .trump-chip { font-size: 26px; padding: 6px 12px; }
+.portrait .trump-chip :deep(sub) { font-size: 17px; }
+.portrait .crown { top: -27px; font-size: 23px; }
+.portrait .setting-option { padding: 14px 24px; }
+.portrait .setting-name { font-size: 28px; }
+.portrait .setting-hint { font-size: 20px; }
+.portrait .book-footer { flex-wrap: wrap; justify-content: center; gap: 14px; }
+.portrait .book-pages { order: -1; width: 100%; justify-content: center; flex-wrap: wrap; gap: 10px; }
+.portrait .book-nav { font-size: 26px; padding: 12px 28px; }
+.portrait .book-pagebtn { font-size: 22px; padding: 8px 16px; }
+.portrait .book-wiki { font-size: 24px; margin-top: 22px; }
 </style>
