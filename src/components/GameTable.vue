@@ -1563,10 +1563,9 @@ onBeforeUnmount(() => {
 }
 
 .portrait #gameTableContainer {
-    top: calc(265px + var(--hand-shift, 0px));
+    top: 265px;
     width: 800px;
     height: 600px;
-    transition: top 0.3s ease;
 }
 .portrait #gameTable {
     height: 600px;

@@ -224,10 +224,9 @@ onMounted(() => {
     transform: translateY(-6px) rotate(0.5turn);
 }
 .portrait .sort-button {
-    bottom: calc(565px - var(--hand-shift, 0px));
+    bottom: 565px;
     right: 20px;
     padding: 8px 18px;
     font-size: 15px;
-    transition: bottom 0.3s ease;
 }
 </style>

@@ -82,13 +82,13 @@ const secondRow = computed(() => cards.value.slice(5));
 }
 .portrait #leftCards {
     left: 90px;
-    top: calc(565px + var(--hand-shift, 0px));
+    top: 565px;
 }
 .portrait #rightCards {
     right: 90px;
-    top: calc(565px + var(--hand-shift, 0px));
+    top: 565px;
 }
 .portrait #topCards {
-    top: calc(240px + var(--hand-shift, 0px));
+    top: 240px;
 }
 </style>

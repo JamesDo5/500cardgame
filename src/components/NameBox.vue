@@ -250,16 +250,16 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
 }
 
 .portrait #nameboxLeftCards {
-    top: calc(565px + var(--hand-shift, 0px));
+    top: 565px;
     left: 118px;
 }
 .portrait #nameboxTopCards {
-    top: calc(248px + var(--hand-shift, 0px));
+    top: 248px;
     left: 400px;
 }
 .portrait #nameboxRightCards {
     --plate-shift: translate(50%, -50%);
-    top: calc(565px + var(--hand-shift, 0px));
+    top: 565px;
     left: auto;
     right: 118px;
 }
@@ -267,7 +267,7 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
     --plate-shift: none;
     top: auto;
     right: auto;
-    bottom: calc(565px - var(--hand-shift, 0px));
+    bottom: 565px;
     left: 20px;
 }
 .portrait #nameboxMe:hover {
