@@ -21,8 +21,15 @@ export function isValidBid(bid) {
 }
 
 const FACE_VALUES = { J: 11, Q: 12, K: 13, A: 14 };
-const LEFT_BOWER_OF = { s: 'Jc', c: 'Js', d: 'Jh', h: 'Jd' };
-const RIGHT_BOWER_OF = { s: 'Js', c: 'Jc', d: 'Jd', h: 'Jh' };
+export const LEFT_BOWER_OF = { s: 'Jc', c: 'Js', d: 'Jh', h: 'Jd' };
+export const RIGHT_BOWER_OF = { s: 'Js', c: 'Jc', d: 'Jd', h: 'Jh' };
+
+export function bowerOf(cardStr, trump) {
+    if (!trump || trump === NO_TRUMP) return '';
+    if (cardStr === RIGHT_BOWER_OF[trump]) return 'right';
+    if (cardStr === LEFT_BOWER_OF[trump]) return 'left';
+    return '';
+}
 
 export function effectiveSuit(cardStr, trump) {
     if (cardStr === JOKER) return trump;

@@ -178,6 +178,48 @@ body.dragging-card, body.dragging-card * {
   color: var(--card-black);
 }
 
+.hand-card.card-front, .drag-card.card-front {
+  position: relative;
+}
+.hand-card.card-front::after, .drag-card.card-front::after {
+  position: absolute;
+  top: 74px;
+  left: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--ivory);
+  border: 2px solid currentColor;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+  font: bold 26px/36px Arial, sans-serif;
+  text-align: center;
+  pointer-events: none;
+  z-index: 1;
+}
+.hand-card.spun::after {
+  transform: rotate(180deg);
+}
+[data-trump="s"] .hand-card[data-card="Js"]::after, [data-trump="s"] .hand-card[data-card="Jc"]::after,
+[data-trump="s"] .drag-card[data-card="Js"]::after, [data-trump="s"] .drag-card[data-card="Jc"]::after {
+  content: '♠';
+  color: var(--card-black);
+}
+[data-trump="c"] .hand-card[data-card="Jc"]::after, [data-trump="c"] .hand-card[data-card="Js"]::after,
+[data-trump="c"] .drag-card[data-card="Jc"]::after, [data-trump="c"] .drag-card[data-card="Js"]::after {
+  content: '♣';
+  color: var(--card-black);
+}
+[data-trump="d"] .hand-card[data-card="Jd"]::after, [data-trump="d"] .hand-card[data-card="Jh"]::after,
+[data-trump="d"] .drag-card[data-card="Jd"]::after, [data-trump="d"] .drag-card[data-card="Jh"]::after {
+  content: '♦';
+  color: var(--card-red);
+}
+[data-trump="h"] .hand-card[data-card="Jh"]::after, [data-trump="h"] .hand-card[data-card="Jd"]::after,
+[data-trump="h"] .drag-card[data-card="Jh"]::after, [data-trump="h"] .drag-card[data-card="Jd"]::after {
+  content: '♥';
+  color: var(--card-red);
+}
+
 
 
 .drag-layer {

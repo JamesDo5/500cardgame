@@ -6,6 +6,7 @@
             <img class="fake-card card-played card-played-right" id="playedCardRight" draggable="false" :src="backUrl">
             <img class="fake-card card-played card-played-bottom" id="playedCardBottom" draggable="false" :src="backUrl">
             <div v-if="jokerBadge" class="joker-badge" :class="[jokerBadge.posClass, jokerBadge.colorClass]">{{ jokerBadge.symbol }}</div>
+            <div v-if="trumpCue" class="trump-cue" :class="[trumpCue.posClass, trumpCue.colorClass, trumpCue.kind]" aria-hidden="true">{{ trumpCue.symbol }}</div>
             <div class="card-row" id="submitCards" :class="{ parked: !showPlayButton, played: myCardPlayed }"></div>
             <div v-if="suitChooserOpen" class="suit-chooser">
                 <div class="suit-chooser-label">Joker leads as</div>
@@ -41,7 +42,7 @@ import { mode, TURN_TIMEOUT_MS, BID_TIMEOUT_MS, BLIND_TIMEOUT_MS, DEAL_TIMEOUT_M
 import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
 import { CARD_BACK_URL, cardBackUrl, HIDDEN_CARD, JOKER, SUITS, SUIT_SYMBOLS, suitColorClass, cardImageUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, preloadCardImages, dealMock, teamOf } from '../game/cards.js';
-import { NO_TRUMP, trickWinner, trickWinnerWithout, legalPlays, lowestCards, nextToPlay, nextToBid, scoreHand, gameOutcome, nominatesSuit, isNominatableSuit, longestSuit } from '../game/rules.js';
+import { NO_TRUMP, bowerOf, trickWinner, trickWinnerWithout, legalPlays, lowestCards, nextToPlay, nextToBid, scoreHand, gameOutcome, nominatesSuit, isNominatableSuit, longestSuit } from '../game/rules.js';
 import { activeTrump } from '../theme.js';
 
 const store = useStore()
@@ -66,6 +67,17 @@ const jokerBadge = computed(() => {
     const pos = store.state.trickCards.indexOf(JOKER);
     if (!isNominatableSuit(suit) || pos === -1) return null;
     return { posClass: BADGE_POS_CLASSES[pos], colorClass: suitColorClass(suit), symbol: SUIT_SYMBOLS[suit] };
+});
+const CUE_POS_CLASSES = ['cue-bottom', 'cue-left', 'cue-top', 'cue-right'];
+const trumpCue = computed(() => {
+    const trump = store.state.trumpSuit;
+    const leader = store.state.trickLeader;
+    if (store.state.gameState !== 5 || trump === NO_TRUMP || leader < 0) return null;
+    const card = store.state.trickCards[leader];
+    if (!card) return null;
+    const kind = card === JOKER ? 'joker' : bowerOf(card, trump);
+    if (!kind) return null;
+    return { posClass: CUE_POS_CLASSES[leader], colorClass: suitColorClass(trump), kind, symbol: SUIT_SYMBOLS[trump] };
 });
 const myAction = computed(() => dealing.value ? iAmDealer.value : store.state.turn.pos === 0);
 const boardCaption = computed(() => {
@@ -222,6 +234,7 @@ class GameTable {
 
     syncPlayed() {
         store.commit('setTrickCards', this.playedCards);
+        store.commit('setTrickLeader', this.lastTrickWinner);
     }
 
     unHandify(item) {
@@ -699,9 +712,9 @@ class GameTable {
     restoreTrick(playedCards, leader, wonTricks, jokerSuit = '') {
         this.playedCards = playedCards.slice();
         this.playedThisHand = new Set(playedCards.filter(Boolean));
+        this.lastTrickWinner = leader;
         this.syncPlayed();
         store.commit('setJokerSuit', isNominatableSuit(jokerSuit) ? jokerSuit : '');
-        this.lastTrickWinner = leader;
         this.wonTricks = wonTricks.slice();
         this.clearPlayedCards();
         playedCards.forEach((card, pos) => {
@@ -1234,6 +1247,46 @@ onBeforeUnmount(() => {
 .badge-left { top: calc(42% - 92px); left: 28%; }
 .badge-right { top: calc(42% + 92px); left: 72%; }
 
+.trump-cue {
+    position: absolute;
+    width: 86px;
+    height: 86px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, sans-serif;
+    font-size: 64px;
+    font-weight: bold;
+    line-height: 1;
+    border-radius: 50%;
+    background: var(--ivory);
+    box-shadow: 0 0 0 3px currentColor, 0 0 0 7px rgba(255, 255, 255, 0.85), 0 0 22px 10px rgba(255, 255, 255, 0.6), 0 8px 16px rgba(0, 0, 0, 0.45);
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    pointer-events: none;
+    animation: cue-breathe 2s ease-in-out infinite;
+}
+.trump-cue.suit-red { color: var(--card-red); }
+.trump-cue.suit-black { color: var(--card-black); }
+.trump-cue.right {
+    width: 56px;
+    height: 56px;
+    font-size: 42px;
+    opacity: 0.8;
+    animation-duration: 2.6s;
+}
+.cue-bottom { top: 77%; left: 50%; }
+.cue-top { top: 22%; left: 50%; }
+.cue-left { top: 42%; left: 28%; }
+.cue-right { top: 42%; left: 72%; }
+@keyframes cue-breathe {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, calc(-50% - 9px)) scale(1.1); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .trump-cue { animation: none; }
+}
+
 .suit-chooser {
     position: absolute;
     top: 77%;
@@ -1341,6 +1394,12 @@ onBeforeUnmount(() => {
     left: 35%;
 }
 .portrait .card-played-right {
+    left: 65%;
+}
+.portrait .cue-left {
+    left: 35%;
+}
+.portrait .cue-right {
     left: 65%;
 }
 </style>
