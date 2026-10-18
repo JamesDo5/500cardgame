@@ -153,48 +153,56 @@ async function share() {
     color: var(--ivory);
 }
 .lobby {
-    width: 900px;
+    width: 1240px;
+    font-size: 22px;
     background: var(--felt-deep);
     border: 3px solid var(--ivory);
     outline: 3px solid var(--gold-deep);
-    padding: 28px 36px;
+    padding: 1.75em 2.25em;
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    box-sizing: border-box;
+}
+.lobby .ui-button {
+    font-size: 1em;
+    padding: 0.625em 1.375em;
 }
 .lobby-top, .lobby-bottom {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 16px;
+    gap: 1em;
 }
 .lobby-kicker {
-    font-size: 13px;
-    letter-spacing: 3px;
+    font-size: 0.8125em;
+    letter-spacing: 0.23em;
     text-transform: uppercase;
     color: var(--muted);
 }
 .lobby-id {
-    font-size: 56px;
+    font-size: 3.5em;
     font-weight: 800;
-    letter-spacing: 10px;
+    letter-spacing: 0.18em;
     line-height: 1;
 }
 .lobby-actions {
     display: flex;
-    gap: 10px;
+    gap: 0.625em;
 }
 .seat-grid {
     position: relative;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-template-rows: auto auto auto;
-    gap: 12px;
-    margin: 28px 0;
+    gap: 0.75em;
+    margin: 1.75em 0;
 }
 .seat {
     border: 2px solid var(--muted);
-    padding: 14px 18px;
+    padding: 0.875em 1.125em;
     background: var(--felt);
-    min-height: 92px;
+    min-height: 5.75em;
+    min-width: 0;
+    box-sizing: border-box;
 }
 .seat.team0 { border-color: var(--gold); }
 .seat.team1 { border-color: var(--card-red-bright); }
@@ -211,73 +219,74 @@ async function share() {
     grid-row: 2;
     align-self: center;
     text-align: center;
-    font-size: 15px;
+    font-size: 0.9375em;
     line-height: 1.6;
 }
-.teams-note .vs { display: block; color: var(--muted); letter-spacing: 2px; }
+.teams-note .vs { display: block; color: var(--muted); letter-spacing: 0.13em; }
 .team0 { color: var(--gold-bright); }
 .team1 { color: var(--card-red-bright); }
 .seat-label {
-    font-size: 12px;
-    letter-spacing: 2px;
+    font-size: 0.75em;
+    letter-spacing: 0.17em;
     text-transform: uppercase;
     color: var(--muted);
 }
 .seat-name {
-    font-size: 24px;
+    font-size: 1.5em;
     font-weight: 700;
-    margin: 4px 0;
+    margin: 0.17em 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 .seat.empty .seat-name { color: var(--muted); font-weight: normal; }
-.seat-flags { display: flex; gap: 8px; min-height: 18px; }
+.seat-flags { display: flex; gap: 0.5em; min-height: 1.125em; }
 .flag {
-    font-size: 11px;
-    letter-spacing: 1px;
+    font-size: 0.6875em;
+    letter-spacing: 0.09em;
     text-transform: uppercase;
-    padding: 1px 6px;
+    padding: 1px 0.55em;
     border: 1px solid var(--muted);
     color: var(--muted);
 }
 .flag.host { border-color: var(--gold); color: var(--gold-bright); }
 .flag.away { border-color: var(--card-red-bright); color: var(--card-red-bright); }
 .flag.hint { border: none; padding: 0; text-transform: none; letter-spacing: 0; color: var(--muted); }
-.lobby-status { font-size: 16px; color: var(--muted); }
+.lobby-status { font-size: 1em; color: var(--muted); }
 .pace-tag {
-    margin-left: 10px;
-    padding: 1px 6px;
+    margin-left: 0.625em;
+    padding: 1px 0.375em;
     border: 1px solid var(--muted);
     color: var(--muted);
-    letter-spacing: 1px;
+    letter-spacing: 0.08em;
 }
 .option-rows {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 16px 40px;
-    margin-bottom: 20px;
+    gap: 1em 2.5em;
+    margin-bottom: 1.25em;
 }
 .pace-row {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 1em;
 }
 .pace-label {
-    font-size: 12px;
-    letter-spacing: 2px;
+    font-size: 0.75em;
+    letter-spacing: 0.17em;
     text-transform: uppercase;
     color: var(--muted);
 }
 .pace-toggle { display: flex; }
 .pace-option {
     font-family: inherit;
+    font-size: 1em;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 2px;
-    padding: 8px 14px;
+    padding: 0.5em 0.875em;
     background: var(--felt);
     border: 2px solid var(--muted);
     color: var(--muted);
@@ -291,8 +300,8 @@ async function share() {
     border-color: var(--ivory);
     color: var(--ink);
 }
-.pace-name { font-size: 15px; font-weight: 700; }
-.pace-hint { font-size: 11px; }
+.pace-name { font-size: 0.9375em; font-weight: 700; }
+.pace-hint { font-size: 0.6875em; }
 .pace-option.active .pace-hint { color: var(--ink-soft); }
 
 .portrait .lobby-overlay {
@@ -300,6 +309,12 @@ async function share() {
     touch-action: pan-y;
 }
 .portrait .lobby {
-    width: 720px;
+    width: 780px;
+    font-size: 16px;
+    padding: 1.5em 1.75em;
+}
+.portrait .lobby .ui-button {
+    font-size: 0.875em;
+    padding: 0.5em 0.9em;
 }
 </style>
