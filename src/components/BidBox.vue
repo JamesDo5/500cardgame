@@ -557,8 +557,8 @@ button.submit-bid-button.armed:hover {
 .portrait .bidbox {
     top: 640px;
     transform: translateX(-50%);
-    width: 527px;
-    padding: 14px;
+    width: 760px;
+    padding: 14px 18px;
 }
 .portrait .bid-grid {
     grid-template-columns: 44px repeat(5, minmax(0, 1fr));
