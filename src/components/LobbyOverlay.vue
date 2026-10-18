@@ -3,7 +3,8 @@ import { computed, ref } from 'vue';
 import { useStore } from 'vuex'
 import { socket } from '../net/socket.js';
 import { C2S, PACE } from '../net/messages.js';
-import { gameLink, saveThemeLevel, THEME_LEVELS } from '../session.js';
+import { gameLink } from '../session.js';
+import { THEME_OPTIONS, CARD_ART_OPTIONS, chooseThemeLevel, chooseCardArt } from '../settings.js';
 import { mode, WIKIPEDIA_URL, RELAXED_MULTIPLIER } from '../config.js';
 
 const props = defineProps(['gameId']);
@@ -32,10 +33,7 @@ const PACES = [
     { value: PACE.RELAXED, label: 'Relaxed', hint: `Timers ${RELAXED_MULTIPLIER}x longer` },
 ];
 const themeLevel = computed(() => store.state.themeLevel);
-const THEMES = [
-    { value: THEME_LEVELS.LIGHT, label: 'Light', hint: 'Tab icon and card backs' },
-    { value: THEME_LEVELS.FULL, label: 'Full', hint: 'Table, colors and more' },
-];
+const cardArt = computed(() => store.state.cardArt);
 
 function seatClick(pos) {
     if (pos === 0 || mode.standalone) return;
@@ -49,11 +47,6 @@ function setPace(value) {
     if (value === pace.value) return;
     if (mode.standalone) { store.commit('setPace', value); return; }
     socket.send(C2S.SET_PACE, { pace: value });
-}
-function setThemeLevel(value) {
-    if (value === themeLevel.value) return;
-    saveThemeLevel(value);
-    store.commit('setThemeLevel', value);
 }
 async function share() {
     const link = gameLink(props.gameId);
@@ -114,9 +107,18 @@ async function share() {
                 <div class="pace-row theme-row">
                     <div class="pace-label">Trump theme</div>
                     <div class="pace-toggle">
-                        <button v-for="t in THEMES" :key="t.value" class="pace-option theme-option" :class="{ active: themeLevel === t.value }" type="button" :aria-pressed="themeLevel === t.value" @click="setThemeLevel(t.value)">
+                        <button v-for="t in THEME_OPTIONS" :key="t.value" class="pace-option theme-option" :class="{ active: themeLevel === t.value }" type="button" :aria-pressed="themeLevel === t.value" @click="chooseThemeLevel(store, t.value)">
                             <span class="pace-name">{{ t.label }}</span>
                             <span class="pace-hint">{{ t.hint }}</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="pace-row art-row">
+                    <div class="pace-label">Card art</div>
+                    <div class="pace-toggle">
+                        <button v-for="a in CARD_ART_OPTIONS" :key="a.value" class="pace-option art-option" :class="{ active: cardArt === a.value }" type="button" :aria-pressed="cardArt === a.value" @click="chooseCardArt(store, a.value)">
+                            <span class="pace-name">{{ a.label }}</span>
+                            <span class="pace-hint">{{ a.hint }}</span>
                         </button>
                     </div>
                 </div>

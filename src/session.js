@@ -2,7 +2,9 @@ const NAME_KEY = '500.playerName';
 const TOKEN_PREFIX = '500.token.';
 const HAND_PREFIX = '500.hand.';
 const THEME_LEVEL_KEY = '500.themeLevel';
+const CARD_ART_KEY = '500.cardArt';
 export const THEME_LEVELS = { LIGHT: 'light', FULL: 'full' };
+export const CARD_ARTS = { PICTURES: 'pictures', SIMPLE: 'simple' };
 
 function storage() {
     try {
@@ -26,6 +28,14 @@ export function loadThemeLevel() {
 
 export function saveThemeLevel(level) {
     storage()?.setItem(THEME_LEVEL_KEY, level);
+}
+
+export function loadCardArt() {
+    return storage()?.getItem(CARD_ART_KEY) === CARD_ARTS.SIMPLE ? CARD_ARTS.SIMPLE : CARD_ARTS.PICTURES;
+}
+
+export function saveCardArt(art) {
+    storage()?.setItem(CARD_ART_KEY, art);
 }
 
 export function loadToken(gameId) {

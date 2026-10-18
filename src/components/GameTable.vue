@@ -41,7 +41,7 @@ import { cardDrag } from '../drag.js';
 import { mode, TURN_TIMEOUT_MS, BID_TIMEOUT_MS, BLIND_TIMEOUT_MS, DEAL_TIMEOUT_MS, TABLE_WIDTH, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS, TRICK_HOLD_MS, CARD_FLY_MS, TRICK_SWEEP_MS, paceMultiplier } from '../config.js';
 import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
-import { CARD_BACK_URL, cardBackUrl, HIDDEN_CARD, JOKER, SUITS, SUIT_SYMBOLS, suitColorClass, cardImageUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, preloadCardImages, dealMock, teamOf } from '../game/cards.js';
+import { CARD_BACK_URL, cardBackUrl, HIDDEN_CARD, JOKER, SUITS, SUIT_SYMBOLS, suitColorClass, cardFaceUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, preloadCardImages, dealMock, teamOf } from '../game/cards.js';
 import { NO_TRUMP, bowerOf, trickWinner, trickWinnerWithout, legalPlays, lowestCards, nextToPlay, nextToBid, scoreHand, gameOutcome, nominatesSuit, isNominatableSuit, longestSuit } from '../game/rules.js';
 import { activeTrump } from '../theme.js';
 
@@ -581,7 +581,7 @@ class GameTable {
         store.commit('setCardCount', { pos, n: store.state.cardCounts[pos] - 1 });
         const ele = document.getElementById('playedCard' + getPosName(pos));
         ele.dataset.card = card;
-        ele.src = cardImageUrl(card);
+        ele.src = cardFaceUrl(card);
         ele.className = `fake-card card-played card-played-${getPosName(pos).toLowerCase()} ${getSuitClass(cardStr2CardObj(card).s)}`;
         ele.style.display = "inline";
         this.flyIn(ele, pos);
@@ -721,7 +721,7 @@ class GameTable {
             if (!card) return;
             const ele = document.getElementById('playedCard' + getPosName(pos));
             ele.dataset.card = card;
-            ele.src = cardImageUrl(card);
+            ele.src = cardFaceUrl(card);
             ele.style.display = "inline";
         });
         this.renderStacks();
