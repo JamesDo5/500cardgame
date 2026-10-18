@@ -28,7 +28,7 @@
         </div>
         <div class="bid-actions">
             <button class="bid-amount-button pass-button" type="button" id="passBidBtn" :class="{ selected: selected === PASS }" :disabled="!myTurn" @click="select(PASS)">Pass</button>
-            <button class="bid-amount-button submit-bid-button" type="button" id="submitBidBtn" :disabled="selected === -1 || !myTurn" @click="submit">Submit</button>
+            <button class="bid-amount-button submit-bid-button" type="button" id="submitBidBtn" :class="{ armed: selected !== -1 && myTurn }" :disabled="selected === -1 || !myTurn" @click="submit">Submit</button>
         </div>
     </div>
 </template>
@@ -534,6 +534,24 @@ button.pass-button, button.submit-bid-button {
     flex: 1;
     height: 56px;
     font-size: 34px;
+}
+button.submit-bid-button.armed {
+    background: linear-gradient(45deg, var(--gold-bright), var(--gold));
+    border-color: var(--gold);
+    box-shadow: 0 0 18px 4px rgba(212, 175, 55, 0.55);
+    animation: submitPulse 1.4s ease-in-out infinite;
+}
+button.submit-bid-button.armed:hover {
+    filter: brightness(1.08);
+}
+@keyframes submitPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7); }
+    50% { box-shadow: 0 0 0 12px rgba(212, 175, 55, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+    button.submit-bid-button.armed {
+        animation: none;
+    }
 }
 
 .portrait .bidbox {
