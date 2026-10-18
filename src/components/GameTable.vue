@@ -1574,8 +1574,10 @@ onBeforeUnmount(() => {
     height: 600px;
 }
 .portrait .play-button {
-    --button-shift: translateX(110px) translateY(30px);
+    --button-shift: translateY(30px);
     top: 100%;
+    left: auto;
+    right: 30px;
     font-size: 36px;
     padding: 24px 60px;
 }
