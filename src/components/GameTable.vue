@@ -29,6 +29,9 @@
             <Transition name="caption-fade">
                 <div v-if="boardCaption" class="board-caption" :class="captionClass">{{ boardCaption }}</div>
             </Transition>
+            <Transition name="announce-fade">
+                <div v-if="handAnnouncement" class="hand-announcement" :class="handAnnouncement.made ? 'made' : 'missed'">{{ handAnnouncement.text }}</div>
+            </Transition>
             <button v-if="dealing && iAmDealer" class="deal-button" type="button" @click="dealNow">Deal</button>
         </div>
         <div class="card-row" id="blindCards" :class="{ active: showBlindButton, discarding: blindPreview }"></div>
@@ -36,14 +39,14 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, computed, ref, toRaw, watch } from 'vue';
+import { onMounted, onBeforeUnmount, computed, ref, shallowRef, toRaw, watch } from 'vue';
 import { useStore } from 'vuex'
 import { cardDrag } from '../drag.js';
 import { mode, TURN_TIMEOUT_MS, BID_TIMEOUT_MS, BLIND_TIMEOUT_MS, DEAL_TIMEOUT_MS, TABLE_WIDTH, AUTOPLAY_MARGIN_MS, BOT_DELAY_MS, TRICK_HOLD_MS, CARD_FLY_MS, TRICK_SWEEP_MS, paceMultiplier } from '../config.js';
 import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
 import { CARD_BACK_URL, cardBackUrl, HIDDEN_CARD, JOKER, SUITS, SUIT_SYMBOLS, suitColorClass, cardFaceUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, preloadCardImages, dealMock, teamOf } from '../game/cards.js';
-import { NO_TRUMP, bowerOf, trickWinner, trickWinnerWithout, legalPlays, lowestCards, nextToPlay, nextToBid, scoreHand, gameOutcome, nominatesSuit, isNominatableSuit, longestSuit } from '../game/rules.js';
+import { NO_TRUMP, bowerOf, trickWinner, trickWinnerWithout, legalPlays, lowestCards, nextToPlay, nextToBid, scoreHand, gameOutcome, nominatesSuit, isNominatableSuit, longestSuit, neededTricks, trumpSuitForBid } from '../game/rules.js';
 import { activeTrump } from '../theme.js';
 
 const store = useStore()
@@ -106,6 +109,24 @@ const captionClass = computed(() => {
     };
 });
 const playArmed = computed(() => myPlayTurn.value && store.state.stagedCards.length > 0);
+const HAND_ANNOUNCE_MS = 5000;
+const handResult = shallowRef(null);
+const handAnnouncement = computed(() => {
+    const r = handResult.value;
+    const deltas = store.state.handScores[store.state.handScores.length - 1];
+    if (!r || !deltas || !store.state.handScored) return null;
+    const made = deltas[r.team] > 0;
+    const mine = r.team === 0;
+    const who = mine ? `You and ${names()[2]}` : `${names()[1]} and ${names()[3]}`;
+    const whose = mine ? 'your' : 'their';
+    const label = `${neededTricks(r.bid)}${SUIT_SYMBOLS[trumpSuitForBid(r.bid)]}`;
+    return { made, text: made ? `${who} made ${whose} bid of ${label}!` : `${who} missed ${whose} bid of ${label} :(` };
+});
+function announceHand(team, bid) {
+    const r = { team, bid };
+    handResult.value = r;
+    setTimeout(() => { if (handResult.value === r) handResult.value = null; }, HAND_ANNOUNCE_MS);
+}
 const showBlindButton = computed(() => store.state.gameState === 3 && store.getters.getBidBox()?.winningBidder === 0 && store.state.turn.pos === 0);
 const blindFaceDown = computed(() => store.state.blindFaceDown);
 const blindBlocker = computed(() => blindFaceDown.value ? 'Flip the blind over first' : store.state.blindBoxCount !== 5 ? 'Discard exactly 5 cards to the blind.' : '');
@@ -379,6 +400,7 @@ class GameTable {
         store.commit('resetCardCounts');
         store.commit('setFirstCardPlayed', false);
         store.commit('setHandScored', false);
+        handResult.value = null;
         cardDrag.abort();
         document.getElementById('submitCards').innerHTML = "";
         this.syncStaged();
@@ -828,6 +850,7 @@ class GameTable {
         const teamTricks = [this.wonTricks[0] + this.wonTricks[2], this.wonTricks[1] + this.wonTricks[3]];
         const { deltas, made } = scoreHand(bid, bidTeam, teamTricks);
         store.commit('addHandScore', deltas);
+        announceHand(bidTeam, bid);
         store.commit('feedPush', `${bidTeam === 0 ? 'We' : 'They'} ${made ? 'made' : 'missed'} ${bid}. Score ${store.state.scores[0]} to ${store.state.scores[1]}.`);
 
         store.commit('setCardCount', { pos: 0, n: 10 });
@@ -1330,6 +1353,57 @@ onBeforeUnmount(() => {
 }
 .caption-fade-enter-from, .caption-fade-leave-to {
     opacity: 0;
+}
+.hand-announcement {
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    z-index: 8;
+    padding: 18px 28px;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    font-size: 40px;
+    font-weight: bold;
+    line-height: 1.2;
+    letter-spacing: 1px;
+    color: var(--ivory);
+    background: rgba(20, 32, 44, 0.82);
+    border: 3px solid var(--gold);
+    pointer-events: none;
+    animation: announceGlow 1.6s ease-in-out infinite;
+}
+.hand-announcement.made {
+    --glow: rgba(212, 175, 55, 0.85);
+    color: var(--gold-bright);
+}
+.hand-announcement.missed {
+    --glow: rgba(182, 28, 43, 0.8);
+    border-color: var(--card-red-bright);
+}
+@keyframes announceGlow {
+    0%, 100% { box-shadow: 0 0 12px 2px var(--glow), 0 8px 24px rgba(0, 0, 0, 0.5); text-shadow: 0 0 8px var(--glow); }
+    50% { box-shadow: 0 0 34px 10px var(--glow), 0 8px 24px rgba(0, 0, 0, 0.5); text-shadow: 0 0 22px var(--glow); }
+}
+.announce-fade-enter-active {
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.announce-fade-leave-active {
+    transition: opacity 1.2s ease;
+}
+.announce-fade-enter-from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+}
+.announce-fade-leave-to {
+    opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+    .hand-announcement {
+        animation: none;
+        box-shadow: 0 0 20px 6px var(--glow), 0 8px 24px rgba(0, 0, 0, 0.5);
+    }
 }
 .joker-badge {
     position: absolute;
