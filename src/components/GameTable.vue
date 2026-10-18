@@ -1614,7 +1614,10 @@ onBeforeUnmount(() => {
     top: 80%;
 }
 .portrait .board-caption.lead {
-    top: 36%;
+    top: 33%;
+}
+.portrait .hand-announcement {
+    top: 27%;
 }
 .portrait .suit-chooser {
     top: 100%;
