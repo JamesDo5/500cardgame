@@ -895,11 +895,13 @@ onBeforeUnmount(() => {
     width: 70px;
     height: 100px;
     --s: 1;
-    transform: translate(calc(var(--i) * var(--s) * 2px), calc(var(--i) * -4px)) rotate(calc(var(--s) * 3deg));
+    --q: 0deg;
+    transform: translate(calc(var(--i) * var(--s) * 2px), calc(var(--i) * -4px)) rotate(calc(var(--s) * 3deg + var(--q)));
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45);
 }
 .card-stack :deep(.stack-card:nth-child(even)) {
     --s: -1;
+    --q: 90deg;
 }
 .card-stack :deep(.stack-count) {
     position: relative;
