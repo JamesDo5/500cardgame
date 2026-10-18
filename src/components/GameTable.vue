@@ -1458,7 +1458,7 @@ onBeforeUnmount(() => {
 }
 .joker-badge.suit-red { color: #c0392b; }
 .joker-badge.suit-black { color: #111111; }
-.badge-bottom { top: 77%; left: calc(50% + 92px); }
+.badge-bottom { top: 77%; left: calc(50% + 72px); }
 .badge-top { top: 22%; left: calc(50% - 92px); }
 .badge-left { top: calc(42% - 92px); left: 28%; }
 .badge-right { top: calc(42% + 92px); left: 72%; }
