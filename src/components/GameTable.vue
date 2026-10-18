@@ -788,7 +788,8 @@ class GameTable {
     }
 
     renderStacks() {
-        this.wonTricks.forEach((count, pos) => {
+        this.wonTricks.forEach((won, pos) => {
+            const count = dealing.value ? 0 : won;
             const ele = document.getElementById('wonTricks' + getPosName(pos));
             ele.style.visibility = count > 0 ? "visible" : "hidden";
             const cards = Array.from({ length: count }, (_, i) => `<img class="stack-card" src="${CARD_BACK_URL}" style="--i:${i}">`).join('');
@@ -858,6 +859,7 @@ class GameTable {
 }
 
 let instance = null;
+watch(dealing, (d) => { if (d) instance?.renderStacks(); });
 onMounted(() => {
     instance = new GameTable();
     store.commit('setSharedGameTable', instance);
