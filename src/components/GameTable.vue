@@ -1632,33 +1632,6 @@ onBeforeUnmount(() => {
 .portrait #blindCards.active {
     transition: filter 0.25s ease, translate 0.25s ease;
 }
-#blindCards.discarding {
-    filter: grayscale(0.85) brightness(0.8);
-    translate: 0 -10px;
-    animation: blindShake 0.6s ease-in-out infinite;
-}
-#blindCards.discarding :deep(.real-card), #blindCards.discarding :deep(.hand-card) {
-    position: relative;
-}
-#blindCards.discarding :deep(.real-card::after), #blindCards.discarding :deep(.hand-card::after) {
-    content: '';
-    position: absolute;
-    inset: 18%;
-    pointer-events: none;
-    background:
-        linear-gradient(45deg, transparent 46%, rgba(255, 255, 255, 0.55) 46%, rgba(255, 255, 255, 0.55) 54%, transparent 54%),
-        linear-gradient(-45deg, transparent 46%, rgba(255, 255, 255, 0.55) 46%, rgba(255, 255, 255, 0.55) 54%, transparent 54%);
-}
-@keyframes blindShake {
-    0%, 100% { translate: 0 -10px; }
-    25% { translate: -3px -11px; }
-    75% { translate: 3px -9px; }
-}
-@media (prefers-reduced-motion: reduce) {
-    #blindCards.discarding {
-        animation: none;
-    }
-}
 .portrait #blindCards.active:has(> :nth-child(6)) :deep(:not(:last-child)) {
     margin-right: -70px;
 }
