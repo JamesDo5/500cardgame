@@ -21,6 +21,7 @@
             <div class="card-stack discard-blind" id="blindDiscard"></div>
             <div v-if="showBlindStack" class="blind-stack">
                 <img v-for="n in 5" :key="n" class="fake-card card-back blind-stack-card" :src="CARD_BACK_URL">
+                <span class="blind-label">Blind</span>
             </div>
             <div v-if="dealing" class="shuffle">
                 <img v-for="n in 7" :key="n" class="fake-card card-back shuffle-card" draggable="false" :style="{ animationDelay: `${(n - 1) * 0.12}s` }" :src="backUrl">
@@ -1237,6 +1238,20 @@ onBeforeUnmount(() => {
 .blind-stack-card:nth-child(3) { transform: translate(4px, -4px) rotate(2deg); }
 .blind-stack-card:nth-child(4) { transform: translate(6px, -6px) rotate(-1deg); }
 .blind-stack-card:nth-child(5) { transform: translate(8px, -8px) rotate(1deg); }
+.blind-label {
+    position: absolute;
+    left: 4px;
+    top: -4px;
+    transform: translate(-50%, -50%);
+    padding: 0 8px;
+    color: var(--ivory);
+    background: rgba(44, 62, 80, 0.85);
+    font-weight: bold;
+    font-size: 26px;
+    line-height: 1.2;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+    white-space: nowrap;
+}
 
 .shuffle {
     position: absolute;
