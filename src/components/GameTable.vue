@@ -1,10 +1,10 @@
 <template>
     <div id="gameTableContainer">
         <div id="gameTable">
-            <img class="fake-card card-played card-played-left" id="playedCardLeft" draggable="false" :src="backUrl">
-            <img class="fake-card card-played card-played-top" id="playedCardTop" draggable="false" :src="backUrl">
-            <img class="fake-card card-played card-played-right" id="playedCardRight" draggable="false" :src="backUrl">
-            <img class="fake-card card-played card-played-bottom" id="playedCardBottom" draggable="false" :src="backUrl">
+            <img class="fake-card card-played card-played-left" id="playedCardLeft" draggable="false">
+            <img class="fake-card card-played card-played-top" id="playedCardTop" draggable="false">
+            <img class="fake-card card-played card-played-right" id="playedCardRight" draggable="false">
+            <img class="fake-card card-played card-played-bottom" id="playedCardBottom" draggable="false">
             <div v-if="jokerBadge" class="joker-badge" :class="[jokerBadge.posClass, jokerBadge.colorClass]">{{ jokerBadge.symbol }}</div>
             <div v-if="trumpCue" class="trump-cue" :class="[trumpCue.posClass, trumpCue.colorClass, trumpCue.kind]" aria-hidden="true">{{ trumpCue.symbol }}</div>
             <div class="card-row" id="submitCards" :class="{ parked: !showPlayButton, played: myCardPlayed }"></div>
@@ -795,6 +795,7 @@ class GameTable {
             const ele = document.getElementById('playedCard' + getPosName(pos));
             ele.dataset.card = card;
             ele.src = cardFaceUrl(card);
+            ele.className = `fake-card card-played card-played-${getPosName(pos).toLowerCase()} ${getSuitClass(cardStr2CardObj(card).s)}`;
             ele.style.display = "inline";
         });
         this.renderStacks();
