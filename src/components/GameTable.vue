@@ -194,6 +194,34 @@ class GameTable {
         this.syncStaged();
         if (from === 'blind' || to === 'blind') this.blindCards = this.domCards('blindCards');
         this.updateLegalHighlights();
+        if (to === 'play') this.playIfForced();
+    }
+
+    needsNomination(card) {
+        return nominatesSuit(card, this.playedCards, this.lastTrickWinner, store.state.trumpSuit) && !isNominatableSuit(chosenSuit.value);
+    }
+
+    forcedCard(hand) {
+        const legal = this.legal(hand);
+        return legal.length === 1 && !this.needsNomination(legal[0]) ? legal[0] : '';
+    }
+
+    playIfForced() {
+        if (this.submitCards.length !== 1 || store.state.gameState !== 5 || this.resolving || nextToPlay(this.playedCards, this.lastTrickWinner) !== 0) return;
+        const card = this.submitCards[0];
+        if (this.forcedCard(store.getters.getSharedHandCards().concat(card)) === card) this.submitTrick();
+    }
+
+    playFromHand(card) {
+        const hand = store.getters.getSharedHandCards();
+        const rest = hand.filter(c => c !== card);
+        const suit = this.nominationFor(card, rest);
+        cardDrag.abort();
+        document.querySelectorAll(`#bottomCards [data-card="${card}"]`).forEach(ele => ele.remove());
+        store.commit('setSharedHandCards', rest);
+        store.commit('setFirstCardPlayed', true);
+        this.incomingTrickCard(0, card, false, suit);
+        this.sendPlay(card, suit);
     }
 
     myBlindOpen() {
@@ -212,7 +240,14 @@ class GameTable {
         if (zone === 'play') return { zone: 'hand', index: this.stagedFrom };
         if (zone !== 'hand') return '';
         const myTurn = store.state.gameState === 5 && !this.resolving && nextToPlay(this.playedCards, this.lastTrickWinner) === 0;
-        if (myTurn && this.submitCards.length === 0 && this.legal(store.getters.getSharedHandCards()).includes(card)) return 'play';
+        if (myTurn && this.submitCards.length === 0) {
+            const hand = store.getters.getSharedHandCards();
+            if (this.forcedCard(hand) === card) {
+                this.playFromHand(card);
+                return '';
+            }
+            if (this.legal(hand).includes(card)) return 'play';
+        }
         if (this.myBlindOpen() && this.domCards('blindCards').length < 5) return 'blind';
         return 'spin';
     }
@@ -489,14 +524,13 @@ class GameTable {
                 return 1;
             }
             const only = legalInHand[0];
-            const rest = hand.filter(c => c !== only);
-            const suit = this.nominationFor(only, rest);
-            cardDrag.abort();
-            document.querySelectorAll(`#bottomCards [data-card="${only}"]`).forEach(ele => ele.remove());
-            store.commit('setSharedHandCards', rest);
-            store.commit('setFirstCardPlayed', true);
-            this.incomingTrickCard(0, only, false, suit);
-            this.sendPlay(only, suit);
+            if (this.needsNomination(only)) {
+                const ele = document.querySelector(`#bottomCards [data-card="${only}"]`);
+                if (ele) cardDrag.flyTo(ele, 'play');
+                store.commit('notify', "Choose a suit!");
+                return 1;
+            }
+            this.playFromHand(only);
             return 0;
         }
         if (submitBoxElement.children.length !== 1) {
