@@ -168,8 +168,23 @@ onMounted(() => {
 }
 
 #bottomCards :deep(.illegal) {
-    opacity: 0.45;
-    filter: grayscale(0.7);
+    filter: grayscale(0.75) brightness(0.7) contrast(0.9);
+    transform: translateY(6px);
+}
+#bottomCards :deep(.illegal.spun) {
+    transform: translateY(6px) rotate(0.5turn);
+}
+#bottomCards :deep(.legal) {
+    z-index: 1;
+    transform: translateY(-8px);
+}
+#bottomCards :deep(.legal.spun) {
+    transform: translateY(-8px) rotate(0.5turn);
+}
+#bottomCards :deep(.legal > *) {
+    outline: 2px solid var(--gold-bright);
+    outline-offset: -1px;
+    box-shadow: -10px 0 18px rgba(0, 0, 0, 0.5), 10px 0 18px rgba(0, 0, 0, 0.5), 0 6px 10px rgba(0, 0, 0, 0.35);
 }
 
 .portrait #bottomCards {
