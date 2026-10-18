@@ -24,7 +24,7 @@ watch(() => feed.value.length, async () => {
     right: 20px;
     bottom: 275px;
     width: 290px;
-    max-height: 190px;
+    max-height: 160px;
     overflow-y: auto;
     color: var(--muted);
     font-family: Arial, sans-serif;
