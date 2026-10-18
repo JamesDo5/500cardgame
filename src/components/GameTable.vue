@@ -1311,6 +1311,7 @@ onBeforeUnmount(() => {
     letter-spacing: 1px;
     white-space: nowrap;
     pointer-events: none;
+    animation: captionBreathe 2.4s ease-in-out infinite;
 }
 .board-caption.low {
     top: 91%;
@@ -1332,6 +1333,7 @@ onBeforeUnmount(() => {
     font-weight: bold;
     color: var(--gold-bright);
     text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 2px 8px rgba(0, 0, 0, 0.5);
+    animation: captionGlow 1.8s ease-in-out infinite;
 }
 .board-caption.corner.mine {
     top: 4px;
@@ -1351,8 +1353,33 @@ onBeforeUnmount(() => {
     text-align: center;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
+.board-caption.lead {
+    animation: leadPulse 1.6s ease-in-out infinite;
+}
 .board-caption.lead.mine {
     font-size: 76px;
+    animation: leadGlowPulse 1.6s ease-in-out infinite;
+}
+@keyframes captionBreathe {
+    0%, 100% { color: var(--on-felt-soft); }
+    50% { color: var(--on-felt); }
+}
+@keyframes captionGlow {
+    0%, 100% { text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 2px 8px rgba(0, 0, 0, 0.5); }
+    50% { text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 0 18px rgba(241, 209, 106, 0.9), 0 0 32px rgba(241, 209, 106, 0.6); }
+}
+@keyframes leadPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); color: var(--on-felt-soft); }
+    50% { transform: translate(-50%, -50%) scale(1.05); color: var(--on-felt); }
+}
+@keyframes leadGlowPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 2px 8px rgba(0, 0, 0, 0.5); }
+    50% { transform: translate(-50%, -50%) scale(1.06); text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 0 24px rgba(241, 209, 106, 1), 0 0 48px rgba(241, 209, 106, 0.7); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .board-caption, .board-caption.mine, .board-caption.lead, .board-caption.lead.mine {
+        animation: none;
+    }
 }
 .caption-fade-enter-active, .caption-fade-leave-active {
     transition: opacity 0.35s ease;
