@@ -1656,7 +1656,7 @@ onBeforeUnmount(() => {
         animation: none;
     }
 }
-#blindCards.active:has(> :nth-child(6)) :deep(:not(:last-child)) {
+.portrait #blindCards.active:has(> :nth-child(6)) :deep(:not(:last-child)) {
     margin-right: -70px;
 }
 .portrait #blindCards.active:has(> :nth-child(8)) :deep(:not(:last-child)) {
