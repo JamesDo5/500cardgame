@@ -1593,14 +1593,20 @@ onBeforeUnmount(() => {
     font-size: 62px;
 }
 .portrait #gameTable {
-    --caption-top: 62%;
+    --caption-top: 80%;
 }
 .portrait #submitCards {
-    top: 100%;
-    transform: translate(-50%, -62%);
+    top: 80%;
+    transform: translate(-50%, -50%);
 }
 .portrait #submitCards.played {
-    transform: translate(-50%, -62%) scale(0.92);
+    transform: translate(-50%, -50%) scale(0.92);
+}
+.portrait .card-played-bottom {
+    top: 80%;
+}
+.portrait .badge-bottom {
+    top: 80%;
 }
 .portrait .board-caption.lead {
     top: 36%;
