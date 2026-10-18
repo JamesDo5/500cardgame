@@ -142,6 +142,7 @@ class GameTable {
         this.resolving = false;
         this.resolveTarget = -1;
         this.pendingCards = [];
+        this.stagedFrom = -1;
         this.initDrag();
         this.ticker = setInterval(() => this.tickTurn(), 200);
     }
@@ -185,7 +186,8 @@ class GameTable {
     moveCard(card, from, to, fromIndex) {
         if (to === 'play') {
             const box = document.getElementById('submitCards');
-            Array.from(box.children).filter(ele => ele.dataset.card !== card).forEach(ele => cardDrag.flyTo(ele, 'hand', from === 'hand' ? fromIndex : -1));
+            Array.from(box.children).filter(ele => ele.dataset.card !== card).forEach(ele => cardDrag.flyTo(ele, 'hand', this.stagedFrom));
+            this.stagedFrom = from === 'hand' ? fromIndex : -1;
         }
         store.getters.getHand().syncOrder();
         this.submitCards = this.domCards('submitCards');
@@ -207,6 +209,7 @@ class GameTable {
             }
             return this.myBlindOpen() ? 'hand' : '';
         }
+        if (zone === 'play') return { zone: 'hand', index: this.stagedFrom };
         if (zone !== 'hand') return '';
         const myTurn = store.state.gameState === 5 && !this.resolving && nextToPlay(this.playedCards, this.lastTrickWinner) === 0;
         if (myTurn && this.submitCards.length === 0 && this.legal(store.getters.getSharedHandCards()).includes(card)) return 'play';
