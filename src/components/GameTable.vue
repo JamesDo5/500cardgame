@@ -13,7 +13,7 @@
                 <button v-for="s in NOMINATABLE_SUITS" :key="s" class="suit-option" :class="[suitColorClass(s), { chosen: chosenSuit === s }]" type="button" :aria-pressed="chosenSuit === s" @click="chosenSuit = s">{{ SUIT_SYMBOLS[s] }}</button>
             </div>
             <button v-if="showPlayButton" class="table-button play-button" :class="{ armed: playArmed }" type="button" :disabled="!myPlayTurn || suitNeeded" @click="playNow">{{ suitNeeded ? 'Choose' : playArmed ? 'Play card?' : 'Play card' }}</button>
-            <button v-if="showBlindButton" class="table-button blind-button" type="button" :disabled="!!blindBlocker" :title="blindBlocker" @click="submitBlindNow">{{ blindBlocker || 'Submit blind' }}</button>
+            <button v-if="showBlindButton" class="table-button blind-button" type="button" :disabled="!!blindBlocker" :title="blindBlocker" @click="submitBlindNow" @pointerenter="previewBlind($event.pointerType === 'mouse')" @pointerleave="previewBlind(false)" @focus="previewBlind($event.target.matches(':focus-visible'))" @blur="previewBlind(false)">{{ blindBlocker || 'Submit blind' }}</button>
             <div class="card-stack won-tricks-bottom" id="wonTricksBottom"></div>
             <div class="card-stack won-tricks-left" id="wonTricksLeft"></div>
             <div class="card-stack won-tricks-top" id="wonTricksTop"></div>
@@ -30,7 +30,7 @@
             </Transition>
             <button v-if="dealing && iAmDealer" class="deal-button" type="button" @click="dealNow">Deal</button>
         </div>
-        <div class="card-row" id="blindCards" :class="{ active: showBlindButton }"></div>
+        <div class="card-row" id="blindCards" :class="{ active: showBlindButton, discarding: blindPreview }"></div>
     </div>
 </template>
 
@@ -108,6 +108,11 @@ const playArmed = computed(() => myPlayTurn.value && store.state.stagedCards.len
 const showBlindButton = computed(() => store.state.gameState === 3 && store.getters.getBidBox()?.winningBidder === 0 && store.state.turn.pos === 0);
 const blindFaceDown = computed(() => store.state.blindFaceDown);
 const blindBlocker = computed(() => blindFaceDown.value ? 'Flip the blind over first' : store.state.blindBoxCount !== 5 ? 'Discard exactly 5 cards to the blind.' : '');
+const blindHover = ref(false);
+const blindPreview = computed(() => blindHover.value && showBlindButton.value && !blindBlocker.value);
+function previewBlind(on) {
+    blindHover.value = on;
+}
 function playNow() {
     store.getters.getGameTable().submitTrick();
 }
@@ -1101,6 +1106,36 @@ onBeforeUnmount(() => {
     align-items: center;
     background-color: rgba(0, 0, 0, 0.18);
 }
+#blindCards.active {
+    transition: filter 0.25s ease, translate 0.25s ease;
+}
+#blindCards.discarding {
+    filter: grayscale(0.85) brightness(0.8);
+    translate: 0 -10px;
+    animation: blindShake 0.6s ease-in-out infinite;
+}
+#blindCards.discarding :deep(.real-card), #blindCards.discarding :deep(.hand-card) {
+    position: relative;
+}
+#blindCards.discarding :deep(.real-card::after), #blindCards.discarding :deep(.hand-card::after) {
+    content: '';
+    position: absolute;
+    inset: 18%;
+    pointer-events: none;
+    background:
+        linear-gradient(45deg, transparent 46%, rgba(255, 255, 255, 0.55) 46%, rgba(255, 255, 255, 0.55) 54%, transparent 54%),
+        linear-gradient(-45deg, transparent 46%, rgba(255, 255, 255, 0.55) 46%, rgba(255, 255, 255, 0.55) 54%, transparent 54%);
+}
+@keyframes blindShake {
+    0%, 100% { translate: 0 -10px; }
+    25% { translate: -3px -11px; }
+    75% { translate: 3px -9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    #blindCards.discarding {
+        animation: none;
+    }
+}
 #blindCards.active:has(> :nth-child(6)) :deep(:not(:last-child)) {
     margin-right: -60px;
 }
@@ -1439,7 +1474,37 @@ onBeforeUnmount(() => {
 .portrait #blindCards :deep(.real-card), .portrait #blindCards :deep(.hand-card) {
     margin-right: -20px;
 }
-.portrait #blindCards.active:has(> :nth-child(6)) :deep(:not(:last-child)) {
+.portrait #blindCards.active {
+    transition: filter 0.25s ease, translate 0.25s ease;
+}
+#blindCards.discarding {
+    filter: grayscale(0.85) brightness(0.8);
+    translate: 0 -10px;
+    animation: blindShake 0.6s ease-in-out infinite;
+}
+#blindCards.discarding :deep(.real-card), #blindCards.discarding :deep(.hand-card) {
+    position: relative;
+}
+#blindCards.discarding :deep(.real-card::after), #blindCards.discarding :deep(.hand-card::after) {
+    content: '';
+    position: absolute;
+    inset: 18%;
+    pointer-events: none;
+    background:
+        linear-gradient(45deg, transparent 46%, rgba(255, 255, 255, 0.55) 46%, rgba(255, 255, 255, 0.55) 54%, transparent 54%),
+        linear-gradient(-45deg, transparent 46%, rgba(255, 255, 255, 0.55) 46%, rgba(255, 255, 255, 0.55) 54%, transparent 54%);
+}
+@keyframes blindShake {
+    0%, 100% { translate: 0 -10px; }
+    25% { translate: -3px -11px; }
+    75% { translate: 3px -9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    #blindCards.discarding {
+        animation: none;
+    }
+}
+#blindCards.active:has(> :nth-child(6)) :deep(:not(:last-child)) {
     margin-right: -70px;
 }
 .portrait #blindCards.active:has(> :nth-child(8)) :deep(:not(:last-child)) {
