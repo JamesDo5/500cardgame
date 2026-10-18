@@ -103,6 +103,7 @@ const captionClass = computed(() => {
     const gs = store.state.gameState;
     return {
         mine: myAction.value,
+        deal: gs === 0,
         lead: gs === 5 && leading.value,
         corner: gs === 1 || gs === 2,
         low: gs === 3 || gs === 4,
@@ -1313,6 +1314,10 @@ onBeforeUnmount(() => {
 }
 .board-caption.low {
     top: 90%;
+}
+.board-caption.deal {
+    top: 70%;
+    transform: translate(-50%, calc(-100% - 18px));
 }
 .board-caption.corner {
     top: 14px;
