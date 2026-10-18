@@ -742,7 +742,7 @@ class GameTable {
             this.endHand();
             return;
         }
-        this.setTurn(winner);
+        if (store.state.turn.pos !== winner || !store.state.turn.deadlineMs) this.setTurn(winner);
         this.updateLegalHighlights();
         const pending = this.pendingCards;
         this.pendingCards = [];
