@@ -146,21 +146,22 @@ export function gameOutcome(scores, bidTeam, made) {
     return -1;
 }
 
-const SUIT_ORDER = ['s', 'c', 'd', 'h'];
-export function sortHand(hand, trump) {
+const SUIT_ORDER = ['h', 'd', 'c', 's'];
+export function sortHand(hand, trump, descending = true) {
     const order = trump && trump !== NO_TRUMP ? [trump, ...SUIT_ORDER.filter(s => s !== trump)] : SUIT_ORDER.slice();
     const t = trump || NO_TRUMP;
+    const dir = descending ? -1 : 1;
     const rank = (card) => {
-        if (card === JOKER) return [-1, -100];
+        if (card === JOKER) return [-1, 0];
         const suit = effectiveSuit(card, t);
         const strength = cardStrength(card, t);
         const jackBoost = cardStr2CardObj(card).v === 'J' && strength === 11 ? 14.5 : strength;
-        return [order.indexOf(suit), -jackBoost];
+        return [order.indexOf(suit), dir * jackBoost];
     };
     return hand.slice().sort((a, b) => {
         const [sa, va] = rank(a), [sb, vb] = rank(b);
         return sa - sb || va - vb;
-    }).reverse();
+    });
 }
 
 const NAIVE_SUIT_ORDER = ['s', 'c', 'd', 'h'];

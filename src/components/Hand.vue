@@ -6,7 +6,7 @@
 </template>
 
 <script setup>
-import { onMounted, computed, watch } from 'vue';
+import { onMounted, computed, ref, watch } from 'vue';
 import { useStore } from 'vuex'
 import { cardBackUrl, elem2CardStr, isValidCardStr, preloadCardImages, produceCardHtml } from '../game/cards.js';
 import { sortHand } from '../game/rules.js';
@@ -20,8 +20,10 @@ const store = useStore()
 const backUrl = computed(() => cardBackUrl(activeTrump(store.state)));
 const canSort = computed(() => store.state.gameState >= 1 && store.state.gameState <= 5 && !store.state.firstCardPlayed && store.state.handCards.length > 1);
 
+const sortDescending = ref(true);
 function sortNow() {
-    replaceHand(sortHand(store.getters.getSharedHandCards(), store.state.trumpSuit));
+    replaceHand(sortHand(store.getters.getSharedHandCards(), store.state.trumpSuit, sortDescending.value));
+    sortDescending.value = !sortDescending.value;
 }
 
 function syncOrder() {
