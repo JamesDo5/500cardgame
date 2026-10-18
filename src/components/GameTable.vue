@@ -1666,15 +1666,19 @@ onBeforeUnmount(() => {
     transform: translate(-50%, 40px);
 }
 .portrait .card-played-left {
+    top: 32%;
     left: 35%;
 }
 .portrait .card-played-right {
+    top: 32%;
     left: 65%;
 }
 .portrait .cue-left {
+    top: 32%;
     left: 35%;
 }
 .portrait .cue-right {
+    top: 32%;
     left: 65%;
 }
 </style>
