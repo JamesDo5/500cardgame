@@ -2,7 +2,7 @@
     <div v-if="bigBid" class="bid-banner" id="finalBidDisplay" :class="{ contract: hasContract }">
         <div class="bid-caption">{{ caption }}</div>
         <div class="bid-big" :class="bigBid.colorClass">{{ bigBid.tricks }}<span class="bid-suit" :class="{ glyph: bigBid.glyph }">{{ bigBid.symbol }}</span><span class="bid-points-big">({{ bigBid.points }})</span></div>
-        <div class="bid-sub">{{ bigBid.sub }}</div>
+        <div class="bid-sub"><template v-if="bigBid.by"><span>by</span><span class="bid-by-name">{{ bigBid.by.name }}</span><span>({{ bigBid.by.side }})</span></template></div>
     </div>
     <button v-if="showToggle" class="bidtable-toggle" type="button" @click="toggle">Bid table</button>
     <div v-show="tableOpen" class="bid-readouts">
@@ -72,7 +72,7 @@ const POS_IDS = ['bottomBid', 'leftBid', 'topBid', 'rightBid'];
 const hasContract = computed(() => store.state.gameState >= 3 && store.state.gameState <= 5 && store.state.winningBid > 0);
 const trumpSuit = computed(() => store.state.trumpSuit);
 const showToggle = computed(() => store.state.gameState >= 1 && store.state.gameState <= 5);
-const who = (pos) => pos < 0 ? '' : `${store.state.playerNames[pos]} (${teamOf(pos) === 0 ? 'us' : 'them'})`;
+const by = (pos) => pos < 0 ? null : { name: store.state.playerNames[pos], side: teamOf(pos) === 0 ? 'us' : 'them' };
 const caption = computed(() => hasContract.value ? 'Bid' : 'Highest bid');
 const bigBid = computed(() => {
     const idle = store.state.gameState <= 0 || store.state.gameState === 6;
@@ -80,7 +80,7 @@ const bigBid = computed(() => {
     const pos = hasContract.value ? bidderPos.value : highestBy.value;
     if (idle || bid <= PASS) return null;
     const suit = trumpSuitForBid(bid);
-    return { tricks: neededTricks(bid), symbol: SUIT_SYMBOLS[suit], glyph: suit !== 'n', colorClass: suitColorClass(suit), points: bid, sub: pos < 0 ? '' : `by ${who(pos)}` };
+    return { tricks: neededTricks(bid), symbol: SUIT_SYMBOLS[suit], glyph: suit !== 'n', colorClass: suitColorClass(suit), points: bid, by: by(pos) };
 });
 const bidderPos = computed(() => store.getters.getBidBox()?.winningBidder ?? -1);
 
@@ -334,9 +334,20 @@ onMounted(() => {
     vertical-align: middle;
 }
 .bid-sub {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.3em;
+    max-width: 360px;
+    margin-left: auto;
     font-size: 24px;
     margin-top: 10px;
     color: var(--ivory);
+    white-space: nowrap;
+}
+.bid-by-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .suit-red {
     color: var(--card-red-bright);
