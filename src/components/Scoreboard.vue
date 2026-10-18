@@ -106,6 +106,5 @@ th, tr {
     left: 20px;
     transform-origin: top left;
     transform: scale(1.25);
-    max-height: 120px;
 }
 </style>
