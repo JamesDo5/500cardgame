@@ -13,7 +13,7 @@
                 <button v-for="s in NOMINATABLE_SUITS" :key="s" class="suit-option" :class="[suitColorClass(s), { chosen: chosenSuit === s }]" type="button" :aria-pressed="chosenSuit === s" @click="chosenSuit = s">{{ SUIT_SYMBOLS[s] }}</button>
             </div>
             <button v-if="showPlayButton" class="table-button play-button" :class="{ armed: playArmed }" type="button" :disabled="!myPlayTurn || suitNeeded" @click="playNow">{{ suitNeeded ? 'Choose' : playArmed ? 'Play card?' : 'Play card' }}</button>
-            <button v-if="showBlindButton" class="table-button blind-button" type="button" :disabled="blindFaceDown" :title="blindFaceDown ? 'Flip the blind over first' : ''" @click="submitBlindNow">{{ blindFaceDown ? 'Flip the blind over first' : 'Submit blind' }}</button>
+            <button v-if="showBlindButton" class="table-button blind-button" type="button" :disabled="!!blindBlocker" :title="blindBlocker" @click="submitBlindNow">{{ blindBlocker || 'Submit blind' }}</button>
             <div class="card-stack won-tricks-bottom" id="wonTricksBottom"></div>
             <div class="card-stack won-tricks-left" id="wonTricksLeft"></div>
             <div class="card-stack won-tricks-top" id="wonTricksTop"></div>
@@ -107,6 +107,7 @@ const captionClass = computed(() => {
 const playArmed = computed(() => myPlayTurn.value && store.state.stagedCards.length > 0);
 const showBlindButton = computed(() => store.state.gameState === 3 && store.getters.getBidBox()?.winningBidder === 0 && store.state.turn.pos === 0);
 const blindFaceDown = computed(() => store.state.blindFaceDown);
+const blindBlocker = computed(() => blindFaceDown.value ? 'Flip the blind over first' : store.state.blindBoxCount !== 5 ? 'Discard exactly 5 cards to the blind.' : '');
 function playNow() {
     store.getters.getGameTable().submitTrick();
 }
@@ -177,7 +178,6 @@ class GameTable {
         if (to === 'blind') {
             if (store.state.gameState !== 3 || store.getters.getBidBox()?.winningBidder !== 0) return "That blind isn't yours.";
             if (store.state.blindFaceDown) return "Flip the blind over first.";
-            if (this.domCards('blindCards').filter(c => c !== card).length >= 5) return "Discard exactly 5 cards to the blind.";
             return '';
         }
         return '';
@@ -192,7 +192,7 @@ class GameTable {
         store.getters.getHand().syncOrder();
         this.submitCards = this.domCards('submitCards');
         this.syncStaged();
-        if (from === 'blind' || to === 'blind') this.blindCards = this.domCards('blindCards');
+        if (from === 'blind' || to === 'blind') this.syncBlindBox();
         this.updateLegalHighlights();
         if (to === 'play') this.playIfForced();
     }
@@ -224,6 +224,11 @@ class GameTable {
         this.sendPlay(card, suit);
     }
 
+    syncBlindBox() {
+        this.blindCards = this.domCards('blindCards');
+        store.commit('setBlindBoxCount', this.blindCards.length);
+    }
+
     myBlindOpen() {
         return store.state.gameState === 3 && store.getters.getBidBox()?.winningBidder === 0 && !store.state.blindFaceDown;
     }
@@ -248,7 +253,7 @@ class GameTable {
             }
             if (this.legal(hand).includes(card)) return 'play';
         }
-        if (this.myBlindOpen() && this.domCards('blindCards').length < 5) return 'blind';
+        if (this.myBlindOpen()) return 'blind';
         return 'spin';
     }
 
@@ -373,6 +378,7 @@ class GameTable {
         this.syncStaged();
         document.getElementById('blindCards').innerHTML = "";
         document.getElementById('blindCards').style.display = "flex";
+        store.commit('setBlindBoxCount', 0);
         document.getElementById('blindDiscard').style.display = "none";
         store.commit('setBlindFaceDown', false);
         this.clearPlayedCards();
@@ -419,6 +425,7 @@ class GameTable {
         cardsElement.style.display = "flex";
         cardDrag.abort();
         cardsElement.innerHTML = this.blindCards.map(card => produceCardHtml(card, faceDown, 'real-card', backUrl.value)).join('');
+        store.commit('setBlindBoxCount', this.blindCards.length);
         store.commit('setBlindFaceDown', faceDown);
     }
 
@@ -487,6 +494,7 @@ class GameTable {
         cardDrag.abort();
         document.getElementById('blindCards').style.display = "none";
         document.getElementById('blindCards').innerHTML = "";
+        store.commit('setBlindBoxCount', 0);
         const discard = document.getElementById('blindDiscard');
         discard.className = `card-stack discard-blind discard-blind-${getPosName(pos).toLowerCase()}`;
         discard.style.display = "flex";
@@ -1093,6 +1101,12 @@ onBeforeUnmount(() => {
     align-items: center;
     background-color: rgba(0, 0, 0, 0.18);
 }
+#blindCards.active:has(> :nth-child(6)) :deep(:not(:last-child)) {
+    margin-right: -60px;
+}
+#blindCards.active:has(> :nth-child(8)) :deep(:not(:last-child)) {
+    margin-right: -90px;
+}
 
 .table-button {
     position: absolute;
@@ -1156,6 +1170,7 @@ onBeforeUnmount(() => {
     transform: translate(-50%, 140px);
     font-size: 30px;
     padding: 18px 56px;
+    white-space: nowrap;
 }
 .won-tricks-bottom {
     top: 88%;
@@ -1423,6 +1438,12 @@ onBeforeUnmount(() => {
 }
 .portrait #blindCards :deep(.real-card), .portrait #blindCards :deep(.hand-card) {
     margin-right: -20px;
+}
+.portrait #blindCards.active:has(> :nth-child(6)) :deep(:not(:last-child)) {
+    margin-right: -70px;
+}
+.portrait #blindCards.active:has(> :nth-child(8)) :deep(:not(:last-child)) {
+    margin-right: -100px;
 }
 .portrait .blind-button {
     transform: translate(-50%, 40px);
