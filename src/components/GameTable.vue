@@ -960,7 +960,7 @@ onBeforeUnmount(() => {
 
 .won-tricks-top {
     top: 10%;
-    left: 35%;
+    left: 24%;
     transform: translate(-50%, -50%) rotate(180deg);
 }
 

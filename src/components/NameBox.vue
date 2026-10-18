@@ -96,6 +96,9 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
 #nameboxMe .name-text {
     max-width: 250px;
 }
+#nameboxTopCards .name-text {
+    max-width: 180px;
+}
 #nameboxMe .player-name::before {
     content: var(--me-glyph);
     color: var(--trump-on-felt, var(--ivory));
