@@ -364,4 +364,32 @@ defineExpose({ show });
 }
 .book-enter-active, .book-leave-active { transition: opacity 0.25s; }
 .book-enter-from, .book-leave-to { opacity: 0; }
+
+.portrait .book {
+    width: 92%;
+    max-height: 92%;
+}
+.portrait .book-page { padding: 28px 30px; }
+.portrait .book-kicker { font-size: 22px; }
+.portrait .book-close { width: 72px; height: 72px; font-size: 46px; }
+.portrait .book-heading { font-size: 40px; }
+.portrait .chev { font-size: 32px; }
+.portrait .book-line, .portrait .book-list { font-size: 27px; }
+.portrait .book-list { padding-left: 34px; }
+.portrait .bid-table { font-size: 26px; }
+.portrait .bid-table th, .portrait .bid-table td { padding: 8px 16px; }
+.portrait .bid-table thead th { font-size: 28px; }
+.portrait .trump-order-label { font-size: 24px; margin-bottom: 30px; }
+.portrait .trump-chips { gap: 32px 10px; }
+.portrait .trump-chip { font-size: 26px; padding: 6px 12px; }
+.portrait .trump-chip :deep(sub) { font-size: 17px; }
+.portrait .crown { top: -27px; font-size: 23px; }
+.portrait .setting-option { padding: 14px 24px; }
+.portrait .setting-name { font-size: 28px; }
+.portrait .setting-hint { font-size: 20px; }
+.portrait .book-footer { flex-wrap: wrap; justify-content: center; gap: 14px; }
+.portrait .book-pages { order: -1; width: 100%; justify-content: center; flex-wrap: wrap; gap: 10px; }
+.portrait .book-nav { font-size: 26px; padding: 12px 28px; }
+.portrait .book-pagebtn { font-size: 22px; padding: 8px 16px; }
+.portrait .book-wiki { font-size: 24px; margin-top: 22px; }
 </style>
