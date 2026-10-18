@@ -3,7 +3,10 @@ import { computed } from 'vue';
 import { useStore } from 'vuex'
 
 const store = useStore();
+const SHOWN_HANDS = 6;
 const handScores = computed(() => store.state.handScores);
+const recentScores = computed(() => handScores.value.slice(-SHOWN_HANDS));
+const hiddenHands = computed(() => handScores.value.length - recentScores.value.length);
 const scores = computed(() => store.state.scores);
 </script>
 
@@ -15,7 +18,8 @@ const scores = computed(() => store.state.scores);
                 <th id="team0name">Us</th>
                 <th id="team1name">Them</th>
             </tr>
-            <tr v-for="(deltas, i) in handScores" :key="i">
+            <tr v-if="hiddenHands" class="elided"><td>…</td><td>…</td></tr>
+            <tr v-for="(deltas, i) in recentScores" :key="hiddenHands + i">
                 <td>{{ deltas[0] }}</td>
                 <td>{{ deltas[1] }}</td>
             </tr>
@@ -49,6 +53,10 @@ th, tr {
 .total {
     border-top: 1px dashed var(--ink-soft);
     font-weight: bold;
+}
+.scoreboard .elided td {
+    color: var(--ink-soft);
+    line-height: 0.7;
 }
 
 .scoreboard {
@@ -102,9 +110,15 @@ th, tr {
 }
 
 .portrait .scoreboard {
-    top: 90px;
+    top: 60px;
     left: 20px;
     transform-origin: top left;
     transform: scale(1.25);
+}
+.portrait .score-table {
+    border-spacing: 0;
+}
+.portrait th, .portrait td {
+    line-height: 1;
 }
 </style>
