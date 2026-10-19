@@ -113,13 +113,14 @@ export function cardPlaceholderSvg(cardStr) {
     } else {
         const { v, s } = cardStr2CardObj(cardStr);
         const joker = s === JOKER;
-        const label = joker ? 'JOKER' : v;
         const sym = joker ? '★' : SUIT_SYMBOLS[s];
         const color = RED_SUITS.has(s) ? '#c0392b' : '#111111';
-        const size = joker ? 9 : v === '10' ? 16 : 19;
-        const corner = `<text x="5" y="19" font-size="${size}" font-weight="bold" font-family="Arial, sans-serif" fill="${color}">${label}</text><text x="5" y="35" font-size="15" font-family="Arial, sans-serif" fill="${color}">${sym}</text>`;
-        const centre = `<text x="35" y="51" font-size="${joker ? 42 : 38}" font-family="Arial, sans-serif" fill="${color}" text-anchor="middle" dominant-baseline="central">${sym}</text>`;
-        svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 100"><rect width="70" height="100" fill="#ffffff" stroke="#2c3e50" stroke-width="2"/>${corner}<g transform="rotate(180 35 50)">${corner}</g>${centre}</svg>`;
+        const font = 'font-weight="bold" font-family="Arial, sans-serif" text-anchor="middle"';
+        const rank = joker
+            ? `<text x="14" y="26" font-size="26" ${font} fill="${color}">★</text><text x="14" y="36" font-size="7" ${font} fill="${color}">JOKER</text>`
+            : `<text x="14" y="25" font-size="${v === '10' ? 21 : 27}" ${font}${v === '10' ? ' letter-spacing="-1.5"' : ''} fill="${color}">${v}</text><text x="14" y="47" font-size="22" ${font} fill="${color}">${sym}</text>`;
+        const centre = `<text x="35" y="52" font-size="${joker ? 32 : 28}" font-family="Arial, sans-serif" fill="${color}" fill-opacity="0.32" text-anchor="middle" dominant-baseline="central">${sym}</text>`;
+        svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 100"><rect width="70" height="100" fill="#ffffff" stroke="#2c3e50" stroke-width="2"/>${centre}${rank}<g transform="rotate(180 35 50)">${rank}</g></svg>`;
     }
     return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
 }
