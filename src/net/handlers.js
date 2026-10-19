@@ -41,11 +41,13 @@ export function installHandlers(socket, store) {
                 console.error('deal -- bad hand from server:', cards);
                 return;
             }
-            store.commit('setDealer', dealer);
-            gt().newHand();
-            bb().reset();
-            hand().incomingHandCards(cards);
-            gt().startBidding();
+            gt().afterSweep(() => {
+                store.commit('setDealer', dealer);
+                gt().newHand();
+                bb().reset();
+                hand().incomingHandCards(cards);
+                gt().startBidding();
+            });
         })
         .on(S2C.BID, ({ pos, bid }) => bb().incomingBid(pos, bid))
         .on(S2C.BIDDING_RESULT, (p) => bb().incomingBiddingResult(p))
