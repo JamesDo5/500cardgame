@@ -196,23 +196,23 @@ body.dragging-card, body.dragging-card * {
 .hand-card.spun::after {
   transform: rotate(180deg);
 }
-[data-trump="s"] .hand-card[data-card="Js"]::after, [data-trump="s"] .hand-card[data-card="Jc"]::after,
-[data-trump="s"] .drag-card[data-card="Js"]::after, [data-trump="s"] .drag-card[data-card="Jc"]::after {
+[data-trump="s"] .hand-card[data-card="Jc"]::after, [data-trump="s"] .hand-card[data-card="j"]::after,
+[data-trump="s"] .drag-card[data-card="Jc"]::after, [data-trump="s"] .drag-card[data-card="j"]::after {
   content: '♠';
   color: var(--card-black);
 }
-[data-trump="c"] .hand-card[data-card="Jc"]::after, [data-trump="c"] .hand-card[data-card="Js"]::after,
-[data-trump="c"] .drag-card[data-card="Jc"]::after, [data-trump="c"] .drag-card[data-card="Js"]::after {
+[data-trump="c"] .hand-card[data-card="Js"]::after, [data-trump="c"] .hand-card[data-card="j"]::after,
+[data-trump="c"] .drag-card[data-card="Js"]::after, [data-trump="c"] .drag-card[data-card="j"]::after {
   content: '♣';
   color: var(--card-black);
 }
-[data-trump="d"] .hand-card[data-card="Jd"]::after, [data-trump="d"] .hand-card[data-card="Jh"]::after,
-[data-trump="d"] .drag-card[data-card="Jd"]::after, [data-trump="d"] .drag-card[data-card="Jh"]::after {
+[data-trump="d"] .hand-card[data-card="Jh"]::after, [data-trump="d"] .hand-card[data-card="j"]::after,
+[data-trump="d"] .drag-card[data-card="Jh"]::after, [data-trump="d"] .drag-card[data-card="j"]::after {
   content: '♦';
   color: var(--card-red);
 }
-[data-trump="h"] .hand-card[data-card="Jh"]::after, [data-trump="h"] .hand-card[data-card="Jd"]::after,
-[data-trump="h"] .drag-card[data-card="Jh"]::after, [data-trump="h"] .drag-card[data-card="Jd"]::after {
+[data-trump="h"] .hand-card[data-card="Jd"]::after, [data-trump="h"] .hand-card[data-card="j"]::after,
+[data-trump="h"] .drag-card[data-card="Jd"]::after, [data-trump="h"] .drag-card[data-card="j"]::after {
   content: '♥';
   color: var(--card-red);
 }

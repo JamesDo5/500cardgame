@@ -79,7 +79,7 @@ const trumpCue = computed(() => {
     if (store.state.gameState !== 5 || trump === NO_TRUMP || leader < 0) return null;
     const card = store.state.trickCards[leader];
     if (!card) return null;
-    const kind = card === JOKER ? 'joker' : bowerOf(card, trump);
+    const kind = card === JOKER ? 'joker' : bowerOf(card, trump) === 'left' ? 'left' : '';
     if (!kind) return null;
     return { posClass: CUE_POS_CLASSES[leader], colorClass: suitColorClass(trump), kind, symbol: SUIT_SYMBOLS[trump] };
 });
@@ -1484,13 +1484,6 @@ onBeforeUnmount(() => {
 }
 .trump-cue.suit-red { color: var(--card-red); }
 .trump-cue.suit-black { color: var(--card-black); }
-.trump-cue.right {
-    width: 56px;
-    height: 56px;
-    font-size: 42px;
-    opacity: 0.8;
-    animation-duration: 2.6s;
-}
 .cue-bottom { top: 77%; left: 50%; }
 .cue-top { top: 22%; left: 50%; }
 .cue-left { top: 42%; left: 28%; }
