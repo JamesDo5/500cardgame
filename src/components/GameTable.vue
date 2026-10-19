@@ -1207,22 +1207,30 @@ onBeforeUnmount(() => {
     box-shadow: none;
     opacity: 0.7;
 }
+.play-button:hover:not(:disabled):not(.armed) {
+    animation: playHoverPulse 0.9s ease-in-out infinite;
+}
+@keyframes playHoverPulse {
+    0%, 100% { transform: var(--button-shift) scale(1); }
+    50% { transform: var(--button-shift) scale(1.07); }
+}
 .play-button.armed {
     background: var(--gold-sheen);
     color: var(--gold-ink);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
     transform: var(--button-shift) scale(1.1);
-    box-shadow: inset 0 0 0 2px var(--gold-deep), 0 0 18px 4px rgba(var(--gold-rgb), 0.55), 0 3px 6px rgba(0, 0, 0, 0.3);
-    animation: armedPulse 1.4s ease-in-out infinite;
+    box-shadow: inset 0 0 0 2px var(--gold-deep), 0 0 0 3px rgba(var(--gold-bright-rgb), 0.95), 0 0 30px 12px rgba(var(--gold-rgb), 0.85), 0 0 44px 14px rgba(var(--gold-rgb), 0.4), 0 3px 6px rgba(0, 0, 0, 0.3);
+    animation: armedPulse 1.2s ease-in-out infinite;
 }
 .play-button.armed:hover {
-    filter: brightness(1.08);
+    filter: brightness(1.1);
 }
 @keyframes armedPulse {
-    0%, 100% { box-shadow: inset 0 0 0 2px var(--gold-deep), 0 0 0 0 rgba(var(--gold-rgb), 0.7), 0 3px 6px rgba(0, 0, 0, 0.3); transform: var(--button-shift) scale(1.08); }
-    50% { box-shadow: inset 0 0 0 2px var(--gold-deep), 0 0 0 14px rgba(var(--gold-rgb), 0), 0 3px 6px rgba(0, 0, 0, 0.3); transform: var(--button-shift) scale(1.14); }
+    0%, 100% { box-shadow: inset 0 0 0 2px var(--gold-deep), 0 0 0 2px rgba(var(--gold-bright-rgb), 0.85), 0 0 16px 6px rgba(var(--gold-rgb), 0.6), 0 0 28px 8px rgba(var(--gold-rgb), 0.2), 0 3px 6px rgba(0, 0, 0, 0.3); transform: var(--button-shift) scale(1.06); }
+    50% { box-shadow: inset 0 0 0 2px var(--gold-deep), 0 0 0 4px rgba(var(--gold-bright-rgb), 1), 0 0 34px 14px rgba(var(--gold-rgb), 0.95), 0 0 48px 16px rgba(var(--gold-rgb), 0.45), 0 3px 6px rgba(0, 0, 0, 0.3); transform: var(--button-shift) scale(1.16); }
 }
 @media (prefers-reduced-motion: reduce) {
-    .play-button.armed {
+    .play-button.armed, .play-button:hover:not(:disabled):not(.armed) {
         animation: none;
     }
 }
