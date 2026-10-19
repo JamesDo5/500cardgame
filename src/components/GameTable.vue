@@ -131,7 +131,7 @@ function announceHand(team, bid) {
 }
 const showBlindButton = computed(() => store.state.gameState === 3 && store.getters.getBidBox()?.winningBidder === 0 && store.state.turn.pos === 0);
 const blindFaceDown = computed(() => store.state.blindFaceDown);
-const blindBlocker = computed(() => blindFaceDown.value ? 'Flip the blind over first' : store.state.blindBoxCount !== 5 ? 'Discard exactly 5 cards to the blind.' : '');
+const blindBlocker = computed(() => blindFaceDown.value ? 'Flip the blind over first' : store.state.blindBoxCount !== 5 ? 'Exchange exactly 5 cards to the blind.' : '');
 const blindHover = ref(false);
 const blindPreview = computed(() => blindHover.value && showBlindButton.value && !blindBlocker.value);
 function previewBlind(on) {
@@ -513,7 +513,7 @@ class GameTable {
             return 1;
         }
         if (items.length !== 5) {
-            store.commit('notify', "Discard exactly 5 cards to the blind.");
+            store.commit('notify', "Exchange exactly 5 cards to the blind.");
             return 1;
         }
         const discards = items.map(elem2CardStr);
