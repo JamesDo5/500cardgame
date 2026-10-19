@@ -149,6 +149,12 @@ function dealNow() {
 }
 
 const SOURCE_ELEMENT_IDS = ['submitCards', 'leftCards', 'topCards', 'rightCards'];
+const ROCK_DEG = 3;
+const ROCK_CYCLE_MS = 1500;
+const ROCK_STAGGER_MS = 190;
+const HOLD_FADE_MS = 400;
+const HOLD_OPACITY = 0.75;
+const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
 class GameTable {
     constructor() {
@@ -705,7 +711,25 @@ class GameTable {
         this.resolveTarget = winner;
         this.setTurn(-1);
         store.getters.getHand()?.markLegal(null);
+        this.outgoingCards().forEach((ele, i) => {
+            ele.animate([{ opacity: 1 }, { opacity: HOLD_OPACITY }], { duration: HOLD_FADE_MS, delay: CARD_FLY_MS, fill: 'forwards' }).id = 'fade';
+            this.rockCard(ele, i * ROCK_STAGGER_MS);
+        });
         setTimeout(() => this.sweepTrick(), TRICK_HOLD_MS);
+    }
+
+    outgoingCards() {
+        return Array.from(document.getElementsByClassName("card-played")).filter(ele => ele.style.display !== "none" && typeof ele.animate === 'function');
+    }
+
+    rockCard(ele, phaseMs) {
+        if (reducedMotion()) return;
+        const anim = ele.animate(
+            [{ transform: `rotate(${-ROCK_DEG}deg)` }, { transform: `rotate(${ROCK_DEG}deg)` }],
+            { duration: ROCK_CYCLE_MS / 2, direction: 'alternate', iterations: Infinity, easing: 'ease-in-out', composite: 'add' }
+        );
+        anim.id = 'rock';
+        anim.currentTime = phaseMs;
     }
 
     sweepTrick() {
@@ -713,17 +737,20 @@ class GameTable {
         store.commit('setJokerSuit', '');
         const stack = document.getElementById('wonTricks' + getPosName(winner));
         const stackStyle = getComputedStyle(stack);
-        const cards = Array.from(document.getElementsByClassName("card-played")).filter(ele => ele.style.display !== "none");
+        const cards = this.outgoingCards();
         const animations = cards.map((ele, i) => {
-            if (typeof ele.animate !== 'function') return Promise.resolve();
+            const rock = ele.getAnimations().find(a => a.id === 'rock');
+            const phase = rock ? rock.currentTime : -1;
+            rock?.cancel();
             const cs = getComputedStyle(ele);
             const anim = ele.animate(
                 [
-                    { left: cs.left, top: cs.top, transform: cs.transform, opacity: 1 },
+                    { left: cs.left, top: cs.top, transform: cs.transform, opacity: cs.opacity },
                     { left: stackStyle.left, top: stackStyle.top, transform: `${stackStyle.transform} scale(0.55)`, opacity: 0.2 },
                 ],
                 { duration: TRICK_SWEEP_MS, delay: i * 40, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'forwards' }
             );
+            if (phase >= 0) this.rockCard(ele, phase);
             return anim.finished.catch(() => {});
         });
         Promise.all(animations).then(() => {
