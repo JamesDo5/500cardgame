@@ -182,8 +182,8 @@ class GameTable {
         cardDrag.init({
             zones: [
                 { name: 'play', el: () => document.getElementById('submitCards'), pad: { top: 24, right: 24, bottom: 24, left: 24 }, canLift: () => true, enter: (el) => this.unHandify(el) },
-                { name: 'blind', el: () => document.getElementById('blindCards'), pad: { top: 24, right: 24, bottom: 24, left: 24 }, canLift: () => store.state.gameState === 3 && !store.state.blindFaceDown, enter: (el) => this.unHandify(el) },
-                { name: 'hand', el: () => document.getElementById('bottomCards'), pad: { top: 60, right: 0, bottom: 400, left: 0 }, canLift: () => true, enter: (el) => { hand().handifyCard(el); this.updateLegalHighlights(); } },
+                { name: 'blind', el: () => document.getElementById('blindCards'), pad: { top: 24, right: 24, bottom: 24, left: 24 }, sortable: true, canLift: () => store.state.gameState === 3 && !store.state.blindFaceDown, enter: (el) => this.unHandify(el) },
+                { name: 'hand', el: () => document.getElementById('bottomCards'), pad: { top: 60, right: 0, bottom: 400, left: 0 }, sortable: true, canLift: () => true, enter: (el) => { hand().handifyCard(el); this.updateLegalHighlights(); } },
             ],
             canDrop: (card, from, to) => this.dropMessage(card, from, to),
             onMove: (card, from, to, fromIndex) => this.moveCard(card, from, to, fromIndex),

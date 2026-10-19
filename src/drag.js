@@ -119,11 +119,15 @@ function cacheGeometry(d) {
             ix0: r.x, iy0: r.y, ix1: r.x + r.w, iy1: r.y + r.h,
         };
     }
-    const hand = zoneOf('hand').el();
-    d.slots = hand ? Array.from(hand.children).map(c => {
-        const r = stageRect(c);
-        return { x: r.x + r.w / 2, y: r.y + r.h / 2 };
-    }) : [];
+    d.slots = {};
+    for (const z of cfg.zones) {
+        const el = z.sortable ? z.el() : null;
+        if (!el) continue;
+        d.slots[z.name] = Array.from(el.children).map(c => {
+            const r = stageRect(c);
+            return { x: r.x + r.w / 2, y: r.y + r.h / 2 };
+        });
+    }
 }
 
 function inside(p, x0, y0, x1, y1) {
@@ -149,13 +153,13 @@ function slotDistance(s, p) {
     return Math.hypot(dx, dy);
 }
 
-function nearestSlot(d, p, current) {
+function nearestSlot(slots, p, current) {
     let best = 0, bestD = Infinity;
-    d.slots.forEach((s, i) => {
+    slots.forEach((s, i) => {
         const dist = slotDistance(s, p);
         if (dist < bestD) { bestD = dist; best = i; }
     });
-    if (current >= 0 && current < d.slots.length && best !== current && bestD > slotDistance(d.slots[current], p) - SLOT_DEADBAND) return current;
+    if (current >= 0 && current < slots.length && best !== current && bestD > slotDistance(slots[current], p) - SLOT_DEADBAND) return current;
     return best;
 }
 
@@ -188,10 +192,10 @@ function place(d, name, index) {
 function updateTarget(d) {
     const z = hitZone(d, d.p);
     d.hover = z;
-    if (z === 'hand') {
-        const hand = zoneOf('hand').el();
-        const current = d.el.parentElement === hand ? indexIn(hand, d.el) : -1;
-        place(d, 'hand', nearestSlot(d, d.p, current));
+    if (z && zoneOf(z).sortable) {
+        const container = zoneOf(z).el();
+        const current = d.el.parentElement === container ? indexIn(container, d.el) : -1;
+        place(d, z, nearestSlot(d.slots[z] ?? [], d.p, current));
     } else if (z) {
         place(d, z, -1);
     } else {
@@ -251,7 +255,7 @@ function onPointerDown(evt, zone) {
         lifted,
         spun,
         hover: zone.name,
-        slots: [],
+        slots: {},
         rects: {},
     };
     if (lifted) cacheGeometry(d);
@@ -361,7 +365,7 @@ function finishDrag(tap, cancelled) {
         } else {
             cfg.onMove(d.card, d.zone, to, d.index);
         }
-    } else if (to === 'hand' && indexIn(zoneOf('hand').el(), d.el) !== d.index) {
+    } else if (zoneOf(to).sortable && indexIn(zoneOf(to).el(), d.el) !== d.index) {
         cfg.onMove(d.card, d.zone, to, d.index);
     }
     const upsideDown = spin !== d.spun && to === 'hand';
