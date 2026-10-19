@@ -141,7 +141,7 @@ function leave() {
     font-size: 20px;
     font-weight: bold;
     color: var(--ink);
-    background: linear-gradient(45deg, var(--gold-bright), var(--gold));
+    background: var(--gold-sheen);
     border: none;
     border-radius: 0;
     cursor: pointer;

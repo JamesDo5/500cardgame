@@ -547,17 +547,18 @@ button.pass-button, button.submit-bid-button {
     font-size: 34px;
 }
 button.submit-bid-button.armed {
-    background: linear-gradient(45deg, var(--gold-bright), var(--gold));
-    border-color: var(--gold);
-    box-shadow: 0 0 18px 4px rgba(212, 175, 55, 0.55);
+    background: var(--gold-sheen);
+    color: var(--gold-ink);
+    border-color: var(--gold-deep);
+    box-shadow: 0 0 18px 4px rgba(var(--gold-rgb), 0.55);
     animation: submitPulse 1.4s ease-in-out infinite;
 }
 button.submit-bid-button.armed:hover {
     filter: brightness(1.08);
 }
 @keyframes submitPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7); }
-    50% { box-shadow: 0 0 0 12px rgba(212, 175, 55, 0); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(var(--gold-rgb), 0.7); }
+    50% { box-shadow: 0 0 0 12px rgba(var(--gold-rgb), 0); }
 }
 @media (prefers-reduced-motion: reduce) {
     button.submit-bid-button.armed {

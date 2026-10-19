@@ -1058,8 +1058,8 @@ onBeforeUnmount(() => {
 }
 #submitCards[data-drop="hover"], #blindCards.active[data-drop="hover"] {
     border-color: var(--gold-bright);
-    background-color: rgba(212, 175, 55, 0.2);
-    box-shadow: 0 0 18px rgba(212, 175, 55, 0.5);
+    background-color: rgba(var(--gold-rgb), 0.2);
+    box-shadow: 0 0 18px rgba(var(--gold-rgb), 0.5);
 }
 #submitCards[data-drop="refuse"], #blindCards.active[data-drop="refuse"] {
     border-color: var(--card-red-bright);
@@ -1208,17 +1208,18 @@ onBeforeUnmount(() => {
     opacity: 0.7;
 }
 .play-button.armed {
-    background: linear-gradient(45deg, var(--gold-bright), var(--gold));
+    background: var(--gold-sheen);
+    color: var(--gold-ink);
     transform: var(--button-shift) scale(1.1);
-    box-shadow: 0 0 18px 4px rgba(212, 175, 55, 0.55), 0 3px 6px rgba(0, 0, 0, 0.3);
+    box-shadow: inset 0 0 0 2px var(--gold-deep), 0 0 18px 4px rgba(var(--gold-rgb), 0.55), 0 3px 6px rgba(0, 0, 0, 0.3);
     animation: armedPulse 1.4s ease-in-out infinite;
 }
 .play-button.armed:hover {
     filter: brightness(1.08);
 }
 @keyframes armedPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7), 0 3px 6px rgba(0, 0, 0, 0.3); transform: var(--button-shift) scale(1.08); }
-    50% { box-shadow: 0 0 0 14px rgba(212, 175, 55, 0), 0 3px 6px rgba(0, 0, 0, 0.3); transform: var(--button-shift) scale(1.14); }
+    0%, 100% { box-shadow: inset 0 0 0 2px var(--gold-deep), 0 0 0 0 rgba(var(--gold-rgb), 0.7), 0 3px 6px rgba(0, 0, 0, 0.3); transform: var(--button-shift) scale(1.08); }
+    50% { box-shadow: inset 0 0 0 2px var(--gold-deep), 0 0 0 14px rgba(var(--gold-rgb), 0), 0 3px 6px rgba(0, 0, 0, 0.3); transform: var(--button-shift) scale(1.14); }
 }
 @media (prefers-reduced-motion: reduce) {
     .play-button.armed {
@@ -1362,7 +1363,7 @@ onBeforeUnmount(() => {
 }
 @keyframes captionGlow {
     0%, 100% { text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 2px 8px rgba(0, 0, 0, 0.5); }
-    50% { text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 0 18px rgba(241, 209, 106, 0.9), 0 0 32px rgba(241, 209, 106, 0.6); }
+    50% { text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 0 18px rgba(var(--gold-bright-rgb), 0.9), 0 0 32px rgba(var(--gold-bright-rgb), 0.6); }
 }
 @keyframes leadPulse {
     0%, 100% { transform: translate(-50%, -50%) scale(1); color: var(--on-felt-soft); }
@@ -1370,7 +1371,7 @@ onBeforeUnmount(() => {
 }
 @keyframes leadGlowPulse {
     0%, 100% { transform: translate(-50%, -50%) scale(1); text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 2px 8px rgba(0, 0, 0, 0.5); }
-    50% { transform: translate(-50%, -50%) scale(1.06); text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 0 24px rgba(241, 209, 106, 1), 0 0 48px rgba(241, 209, 106, 0.7); }
+    50% { transform: translate(-50%, -50%) scale(1.06); text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 0 24px rgba(var(--gold-bright-rgb), 1), 0 0 48px rgba(var(--gold-bright-rgb), 0.7); }
 }
 @media (prefers-reduced-motion: reduce) {
     .board-caption, .board-caption.mine, .board-caption.lead, .board-caption.lead.mine {
@@ -1404,7 +1405,7 @@ onBeforeUnmount(() => {
     animation: announceGlow 1.6s ease-in-out infinite;
 }
 .hand-announcement.made {
-    --glow: rgba(212, 175, 55, 0.85);
+    --glow: rgba(var(--gold-rgb), 0.85);
     color: var(--gold-bright);
 }
 .hand-announcement.missed {
@@ -1536,12 +1537,13 @@ onBeforeUnmount(() => {
     font-size: 40px;
     font-weight: bold;
     letter-spacing: 2px;
-    color: var(--ink);
-    background: linear-gradient(45deg, var(--gold-bright), var(--gold));
+    color: var(--gold-ink);
+    background: var(--gold-sheen);
     border: none;
     border-radius: 0;
     cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+    box-shadow: inset 0 0 0 2px var(--gold-deep), inset 0 0 0 3px rgba(255, 255, 255, 0.25), 0 4px 10px rgba(0, 0, 0, 0.3);
     animation: dealPulse 1.2s ease-in-out infinite;
 }
 .deal-button:hover {

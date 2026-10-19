@@ -130,23 +130,23 @@ const urgent = computed(() => secondsLeft.value !== null && secondsLeft.value <=
     z-index: 2;
 }
 .namecard-wrapper.turn .namecard-bg {
-    background: linear-gradient(45deg, var(--gold-bright), var(--gold));
+    background: var(--gold-sheen);
     opacity: 1;
-    box-shadow: 0 0 14px 3px rgba(241, 209, 106, 0.7);
+    box-shadow: 0 0 14px 3px rgba(var(--gold-bright-rgb), 0.7);
     animation: turnPulse 1.4s ease-in-out infinite;
 }
 #nameboxMe.turn .player-name {
     color: var(--gold-bright);
-    text-shadow: 0 0 14px rgba(241, 209, 106, 0.9), 0 2px 6px rgba(0, 0, 0, 0.6);
+    text-shadow: 0 0 14px rgba(var(--gold-bright-rgb), 0.9), 0 2px 6px rgba(0, 0, 0, 0.6);
     animation: turnTextPulse 1.4s ease-in-out infinite;
 }
 @keyframes turnPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(241, 209, 106, 0.85), 0 0 10px 2px rgba(241, 209, 106, 0.5); }
-    50% { box-shadow: 0 0 0 8px rgba(241, 209, 106, 0), 0 0 24px 6px rgba(241, 209, 106, 0.8); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(var(--gold-bright-rgb), 0.85), 0 0 10px 2px rgba(var(--gold-bright-rgb), 0.5); }
+    50% { box-shadow: 0 0 0 8px rgba(var(--gold-bright-rgb), 0), 0 0 24px 6px rgba(var(--gold-bright-rgb), 0.8); }
 }
 @keyframes turnTextPulse {
-    0%, 100% { text-shadow: 0 0 6px rgba(241, 209, 106, 0.5), 0 2px 6px rgba(0, 0, 0, 0.6); }
-    50% { text-shadow: 0 0 18px rgba(241, 209, 106, 1), 0 0 32px rgba(241, 209, 106, 0.6), 0 2px 6px rgba(0, 0, 0, 0.6); }
+    0%, 100% { text-shadow: 0 0 6px rgba(var(--gold-bright-rgb), 0.5), 0 2px 6px rgba(0, 0, 0, 0.6); }
+    50% { text-shadow: 0 0 18px rgba(var(--gold-bright-rgb), 1), 0 0 32px rgba(var(--gold-bright-rgb), 0.6), 0 2px 6px rgba(0, 0, 0, 0.6); }
 }
 @media (prefers-reduced-motion: reduce) {
     .namecard-wrapper.turn .namecard-bg, #nameboxMe.turn .player-name {
