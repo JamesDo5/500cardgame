@@ -34,7 +34,7 @@
             </Transition>
             <button v-if="dealing && iAmDealer" class="deal-button" type="button" @click="dealNow">Deal</button>
         </div>
-        <div class="card-row" id="blindCards" :class="{ active: showBlindButton, discarding: blindPreview }"></div>
+        <div class="card-row" id="blindCards" :class="{ active: showBlindButton, discarding: blindPreview, flippable: showBlindButton && blindFaceDown }"></div>
     </div>
 </template>
 
@@ -1207,6 +1207,9 @@ onBeforeUnmount(() => {
 }
 #blindCards.active {
     transition: filter 0.25s ease, translate 0.25s ease;
+}
+#blindCards.flippable, #blindCards.flippable :deep(.card-back), #blindCards.flippable :deep(.card-back > *) {
+    cursor: grab;
 }
 #blindCards.discarding {
     filter: grayscale(0.85) brightness(0.8);
