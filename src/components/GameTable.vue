@@ -1101,14 +1101,14 @@ onBeforeUnmount(() => {
 }
 
 .card-played-bottom {
-    top: 77%;
+    top: 62%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 4;
 }
 
 #submitCards {
-    top: 77%;
+    top: 88%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 2;
@@ -1383,7 +1383,7 @@ onBeforeUnmount(() => {
 .board-caption {
     --caption-shift: translate(-50%, -50%);
     position: absolute;
-    top: var(--caption-top, 77%);
+    top: var(--caption-top, 88%);
     left: 50%;
     transform: var(--caption-shift);
     transform-origin: 50% 50%;
@@ -1539,7 +1539,7 @@ onBeforeUnmount(() => {
 }
 .joker-badge.suit-red { color: #c0392b; }
 .joker-badge.suit-black { color: #111111; }
-.badge-bottom { top: 77%; left: calc(50% + 72px); }
+.badge-bottom { top: 62%; left: calc(50% + 72px); }
 .badge-top { top: 22%; left: calc(50% - 92px); }
 .badge-left { top: calc(42% - 92px); left: 28%; }
 .badge-right { top: calc(42% + 92px); left: 72%; }
@@ -1566,7 +1566,7 @@ onBeforeUnmount(() => {
 }
 .trump-cue.suit-red { color: var(--card-red); }
 .trump-cue.suit-black { color: var(--card-black); }
-.cue-bottom { top: 77%; left: 50%; }
+.cue-bottom { top: 62%; left: 50%; }
 .cue-top { top: 22%; left: 50%; }
 .cue-left { top: 42%; left: 28%; }
 .cue-right { top: 42%; left: 72%; }
@@ -1580,7 +1580,7 @@ onBeforeUnmount(() => {
 
 .suit-chooser {
     position: absolute;
-    top: 77%;
+    top: 88%;
     left: 50%;
     transform: translate(-50%, calc(-50% - 150px));
     display: flex;
@@ -1684,10 +1684,13 @@ onBeforeUnmount(() => {
     transform: translate(-50%, -50%) scale(0.92);
 }
 .portrait .card-played-bottom {
-    top: 80%;
+    top: 46%;
 }
 .portrait .badge-bottom {
-    top: 80%;
+    top: 46%;
+}
+.portrait .cue-bottom {
+    top: 46%;
 }
 .portrait .board-caption.lead {
     top: 33%;
