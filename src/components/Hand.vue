@@ -20,10 +20,10 @@ const store = useStore()
 const backUrl = computed(() => cardBackUrl(activeTrump(store.state)));
 const canSort = computed(() => store.state.gameState >= 1 && store.state.gameState <= 5 && !store.state.firstCardPlayed && store.state.handCards.length > 1);
 
-const sortDescending = ref(true);
+const sortReversed = ref(false);
 function sortNow() {
-    replaceHand(sortHand(store.getters.getSharedHandCards(), store.state.trumpSuit, sortDescending.value));
-    sortDescending.value = !sortDescending.value;
+    replaceHand(sortHand(store.getters.getSharedHandCards(), store.state.trumpSuit, sortReversed.value));
+    sortReversed.value = !sortReversed.value;
 }
 
 function syncOrder() {
