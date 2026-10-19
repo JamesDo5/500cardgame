@@ -48,6 +48,7 @@ import { C2S } from '../net/messages.js';
 import { CARD_BACK_URL, cardBackUrl, HIDDEN_CARD, JOKER, SUITS, SUIT_SYMBOLS, suitColorClass, cardFaceUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, preloadCardImages, dealMock, teamOf } from '../game/cards.js';
 import { NO_TRUMP, bowerOf, trickWinner, trickWinnerWithout, legalPlays, lowestCards, nextToPlay, nextToBid, scoreHand, gameOutcome, nominatesSuit, isNominatableSuit, longestSuit, neededTricks, trumpSuitForBid } from '../game/rules.js';
 import { activeTrump } from '../theme.js';
+import { PARTNER_JOKES } from '../flavor.js';
 
 const store = useStore()
 
@@ -147,14 +148,6 @@ function dealNow() {
     if (mode.standalone) gt.dealStandalone(); else socket.send(C2S.DEAL);
 }
 
-const PARTNER_JOKES = [
-    "Your partner had that the whole time.",
-    "Your partner swoops in!",
-    "Your partner carried this time.",
-    "Your lead, your partner's trick.",
-    "Teamwork, mostly your partner's.",
-    "Your partner saw that coming three tricks ago.",
-];
 const SOURCE_ELEMENT_IDS = ['submitCards', 'leftCards', 'topCards', 'rightCards'];
 
 class GameTable {

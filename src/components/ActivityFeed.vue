@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch, nextTick } from 'vue';
 import { useStore } from 'vuex'
+import { isFlavorLine } from '../flavor.js';
 
 const store = useStore();
 const feed = computed(() => store.state.feed);
@@ -14,7 +15,7 @@ watch(() => feed.value.length, async () => {
 
 <template>
     <div class="activity-feed" ref="listRef">
-        <div v-for="(msg, i) in feed" :key="i" class="feed-line">{{ msg }}</div>
+        <div v-for="(msg, i) in feed" :key="i" class="feed-line" :class="{ flavor: isFlavorLine(msg) }">{{ msg }}</div>
     </div>
 </template>
 
@@ -36,6 +37,9 @@ watch(() => feed.value.length, async () => {
 }
 .feed-line {
     padding: 2px 0;
+}
+.feed-line.flavor {
+    font-style: italic;
 }
 
 .portrait .activity-feed {

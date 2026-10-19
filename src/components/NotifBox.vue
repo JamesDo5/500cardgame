@@ -1,6 +1,7 @@
 <script setup>
 import { computed, watch } from 'vue';
 import { useStore } from 'vuex'
+import { isFlavorLine } from '../flavor.js';
 
 const store = useStore();
 const notice = computed(() => store.state.notice);
@@ -14,7 +15,7 @@ watch(notice, (msg) => {
 
 <template>
     <Transition name="notif">
-        <div v-if="notice" class="notif-box">{{ notice }}</div>
+        <div v-if="notice" class="notif-box" :class="{ flavor: isFlavorLine(notice) }">{{ notice }}</div>
     </Transition>
 </template>
 
@@ -34,6 +35,9 @@ watch(notice, (msg) => {
     font-size: 26px;
     z-index: 50;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+.notif-box.flavor {
+    font-style: italic;
 }
 .portrait .notif-box {
     font-size: 20px;
