@@ -86,16 +86,8 @@ const PAGES = [
         ]},
     ]},
     { label: 'Settings', sections: [
-        { heading: 'Settings — Trump theme', setting: 'themeLevel', options: THEME_OPTIONS, choose: chooseThemeLevel, lines: [
-            'Light keeps the table green and shows the trump suit on the tab icon and card backs. Full tints the table and accents to match the trump suit.',
-        ]},
-        { heading: 'Settings — Card art', setting: 'cardArt', options: CARD_ART_OPTIONS, choose: chooseCardArt, lines: [
-            'Pictures shows the illustrated deck. Simple shows plain high-contrast faces with a big rank and suit, easier to read at a glance.',
-        ]},
-        { heading: 'Settings — Saved here', bullets: true, lines: [
-            'These choices only affect your screen and are remembered on this device.',
-            'Changes apply straight away, even mid-hand.',
-        ]},
+        { heading: 'Settings — Trump theme', setting: 'themeLevel', options: THEME_OPTIONS, choose: chooseThemeLevel },
+        { heading: 'Settings — Card art', setting: 'cardArt', options: CARD_ART_OPTIONS, choose: chooseCardArt },
     ]},
 ];
 const current = computed(() => PAGES[page.value]);
