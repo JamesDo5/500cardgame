@@ -1305,7 +1305,7 @@ onBeforeUnmount(() => {
     75% { transform: translate(30%, -50%) rotate(8deg); }
 }
 .board-caption {
-    --caption-shift: translateX(-50%);
+    --caption-shift: translate(-50%, -50%);
     position: absolute;
     top: var(--caption-top, 77%);
     left: 50%;
@@ -1321,6 +1321,7 @@ onBeforeUnmount(() => {
     animation: captionBreathe 2.4s ease-in-out infinite;
 }
 .board-caption.low {
+    --caption-shift: translateX(-50%);
     top: 91%;
 }
 .board-caption.deal {
