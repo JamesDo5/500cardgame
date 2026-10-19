@@ -18,7 +18,7 @@ export const AUTOPLAY_MARGIN_MS = timeouts.clientAutoplayMarginMs;
 export const RELAXED_MULTIPLIER = timeouts.relaxedMultiplier;
 export const DEFAULT_PACE = timeouts.defaultPace;
 export const paceMultiplier = (pace) => pace === PACE.RELAXED ? RELAXED_MULTIPLIER : 1;
-export const BOT_DELAY_MS = 900;
+export const BOT_DELAY_MS = 2200;
 export const TRICK_HOLD_MS = timeouts.trickHoldMs;
 export const CARD_FLY_MS = 350;
 export const TRICK_SWEEP_MS = 500;
