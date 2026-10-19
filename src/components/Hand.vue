@@ -42,6 +42,7 @@ function incomingHandCards(cards) {
         console.error("incomingHandCards() -- expected 10 valid cards, got:", cards);
         return 1;
     }
+    sortReversed.value = false;
     preloadCardImages(cards);
     store.commit('setSharedHandCards', cards.slice());
     renderHand(cards);
