@@ -53,12 +53,12 @@ export function installHandlers(socket, store) {
         .on(S2C.BLIND_DONE, ({ pos }) => gt().incomingBlindDiscard(pos))
         .on(S2C.CARD_PLAYED, ({ pos, card, auto, suit }) => gt().incomingTrickCard(pos, card, auto, suit))
         .on(S2C.TRICK_RESULT, ({ winner }) => gt().reconcileTrickWinner(winner))
-        .on(S2C.HAND_SCORE, ({ deltas, scores }) => store.commit('reconcileHandScore', { deltas, scores }))
-        .on(S2C.GAME_OVER, ({ winnerTeam, scores }) => {
+        .on(S2C.HAND_SCORE, ({ deltas, scores }) => gt().afterSweep(() => store.commit('reconcileHandScore', { deltas, scores })))
+        .on(S2C.GAME_OVER, ({ winnerTeam, scores }) => gt().afterSweep(() => {
             store.commit('reconcileHandScore', { scores });
             gt().endGame(winnerTeam);
-        })
-        .on(S2C.TURN, ({ pos, deadlineMs }) => store.commit('setTurn', { pos, deadlineMs }))
+        }))
+        .on(S2C.TURN, ({ pos, deadlineMs }) => gt().incomingTurn({ pos, deadlineMs }))
         .on(S2C.SYNC_STATE, (snap) => applySnapshot(store, snap))
         .on(S2C.ERROR, ({ code, message }) => {
             console.error('server error', code, message);
@@ -102,7 +102,7 @@ function applySnapshot(store, snap) {
     if (Array.isArray(snap.blind)) gt.incomingBlind(snap.blind, false);
     if (snap.blindDone && Number.isInteger(snap.bidWinner)) gt.incomingBlindDiscard(snap.bidWinner);
     if (Array.isArray(snap.playedCards)) gt.restoreTrick(snap.playedCards, snap.leader, snap.wonTricks, snap.jokerSuit);
-    if (snap.turn) store.commit('setTurn', snap.turn);
+    if (snap.turn) gt.incomingTurn(snap.turn);
     store.commit('setGameState', snap.gameState ?? -1);
     if (store.state.gameState === 6) store.commit('setGameWinner', snap.winnerTeam ?? -1);
     if (store.state.gameState === 1 || store.state.gameState === 2) bb.show(); else bb.hide();

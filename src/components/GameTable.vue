@@ -26,7 +26,7 @@
             <div v-if="dealing" class="shuffle">
                 <img v-for="n in 7" :key="n" class="fake-card card-back shuffle-card" draggable="false" :style="{ animationDelay: `${(n - 1) * 0.12}s` }" :src="backUrl">
             </div>
-            <Transition name="caption-fade">
+            <Transition name="caption-fade" type="transition">
                 <div v-if="boardCaption" class="board-caption" :class="captionClass">{{ boardCaption }}</div>
             </Transition>
             <Transition name="announce-fade">
@@ -163,7 +163,7 @@ class GameTable {
         this.handledDeadline = 0;
         this.resolving = false;
         this.resolveTarget = -1;
-        this.pendingCards = [];
+        this.pendingFrames = [];
         this.stagedFrom = -1;
         this.initDrag();
         this.ticker = setInterval(() => this.tickTurn(), 200);
@@ -306,6 +306,20 @@ class GameTable {
         item.classList.remove("hand-card", "spun", "illegal", "legal");
     }
 
+    afterSweep(fn) {
+        if (this.resolving) this.pendingFrames.push(fn); else fn();
+    }
+
+    flushPending() {
+        const queued = this.pendingFrames;
+        this.pendingFrames = [];
+        queued.forEach(fn => fn());
+    }
+
+    incomingTurn(turn) {
+        this.afterSweep(() => store.commit('setTurn', turn));
+    }
+
     setTurn(pos) {
         if (pos === -1) {
             store.commit('setTurn', { pos: -1, deadlineMs: 0 });
@@ -390,7 +404,7 @@ class GameTable {
         this.mockBlind = null;
         this.resolving = false;
         this.resolveTarget = -1;
-        this.pendingCards = [];
+        this.pendingFrames = [];
         store.commit('resetCardCounts');
         store.commit('setFirstCardPlayed', false);
         store.commit('setHandScored', false);
@@ -625,7 +639,7 @@ class GameTable {
         }
         if (this.playedCards[pos] === card || this.playedThisHand.has(card)) return 0;
         if (this.resolving) {
-            this.pendingCards.push([pos, card, auto, suit]);
+            this.pendingFrames.push(() => this.incomingTrickCard(pos, card, auto, suit));
             return 0;
         }
         if (this.playedCards[pos] !== '') {
@@ -734,13 +748,12 @@ class GameTable {
         this.resolveTarget = -1;
         if (this.isHandOver()) {
             this.endHand();
+            this.flushPending();
             return;
         }
         if (store.state.turn.pos !== winner || !store.state.turn.deadlineMs) this.setTurn(winner);
         this.updateLegalHighlights();
-        const pending = this.pendingCards;
-        this.pendingCards = [];
-        pending.forEach(([pos, card, auto, suit]) => this.incomingTrickCard(pos, card, auto, suit));
+        this.flushPending();
     }
 
     maybePartnerJoke(trick, leader, winner) {
