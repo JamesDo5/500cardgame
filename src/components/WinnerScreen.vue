@@ -105,21 +105,23 @@ function leave() {
     animation: winnerPop 0.6s cubic-bezier(.2,1.4,.4,1);
 }
 .winner-title {
-    font-size: 48px;
+    font-size: 76px;
     font-weight: 800;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
+    line-height: 1.1;
 }
 .winner-sub {
-    margin-top: 6px;
+    margin-top: 10px;
+    font-size: 26px;
     color: var(--ink-soft);
 }
 .winner-scores {
-    margin: 20px auto 0;
+    margin: 26px auto 0;
     border-collapse: collapse;
-    font-size: 18px;
+    font-size: 29px;
 }
 .winner-scores th, .winner-scores td {
-    padding: 2px 24px;
+    padding: 3px 38px;
 }
 .winner-scores th {
     text-decoration: underline;
@@ -132,13 +134,13 @@ function leave() {
     border-left: 2px solid var(--ink);
 }
 .winner-total td {
-    border-top: 1px dashed var(--ink-soft);
+    border-top: 2px dashed var(--ink-soft);
     font-weight: bold;
 }
 .winner-button {
-    margin-top: 24px;
-    padding: 12px 36px;
-    font-size: 20px;
+    margin-top: 28px;
+    padding: 14px 44px;
+    font-size: 26px;
     font-weight: bold;
     color: var(--ink);
     background: var(--gold-sheen);
@@ -147,7 +149,8 @@ function leave() {
     cursor: pointer;
 }
 .winner-wait {
-    margin-top: 24px;
+    margin-top: 28px;
+    font-size: 22px;
     color: var(--gold-deep);
     font-weight: bold;
 }
