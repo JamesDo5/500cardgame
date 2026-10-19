@@ -40,6 +40,7 @@ watch(notice, (msg) => {
     font-style: italic;
 }
 .portrait .notif-box {
+    top: 332px;
     font-size: 20px;
 }
 .notif-enter-active, .notif-leave-active {
