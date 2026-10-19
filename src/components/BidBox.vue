@@ -41,7 +41,8 @@ import { layout } from '../layout.js';
 import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
 import { teamOf, SUIT_SYMBOLS, suitColorClass } from '../game/cards.js';
-import { PASS, MIN_BID, MAX_BID, isValidBid, trumpSuitForBid, neededTricks, nextToBid, isBiddingOver, highestBid, winningBidder } from '../game/rules.js';
+import { PASS, isValidBid, trumpSuitForBid, neededTricks, nextToBid, isBiddingOver, highestBid, winningBidder } from '../game/rules.js';
+import { chooseBid } from '../game/bots.js';
 
 const store = useStore()
 
@@ -228,10 +229,8 @@ class BidBox {
 
     botBid(pos) {
         if (!mode.standalone || pos === 0 || this.bids[pos] !== -1) return 1;
-        const floor = Math.max(this.getHighestBid(), MIN_BID - 20);
-        if (floor === MAX_BID || Math.random() < 0.5) return this.incomingBid(pos, PASS);
-        const options = Array.from({ length: Math.min(4, (MAX_BID - floor) / 20) }, (_, i) => floor + 20 * (i + 1));
-        return this.incomingBid(pos, options[Math.floor(Math.random() * options.length)]);
+        const hand = store.getters.getGameTable()?.mockHands?.[pos] ?? [];
+        return this.incomingBid(pos, chooseBid(hand, this.getHighestBid()));
     }
 
     endBidding() {

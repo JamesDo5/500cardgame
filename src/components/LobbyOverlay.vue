@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { useStore } from 'vuex'
 import { socket } from '../net/socket.js';
-import { C2S, PACE } from '../net/messages.js';
+import { C2S, PACE, BOT_SKILL, DEFAULT_BOT_SKILL } from '../net/messages.js';
 import { gameLink } from '../session.js';
 import { THEME_OPTIONS, CARD_ART_OPTIONS, chooseThemeLevel, chooseCardArt } from '../settings.js';
 import { mode, WIKIPEDIA_URL, RELAXED_MULTIPLIER } from '../config.js';
@@ -32,6 +32,16 @@ const PACES = [
     { value: PACE.COMPETITIVE, label: 'Competitive', hint: 'Normal timers' },
     { value: PACE.RELAXED, label: 'Relaxed', hint: `Timers ${RELAXED_MULTIPLIER}x longer` },
 ];
+const botCount = computed(() => seats.value.filter(s => s.bot).length);
+const maxBots = computed(() => Number.isInteger(store.state.lobby.maxBots) ? store.state.lobby.maxBots : 1);
+const botsFull = computed(() => botCount.value >= maxBots.value);
+const botLimitHint = computed(() => maxBots.value === 1 ? 'One bot per table' : `${maxBots.value} bots per table`);
+const botSkill = computed(() => store.state.lobby.botSkill ?? DEFAULT_BOT_SKILL);
+const BOT_SKILLS = [
+    { value: BOT_SKILL.ROTE, label: 'Rote', hint: 'Plays by rote' },
+    { value: BOT_SKILL.SMART, label: 'Smart', hint: 'Reads the table' },
+];
+const botControls = (pos) => iAmHost.value && pos !== 0 && !mode.standalone && (!!seats.value[pos]?.bot || !seats.value[pos]?.occupied);
 const themeLevel = computed(() => store.state.themeLevel);
 const cardArt = computed(() => store.state.cardArt);
 
@@ -42,6 +52,17 @@ function seatClick(pos) {
 function start() {
     if (!canStart.value) return;
     socket.send(C2S.START_GAME);
+}
+function addBot(seat) {
+    if (botsFull.value) return;
+    socket.send(C2S.ADD_BOT, { seat });
+}
+function removeBot() {
+    socket.send(C2S.REMOVE_BOT);
+}
+function setBotSkill(value) {
+    if (value === botSkill.value) return;
+    socket.send(C2S.SET_BOT_SKILL, { skill: value });
 }
 function setPace(value) {
     if (value === pace.value) return;
@@ -83,8 +104,13 @@ async function share() {
                         <span v-if="seats[s.pos]?.host" class="flag host">Host</span>
                         <span v-if="seats[s.pos]?.bot" class="flag">Bot</span>
                         <span v-if="seats[s.pos]?.occupied && seats[s.pos]?.connected === false" class="flag away">Away</span>
-                        <span v-if="!seats[s.pos]?.occupied && s.pos !== 0" class="flag hint">Click to move here</span>
-                        <span v-else-if="s.pos !== 0 && seats[s.pos]?.occupied && !mode.standalone" class="flag hint">Click to swap</span>
+                        <template v-if="botControls(s.pos)">
+                            <button v-if="seats[s.pos]?.bot" class="ui-button seat-button" type="button" @click.stop="removeBot">Remove bot</button>
+                            <button v-else class="ui-button seat-button" type="button" :disabled="botsFull" :title="botsFull ? botLimitHint : ''" @click.stop="addBot(s.pos)">Add bot</button>
+                            <span v-if="!seats[s.pos]?.bot && botsFull" class="flag hint">{{ botLimitHint }}</span>
+                        </template>
+                        <span v-if="!seats[s.pos]?.occupied && s.pos !== 0 && !botControls(s.pos)" class="flag hint">Click to move here</span>
+                        <span v-else-if="s.pos !== 0 && seats[s.pos]?.occupied && !mode.standalone && !botControls(s.pos)" class="flag hint">Click to swap</span>
                     </div>
                 </div>
                 <div class="teams-note">
@@ -101,6 +127,15 @@ async function share() {
                         <button v-for="p in PACES" :key="p.value" class="pace-option" :class="{ active: pace === p.value }" type="button" :aria-pressed="pace === p.value" @click="setPace(p.value)">
                             <span class="pace-name">{{ p.label }}</span>
                             <span class="pace-hint">{{ p.hint }}</span>
+                        </button>
+                    </div>
+                </div>
+                <div v-if="botCount" class="pace-row skill-row">
+                    <div class="pace-label">Bot skill</div>
+                    <div class="pace-toggle">
+                        <button v-for="b in BOT_SKILLS" :key="b.value" class="pace-option skill-option" :class="{ active: botSkill === b.value }" type="button" :aria-pressed="botSkill === b.value" @click="setBotSkill(b.value)">
+                            <span class="pace-name">{{ b.label }}</span>
+                            <span class="pace-hint">{{ b.hint }}</span>
                         </button>
                     </div>
                 </div>
@@ -249,7 +284,7 @@ async function share() {
     text-overflow: ellipsis;
 }
 .seat.empty .seat-name { color: var(--on-felt-soft); font-weight: normal; }
-.seat-flags { display: flex; gap: 0.5em; min-height: 1.125em; }
+.seat-flags { display: flex; align-items: center; gap: 0.5em; min-height: 1.125em; }
 .flag {
     font-size: 0.6875em;
     letter-spacing: 0.09em;
@@ -261,6 +296,8 @@ async function share() {
 .flag.host { border-color: var(--gold-ink); color: var(--gold-ink); }
 .flag.away { border-color: var(--card-red); color: var(--card-red); }
 .flag.hint { border: none; padding: 0; text-transform: none; letter-spacing: 0; color: var(--on-felt-soft); }
+.lobby .seat-button { font-size: 0.6875em; padding: 0.2em 0.7em; letter-spacing: 0.05em; white-space: nowrap; }
+.lobby .seat-button:disabled { opacity: 0.45; background: var(--ivory-3); border-color: var(--ivory-3); color: var(--ink-soft); cursor: not-allowed; }
 .lobby-status { font-size: 1em; color: var(--on-felt); }
 .pace-tag {
     margin-left: 0.625em;

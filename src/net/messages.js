@@ -9,3 +9,6 @@ export const PACE = Object.freeze(Object.fromEntries(wire.pace.map(p => [p.toUpp
 
 const JOIN_ERRORS = ['NAME_TAKEN', 'UNKNOWN_GAME', 'ROOM_FULL', 'BAD_NAME', 'ROOM_CLOSED', 'NOT_JOINED'];
 export const JOIN_ERROR_CODES = new Set(wire.errorCodes.filter(code => JOIN_ERRORS.includes(code)));
+export const BOT_SKILL = Object.freeze(Object.fromEntries(wire.botSkill.map(s => [s.toUpperCase(), s])));
+export const DEFAULT_BOT_SKILL = wire.defaultBotSkill;
+export const MOVE_GRADES = Object.freeze(wire.moveGrades.slice());

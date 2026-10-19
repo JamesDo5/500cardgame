@@ -28,6 +28,7 @@ export default new Vuex.Store({
         connection: 'idle',
         session: { gameId: '', seat: -1, token: '', name: '' },
         lobby: { seats: [], hostPos: -1, canStart: false },
+        handReview: null,
         pace: DEFAULT_PACE,
         themeLevel: loadThemeLevel(),
         cardArt: loadCardArt(),
@@ -95,6 +96,7 @@ export default new Vuex.Store({
             state.trickCards = ['', '', '', ''];
             state.trickLeader = -1;
             state.jokerSuit = '';
+            state.handReview = null;
             state.feed = [];
         },
         setTurn(state, turn) { state.turn = { startedMs: Date.now(), ...turn }; },
@@ -108,6 +110,7 @@ export default new Vuex.Store({
         setConnection(state, s) { state.connection = s; },
         setSession(state, patch) { state.session = { ...state.session, ...patch }; },
         setLobby(state, lobby) { state.lobby = lobby; },
+        setHandReview(state, review) { state.handReview = review; },
         setPace(state, pace) { state.pace = pace; },
         setThemeLevel(state, level) { state.themeLevel = level; },
         setCardArt(state, art) { state.cardArt = art; },

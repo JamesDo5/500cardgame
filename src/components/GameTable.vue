@@ -33,6 +33,7 @@
                 <div v-if="handAnnouncement" class="hand-announcement" :class="handAnnouncement.made ? 'made' : 'missed'">{{ handAnnouncement.text }}</div>
             </Transition>
             <button v-if="dealing && iAmDealer" class="deal-button" type="button" @click="dealNow">Deal</button>
+            <HandReview v-if="dealing && store.state.handReview" />
         </div>
         <div class="card-row" id="blindCards" :class="{ active: showBlindButton, discarding: blindPreview, flippable: showBlindButton && blindFaceDown }"></div>
     </div>
@@ -47,7 +48,9 @@ import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
 import { CARD_BACK_URL, cardBackUrl, HIDDEN_CARD, JOKER, SUITS, SUIT_SYMBOLS, suitColorClass, cardFaceUrl, cardStr2CardObj, elem2CardStr, getPosName, getSuitClass, isValidCardStr, produceCardHtml, preloadCardImages, dealMock, teamOf } from '../game/cards.js';
 import { NO_TRUMP, bowerOf, trickWinner, trickWinnerWithout, legalPlays, lowestCards, nextToPlay, nextToBid, scoreHand, gameOutcome, nominatesSuit, isNominatableSuit, longestSuit, neededTricks, trumpSuitForBid } from '../game/rules.js';
+import { chooseDiscards, chooseCard } from '../game/bots.js';
 import { activeTrump } from '../theme.js';
+import HandReview from './HandReview.vue';
 import { PARTNER_JOKES } from '../flavor.js';
 import { now } from '../game/clock.js';
 
@@ -447,6 +450,7 @@ class GameTable {
         store.commit('resetCardCounts');
         store.commit('setFirstCardPlayed', false);
         store.commit('setHandScored', false);
+        store.commit('setHandReview', null);
         handResult.value = null;
         cardDrag.abort();
         document.getElementById('submitCards').innerHTML = "";
@@ -584,8 +588,8 @@ class GameTable {
     botBlind(pos) {
         if (!mode.standalone || !this.mockHands) return 1;
         const all = this.mockHands[pos].concat(this.mockBlind);
-        for (let i = 0; i < 5; i++) all.splice(Math.floor(Math.random() * all.length), 1);
-        this.mockHands[pos] = all;
+        const discards = chooseDiscards(all, store.state.trumpSuit);
+        this.mockHands[pos] = all.filter(c => !discards.includes(c));
         return this.incomingBlindDiscard(pos);
     }
 
@@ -907,8 +911,7 @@ class GameTable {
 
     botPlay(pos) {
         if (!mode.standalone || !this.mockHands) return 1;
-        const legal = this.legal(this.mockHands[pos]);
-        const card = legal[Math.floor(Math.random() * legal.length)];
+        const card = chooseCard(this.mockHands[pos], this.playedCards, this.lastTrickWinner, store.state.trumpSuit, store.state.jokerSuit, pos);
         this.mockHands[pos].splice(this.mockHands[pos].indexOf(card), 1);
         const suit = nominatesSuit(card, this.playedCards, this.lastTrickWinner, store.state.trumpSuit) ? longestSuit(this.mockHands[pos]) : '';
         return this.incomingTrickCard(pos, card, false, suit);

@@ -12,6 +12,11 @@ export function trumpSuitForBid(bid) {
     return BID_SUIT_CYCLE[(bid / 20) % 5];
 }
 
+const BID_SUITS = ['s', 'c', 'd', 'h', NO_TRUMP];
+export function bidValue(tricks, suit) {
+    return MIN_BID + (tricks - 6) * 100 + BID_SUITS.indexOf(suit) * 20;
+}
+
 export function neededTricks(bid) {
     return Math.floor((bid + 560) / 100);
 }
