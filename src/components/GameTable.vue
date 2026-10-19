@@ -1476,8 +1476,9 @@ onBeforeUnmount(() => {
     line-height: 1;
     border-radius: 50%;
     background: var(--ivory);
-    box-shadow: 0 0 0 3px currentColor, 0 0 0 7px rgba(255, 255, 255, 0.85), 0 0 22px 10px rgba(255, 255, 255, 0.6), 0 8px 16px rgba(0, 0, 0, 0.45);
-    transform: translate(-50%, -50%);
+    opacity: 0.75;
+    box-shadow: 0 0 0 3px currentColor, 0 0 0 7px rgba(255, 255, 255, 0.85), 0 0 22px 10px rgba(255, 255, 255, 0.6), 0 12px 18px rgba(0, 0, 0, 0.5), 0 4px 6px rgba(0, 0, 0, 0.3);
+    transform: translate(-50%, calc(-50% - 4px)) scale(1.04);
     z-index: 5;
     pointer-events: none;
     animation: cue-breathe 2s ease-in-out infinite;
@@ -1489,8 +1490,8 @@ onBeforeUnmount(() => {
 .cue-left { top: 42%; left: 28%; }
 .cue-right { top: 42%; left: 72%; }
 @keyframes cue-breathe {
-    0%, 100% { transform: translate(-50%, -50%) scale(1); }
-    50% { transform: translate(-50%, calc(-50% - 9px)) scale(1.1); }
+    0%, 100% { transform: translate(-50%, calc(-50% - 4px)) scale(1.04); }
+    50% { transform: translate(-50%, calc(-50% - 13px)) scale(1.12); }
 }
 @media (prefers-reduced-motion: reduce) {
     .trump-cue { animation: none; }
