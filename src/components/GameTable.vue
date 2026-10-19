@@ -13,7 +13,7 @@
                 <button v-for="s in NOMINATABLE_SUITS" :key="s" class="suit-option" :class="[suitColorClass(s), { chosen: chosenSuit === s }]" type="button" :aria-pressed="chosenSuit === s" @click="chosenSuit = s">{{ SUIT_SYMBOLS[s] }}</button>
             </div>
             <button v-if="showPlayButton" class="table-button play-button" :class="{ armed: playArmed }" type="button" :disabled="!myPlayTurn || suitNeeded" @click="playNow">{{ suitNeeded ? 'Choose' : playArmed ? 'Play card?' : 'Play card' }}</button>
-            <button v-if="showBlindButton" class="table-button blind-button" type="button" :disabled="!!blindBlocker" :title="blindBlocker" @click="submitBlindNow" @pointerenter="previewBlind($event.pointerType === 'mouse')" @pointerleave="previewBlind(false)" @focus="previewBlind($event.target.matches(':focus-visible'))" @blur="previewBlind(false)">{{ blindBlocker || 'Submit blind' }}</button>
+            <button v-if="showBlindButton" class="table-button blind-button" :class="{ armed: blindArmed }" type="button" :disabled="!!blindBlocker" :title="blindBlocker" @click="submitBlindNow" @pointerenter="previewBlind($event.pointerType === 'mouse')" @pointerleave="previewBlind(false)" @focus="previewBlind($event.target.matches(':focus-visible'))" @blur="previewBlind(false)">{{ blindBlocker || 'Submit blind' }}</button>
             <div class="card-stack won-tricks-bottom" id="wonTricksBottom"></div>
             <div class="card-stack won-tricks-left" id="wonTricksLeft"></div>
             <div class="card-stack won-tricks-top" id="wonTricksTop"></div>
@@ -49,6 +49,7 @@ import { CARD_BACK_URL, cardBackUrl, HIDDEN_CARD, JOKER, SUITS, SUIT_SYMBOLS, su
 import { NO_TRUMP, bowerOf, trickWinner, trickWinnerWithout, legalPlays, lowestCards, nextToPlay, nextToBid, scoreHand, gameOutcome, nominatesSuit, isNominatableSuit, longestSuit, neededTricks, trumpSuitForBid } from '../game/rules.js';
 import { activeTrump } from '../theme.js';
 import { PARTNER_JOKES } from '../flavor.js';
+import { now } from '../game/clock.js';
 
 const store = useStore()
 
@@ -132,6 +133,12 @@ function announceHand(team, bid) {
 const showBlindButton = computed(() => store.state.gameState === 3 && store.getters.getBidBox()?.winningBidder === 0 && store.state.turn.pos === 0);
 const blindFaceDown = computed(() => store.state.blindFaceDown);
 const blindBlocker = computed(() => blindFaceDown.value ? 'Flip the blind over first' : store.state.blindBoxCount !== 5 ? 'Exchange exactly 5 cards to the blind.' : '');
+const blindArmed = computed(() => {
+    if (!showBlindButton.value || blindBlocker.value) return false;
+    const { deadlineMs, startedMs } = store.state.turn;
+    const total = deadlineMs ? deadlineMs - startedMs : BLIND_TIMEOUT_MS * paceMultiplier(store.state.pace);
+    return now.value - startedMs >= total / 2;
+});
 const blindHover = ref(false);
 const blindPreview = computed(() => blindHover.value && showBlindButton.value && !blindBlocker.value);
 function previewBlind(on) {
@@ -1293,7 +1300,7 @@ onBeforeUnmount(() => {
     0%, 100% { transform: var(--button-shift) scale(1); }
     50% { transform: var(--button-shift) scale(1.07); }
 }
-.play-button.armed {
+.play-button.armed, .blind-button.armed {
     background: var(--gold-sheen);
     color: var(--gold-ink);
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
@@ -1301,7 +1308,7 @@ onBeforeUnmount(() => {
     box-shadow: inset 0 0 0 2px var(--gold-deep), 0 0 0 3px rgba(var(--gold-bright-rgb), 0.95), 0 0 30px 12px rgba(var(--gold-rgb), 0.85), 0 0 44px 14px rgba(var(--gold-rgb), 0.4), 0 3px 6px rgba(0, 0, 0, 0.3);
     animation: armedPulse 1.2s ease-in-out infinite;
 }
-.play-button.armed:hover {
+.play-button.armed:hover, .blind-button.armed:hover {
     filter: brightness(1.1);
 }
 @keyframes armedPulse {
@@ -1309,14 +1316,15 @@ onBeforeUnmount(() => {
     50% { box-shadow: inset 0 0 0 2px var(--gold-deep), 0 0 0 4px rgba(var(--gold-bright-rgb), 1), 0 0 34px 14px rgba(var(--gold-rgb), 0.95), 0 0 48px 16px rgba(var(--gold-rgb), 0.45), 0 3px 6px rgba(0, 0, 0, 0.3); transform: var(--button-shift) scale(1.16); }
 }
 @media (prefers-reduced-motion: reduce) {
-    .play-button.armed, .play-button:hover:not(:disabled):not(.armed) {
+    .play-button.armed, .blind-button.armed, .play-button:hover:not(:disabled):not(.armed) {
         animation: none;
     }
 }
 .blind-button {
+    --button-shift: translate(-50%, 140px);
     top: 50%;
     left: 50%;
-    transform: translate(-50%, 140px);
+    transform: var(--button-shift);
     font-size: 30px;
     padding: 18px 56px;
     white-space: nowrap;
@@ -1721,7 +1729,7 @@ onBeforeUnmount(() => {
     margin-right: -100px;
 }
 .portrait .blind-button {
-    transform: translate(-50%, 40px);
+    --button-shift: translate(-50%, 40px);
 }
 .portrait .card-played-left {
     top: 32%;
