@@ -278,7 +278,7 @@ class BidBox {
 }
 
 const bidbox = new BidBox();
-const select = (bid) => { selected.value = bid; };
+const select = (bid) => { selected.value = selected.value === bid ? -1 : bid; };
 const submit = () => bidbox.submitBid();
 const hide = () => bidbox.hide();
 const toggle = () => bidbox.toggle();
