@@ -547,18 +547,21 @@ button.pass-button, button.submit-bid-button {
     font-size: 34px;
 }
 button.submit-bid-button.armed {
+    position: relative;
+    z-index: 1;
     background: var(--gold-sheen);
     color: var(--gold-ink);
     border-color: var(--gold-deep);
-    box-shadow: 0 0 18px 4px rgba(var(--gold-rgb), 0.55);
-    animation: submitPulse 1.4s ease-in-out infinite;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+    box-shadow: 0 0 0 3px rgba(var(--gold-bright-rgb), 0.95), 0 0 28px 10px rgba(var(--gold-rgb), 0.8), 0 0 64px 22px rgba(var(--gold-rgb), 0.4);
+    animation: submitPulse 1.3s ease-in-out infinite;
 }
 button.submit-bid-button.armed:hover {
-    filter: brightness(1.08);
+    filter: brightness(1.1);
 }
 @keyframes submitPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(var(--gold-rgb), 0.7); }
-    50% { box-shadow: 0 0 0 12px rgba(var(--gold-rgb), 0); }
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 2px rgba(var(--gold-bright-rgb), 0.85), 0 0 16px 5px rgba(var(--gold-rgb), 0.6), 0 0 40px 12px rgba(var(--gold-rgb), 0.25); }
+    50% { transform: scale(1.06); box-shadow: 0 0 0 4px rgba(var(--gold-bright-rgb), 1), 0 0 36px 14px rgba(var(--gold-rgb), 0.95), 0 0 90px 32px rgba(var(--gold-rgb), 0.5); }
 }
 @media (prefers-reduced-motion: reduce) {
     button.submit-bid-button.armed {
