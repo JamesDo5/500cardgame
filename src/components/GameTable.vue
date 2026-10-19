@@ -1593,7 +1593,7 @@ onBeforeUnmount(() => {
     position: absolute;
     top: 88%;
     left: 50%;
-    transform: translate(-50%, calc(-50% - 150px));
+    transform: translate(-50%, calc(-50% - 180px));
     display: flex;
     align-items: center;
     gap: 8px;
