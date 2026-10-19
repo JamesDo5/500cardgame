@@ -1305,10 +1305,12 @@ onBeforeUnmount(() => {
     75% { transform: translate(30%, -50%) rotate(8deg); }
 }
 .board-caption {
+    --caption-shift: translateX(-50%);
     position: absolute;
     top: var(--caption-top, 77%);
     left: 50%;
-    transform: translateX(-50%);
+    transform: var(--caption-shift);
+    transform-origin: 50% 50%;
     z-index: 3;
     color: var(--on-felt);
     font-family: Arial, sans-serif;
@@ -1322,13 +1324,14 @@ onBeforeUnmount(() => {
     top: 91%;
 }
 .board-caption.deal {
+    --caption-shift: translate(-50%, calc(-100% - 18px));
     top: 70%;
-    transform: translate(-50%, calc(-100% - 18px));
 }
 .board-caption.corner {
+    --caption-shift: translate(0, 0);
     top: 14px;
     left: 16px;
-    transform: none;
+    transform-origin: 0 50%;
     max-width: 222px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1337,8 +1340,8 @@ onBeforeUnmount(() => {
     font-size: 38px;
     font-weight: bold;
     color: var(--gold-bright);
-    text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 2px 8px rgba(0, 0, 0, 0.5);
-    animation: captionGlow 1.8s ease-in-out infinite;
+    text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 0 18px rgba(var(--gold-bright-rgb), 0.8), 0 0 40px rgba(var(--gold-rgb), 0.5), 0 2px 8px rgba(0, 0, 0, 0.5);
+    animation: captionGlow 1.6s ease-in-out infinite;
 }
 .board-caption.corner.mine {
     top: 4px;
@@ -1347,8 +1350,8 @@ onBeforeUnmount(() => {
     max-width: 380px;
 }
 .board-caption.lead {
+    --caption-shift: translate(-50%, -50%);
     top: 30%;
-    transform: translate(-50%, -50%);
     width: 76%;
     font-size: 62px;
     font-weight: bold;
@@ -1357,29 +1360,28 @@ onBeforeUnmount(() => {
     white-space: normal;
     text-align: center;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-}
-.board-caption.lead {
     animation: leadPulse 1.6s ease-in-out infinite;
 }
 .board-caption.lead.mine {
     font-size: 76px;
+    text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 0 24px rgba(var(--gold-bright-rgb), 0.9), 0 0 56px rgba(var(--gold-rgb), 0.55), 0 2px 8px rgba(0, 0, 0, 0.5);
     animation: leadGlowPulse 1.6s ease-in-out infinite;
 }
 @keyframes captionBreathe {
-    0%, 100% { color: var(--on-felt-soft); }
-    50% { color: var(--on-felt); }
+    0%, 100% { transform: var(--caption-shift) scale(1); color: var(--on-felt-soft); text-shadow: 0 0 0 rgba(255, 255, 255, 0); }
+    50% { transform: var(--caption-shift) scale(1.05); color: var(--on-felt); text-shadow: 0 0 14px rgba(255, 255, 255, 0.55); }
 }
 @keyframes captionGlow {
-    0%, 100% { text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 2px 8px rgba(0, 0, 0, 0.5); }
-    50% { text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 0 18px rgba(var(--gold-bright-rgb), 0.9), 0 0 32px rgba(var(--gold-bright-rgb), 0.6); }
+    0%, 100% { transform: var(--caption-shift) scale(1); text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 0 8px rgba(var(--gold-bright-rgb), 0.5), 0 0 20px rgba(var(--gold-rgb), 0.25), 0 2px 8px rgba(0, 0, 0, 0.5); }
+    50% { transform: var(--caption-shift) scale(1.12); text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 0 26px rgba(var(--gold-bright-rgb), 1), 0 0 56px rgba(var(--gold-bright-rgb), 0.85), 0 0 96px rgba(var(--gold-rgb), 0.6); }
 }
 @keyframes leadPulse {
-    0%, 100% { transform: translate(-50%, -50%) scale(1); color: var(--on-felt-soft); }
-    50% { transform: translate(-50%, -50%) scale(1.05); color: var(--on-felt); }
+    0%, 100% { transform: var(--caption-shift) scale(1); color: var(--on-felt-soft); text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25); }
+    50% { transform: var(--caption-shift) scale(1.07); color: var(--on-felt); text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 0 22px rgba(255, 255, 255, 0.6); }
 }
 @keyframes leadGlowPulse {
-    0%, 100% { transform: translate(-50%, -50%) scale(1); text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 2px 8px rgba(0, 0, 0, 0.5); }
-    50% { transform: translate(-50%, -50%) scale(1.06); text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 0 24px rgba(var(--gold-bright-rgb), 1), 0 0 48px rgba(var(--gold-bright-rgb), 0.7); }
+    0%, 100% { transform: var(--caption-shift) scale(1); text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 0 10px rgba(var(--gold-bright-rgb), 0.5), 0 0 24px rgba(var(--gold-rgb), 0.25), 0 2px 8px rgba(0, 0, 0, 0.5); }
+    50% { transform: var(--caption-shift) scale(1.1); text-shadow: 0 0 2px var(--ink), 0 0 2px var(--ink), 0 0 4px var(--ink), 0 0 32px rgba(var(--gold-bright-rgb), 1), 0 0 72px rgba(var(--gold-bright-rgb), 0.85), 0 0 120px rgba(var(--gold-rgb), 0.6); }
 }
 @media (prefers-reduced-motion: reduce) {
     .board-caption, .board-caption.mine, .board-caption.lead, .board-caption.lead.mine {
