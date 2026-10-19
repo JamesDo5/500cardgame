@@ -199,9 +199,8 @@ class GameTable {
     dropMessage(card, from, to) {
         if (to === 'play') {
             if (store.state.gameState !== 5) return "Not time to play yet.";
-            if (this.resolving || nextToPlay(this.playedCards, this.lastTrickWinner) !== 0) return "It's not your turn.";
-            const all = Array.from(new Set(store.getters.getSharedHandCards().concat(this.submitCards, card)));
-            if (!this.legal(all).includes(card)) return "Follow suit!";
+            if (this.resolving) return "It's not your turn.";
+            if (!this.stageable(card)) return "Follow suit!";
             return '';
         }
         if (to === 'blind') {
@@ -224,6 +223,26 @@ class GameTable {
         if (from === 'blind' || to === 'blind') this.syncBlindBox();
         this.updateLegalHighlights();
         if (to === 'play') this.playIfForced();
+    }
+
+    stageable(card) {
+        if (this.playedCards[0]) return true;
+        const all = Array.from(new Set(store.getters.getSharedHandCards().concat(this.submitCards, card)));
+        return this.legal(all).includes(card);
+    }
+
+    settleStaged() {
+        if (store.state.gameState !== 5 || this.resolving || nextToPlay(this.playedCards, this.lastTrickWinner) !== 0) return;
+        const box = document.getElementById('submitCards');
+        if (!box || !box.children.length) return;
+        const legal = this.legal(store.getters.getSharedHandCards().concat(this.submitCards));
+        const illegal = Array.from(box.children).filter(ele => !legal.includes(ele.dataset.card));
+        if (illegal.length) {
+            illegal.forEach(ele => cardDrag.flyTo(ele, 'hand', this.stagedFrom));
+            store.commit('notify', "Follow suit!");
+            return;
+        }
+        this.playIfForced();
     }
 
     needsNomination(card) {
@@ -273,15 +292,13 @@ class GameTable {
         }
         if (zone === 'play') return { zone: 'hand', index: this.stagedFrom };
         if (zone !== 'hand') return '';
-        const myTurn = store.state.gameState === 5 && !this.resolving && nextToPlay(this.playedCards, this.lastTrickWinner) === 0;
-        if (myTurn && this.submitCards.length === 0) {
-            const hand = store.getters.getSharedHandCards();
-            if (this.forcedCard(hand) === card) {
-                this.playFromHand(card);
-                return '';
-            }
-            if (this.legal(hand).includes(card)) return 'play';
+        const playing = store.state.gameState === 5 && !this.resolving;
+        const myTurn = playing && nextToPlay(this.playedCards, this.lastTrickWinner) === 0;
+        if (myTurn && this.submitCards.length === 0 && this.forcedCard(store.getters.getSharedHandCards()) === card) {
+            this.playFromHand(card);
+            return '';
         }
+        if (playing && this.submitCards.length === 0 && this.stageable(card)) return 'play';
         if (this.myBlindOpen()) return 'blind';
         return 'spin';
     }
@@ -325,7 +342,10 @@ class GameTable {
     }
 
     incomingTurn(turn) {
-        this.afterSweep(() => store.commit('setTurn', turn));
+        this.afterSweep(() => {
+            store.commit('setTurn', turn);
+            if (turn.pos === 0) this.settleStaged();
+        });
     }
 
     setTurn(pos) {
@@ -341,10 +361,12 @@ class GameTable {
         }
         if (!store.state.timersEnabled) {
             store.commit('setTurn', { pos, deadlineMs: 0 });
+            if (pos === 0 && gs === 5) this.settleStaged();
             return;
         }
         const ms = gs === 0 ? DEAL_TIMEOUT_MS : gs === 1 || gs === 2 ? BID_TIMEOUT_MS : gs === 3 || gs === 4 ? BLIND_TIMEOUT_MS : TURN_TIMEOUT_MS;
         store.commit('setTurn', { pos, deadlineMs: Date.now() + ms * paceMultiplier(store.state.pace) });
+        if (pos === 0 && gs === 5) this.settleStaged();
     }
 
     expectedActor() {
