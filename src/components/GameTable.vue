@@ -895,6 +895,7 @@ class GameTable {
             const cards = Array.from({ length: count }, (_, i) => `<img class="stack-card" src="${backUrl.value}" style="--i:${i}">`).join('');
             ele.innerHTML = `${cards}<span class="stack-count">${count}</span>`;
         });
+        if (dealing.value) document.getElementById('blindDiscard').style.display = "none";
     }
 
     updateLegalHighlights() {
