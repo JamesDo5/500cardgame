@@ -169,6 +169,8 @@ class GameTable {
         this.handledDeadline = 0;
         this.resolving = false;
         this.resolveTarget = -1;
+        this.resolveId = 0;
+        this.sweepTimer = 0;
         this.pendingFrames = [];
         this.stagedFrom = -1;
         this.initDrag();
@@ -410,6 +412,8 @@ class GameTable {
         this.mockBlind = null;
         this.resolving = false;
         this.resolveTarget = -1;
+        this.resolveId += 1;
+        clearTimeout(this.sweepTimer);
         this.pendingFrames = [];
         store.commit('resetCardCounts');
         store.commit('setFirstCardPlayed', false);
@@ -715,7 +719,8 @@ class GameTable {
             ele.animate([{ opacity: 1 }, { opacity: HOLD_OPACITY }], { duration: HOLD_FADE_MS, delay: CARD_FLY_MS, fill: 'forwards' }).id = 'fade';
             this.rockCard(ele, i * ROCK_STAGGER_MS);
         });
-        setTimeout(() => this.sweepTrick(), TRICK_HOLD_MS);
+        clearTimeout(this.sweepTimer);
+        this.sweepTimer = setTimeout(() => this.sweepTrick(), TRICK_HOLD_MS);
     }
 
     outgoingCards() {
@@ -734,8 +739,14 @@ class GameTable {
 
     sweepTrick() {
         const winner = this.resolveTarget;
+        const id = this.resolveId;
+        if (!this.resolving || winner < 0 || winner > 3) return;
         store.commit('setJokerSuit', '');
         const stack = document.getElementById('wonTricks' + getPosName(winner));
+        if (!stack) {
+            this.finishTrick(winner);
+            return;
+        }
         const stackStyle = getComputedStyle(stack);
         const cards = this.outgoingCards();
         const animations = cards.map((ele, i) => {
@@ -754,6 +765,7 @@ class GameTable {
             return anim.finished.catch(() => {});
         });
         Promise.all(animations).then(() => {
+            if (id !== this.resolveId || !this.resolving) return;
             cards.forEach(ele => ele.getAnimations().forEach(a => a.cancel()));
             this.finishTrick(winner);
         });
@@ -817,14 +829,14 @@ class GameTable {
     }
 
     restoreTrick(playedCards, leader, wonTricks, jokerSuit = '') {
-        this.playedCards = playedCards.slice();
-        this.playedThisHand = new Set(playedCards.filter(Boolean));
-        this.lastTrickWinner = leader;
+        this.playedCards = Array.from({ length: 4 }, (_, pos) => isValidCardStr(playedCards[pos]) ? playedCards[pos] : '');
+        this.playedThisHand = new Set(this.playedCards.filter(Boolean));
+        this.lastTrickWinner = Number.isInteger(leader) && leader >= 0 && leader <= 3 ? leader : -1;
         this.syncPlayed();
         store.commit('setJokerSuit', isNominatableSuit(jokerSuit) ? jokerSuit : '');
-        this.wonTricks = wonTricks.slice();
+        this.wonTricks = Array.isArray(wonTricks) && wonTricks.length === 4 ? wonTricks.map(n => Number.isInteger(n) ? n : 0) : [0, 0, 0, 0];
         this.clearPlayedCards();
-        playedCards.forEach((card, pos) => {
+        this.playedCards.forEach((card, pos) => {
             if (!card) return;
             const ele = document.getElementById('playedCard' + getPosName(pos));
             ele.dataset.card = card;
@@ -834,10 +846,12 @@ class GameTable {
         });
         this.renderStacks();
         this.updateLegalHighlights();
+        if (this.lastTrickWinner >= 0 && this.playedCards.every(Boolean)) this.endTrick();
     }
 
     clearPlayedCards() {
         Array.from(document.getElementsByClassName("card-played")).forEach((ele) => {
+            ele.getAnimations?.().forEach(a => a.cancel());
             ele.dataset.card = HIDDEN_CARD;
             ele.src = backUrl.value;
             ele.style.display = "none";
