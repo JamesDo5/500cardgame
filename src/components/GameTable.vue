@@ -1703,6 +1703,14 @@ onBeforeUnmount(() => {
 .portrait .cue-bottom {
     top: 46%;
 }
+.portrait .badge-left {
+    top: calc(34% - 92px);
+    left: 35%;
+}
+.portrait .badge-right {
+    top: calc(34% + 92px);
+    left: 65%;
+}
 .portrait .board-caption.lead {
     top: 33%;
 }
@@ -1732,19 +1740,19 @@ onBeforeUnmount(() => {
     --button-shift: translate(-50%, 40px);
 }
 .portrait .card-played-left {
-    top: 32%;
+    top: 34%;
     left: 35%;
 }
 .portrait .card-played-right {
-    top: 32%;
+    top: 34%;
     left: 65%;
 }
 .portrait .cue-left {
-    top: 32%;
+    top: 34%;
     left: 35%;
 }
 .portrait .cue-right {
-    top: 32%;
+    top: 34%;
     left: 65%;
 }
 </style>
