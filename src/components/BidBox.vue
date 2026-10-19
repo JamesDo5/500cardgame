@@ -5,8 +5,8 @@
         <div class="bid-sub"><template v-if="bigBid.by"><span>by</span><span class="bid-by-name">{{ bigBid.by.name }}</span><span>({{ bigBid.by.side }})</span></template></div>
     </div>
     <button v-if="showToggle" class="bidtable-toggle" type="button" @click="toggle">Bid table</button>
-    <div v-show="tableOpen" class="bid-readouts">
-        <div v-for="(d, i) in displayBids" :key="i" class="bid-display" :class="[POS_CLASSES[i], { placed: d.placed }]" :id="POS_IDS[i]">
+    <div v-show="readoutsVisible" class="bid-readouts">
+        <div v-for="(d, i) in displayBids" :key="i" class="bid-display" :class="[POS_CLASSES[i], { placed: d.placed }]" :id="POS_IDS[i]" :style="i === 2 ? partnerReadoutStyle : null">
             <span class="bid-prefix">{{ i === 0 ? 'My bid:' : 'Bid:' }}</span>
             <span v-if="d.pass" class="bid-pass">Pass</span>
             <span v-else-if="d.tricks" class="bid-value" :class="d.colorClass">{{ d.tricks }}<span class="bid-suit">{{ d.symbol }}</span><small class="bid-points">({{ d.points }})</small></span>
@@ -34,9 +34,10 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, onBeforeUnmount, ref, computed, nextTick } from 'vue';
 import { useStore } from 'vuex'
 import { mode } from '../config.js';
+import { layout } from '../layout.js';
 import { socket } from '../net/socket.js';
 import { C2S } from '../net/messages.js';
 import { teamOf, SUIT_SYMBOLS, suitColorClass } from '../game/cards.js';
@@ -83,6 +84,24 @@ const bigBid = computed(() => {
     return { tricks: neededTricks(bid), symbol: SUIT_SYMBOLS[suit], glyph: suit !== 'n', colorClass: suitColorClass(suit), points: bid, by: by(pos) };
 });
 const bidderPos = computed(() => store.getters.getBidBox()?.winningBidder ?? -1);
+const readoutsVisible = computed(() => tableOpen.value || store.state.gameState === 1 || store.state.gameState === 2);
+const PARTNER_PLATE_LEFT = 800;
+const PARTNER_PLATE_TOP = 125;
+const PARTNER_READOUT_GAP = 14;
+const partnerPlateWidth = ref(0);
+const partnerReadoutStyle = computed(() => layout.portrait || !partnerPlateWidth.value ? null : { left: `${PARTNER_PLATE_LEFT + partnerPlateWidth.value / 2 + PARTNER_READOUT_GAP}px`, top: `${PARTNER_PLATE_TOP}px`, transform: 'translateY(-50%)' });
+let plateObserver = null;
+function watchPartnerPlate(attempt = 0) {
+    const plate = document.getElementById('nameboxTopCards');
+    if (!plate) {
+        if (attempt < 20) requestAnimationFrame(() => watchPartnerPlate(attempt + 1));
+        return;
+    }
+    partnerPlateWidth.value = plate.offsetWidth;
+    if (typeof ResizeObserver !== 'function') return;
+    plateObserver = new ResizeObserver(() => { partnerPlateWidth.value = plate.offsetWidth; });
+    plateObserver.observe(plate);
+}
 
 function formatBid(bid) {
     if (bid === -1) return { placed: false };
@@ -264,10 +283,13 @@ const submit = () => bidbox.submitBid();
 const hide = () => bidbox.hide();
 const toggle = () => bidbox.toggle();
 
-onMounted(() => {
+onMounted(async () => {
     store.commit('setSharedBidBox', bidbox);
     bidbox.updateBidDisplays();
+    await nextTick();
+    watchPartnerPlate();
 });
+onBeforeUnmount(() => plateObserver?.disconnect());
 </script>
 
 <style scoped>
@@ -401,7 +423,7 @@ onMounted(() => {
 }
 .bid-display {
     position: absolute;
-    font-size: 32px;
+    font-size: 42px;
     line-height: 1.2;
     padding: 3px 14px;
     color: var(--ivory);
@@ -413,8 +435,11 @@ onMounted(() => {
     z-index: 8;
 }
 .bottom-bid {
-    top: 60px;
+    top: 55px;
     right: 25px;
+    line-height: 1.1;
+    padding-top: 2px;
+    padding-bottom: 2px;
 }
 .left-bid {
     left: 200px;
@@ -623,7 +648,7 @@ button.submit-bid-button.armed:hover {
     font-size: 14px;
 }
 .portrait .bid-display {
-    font-size: 26px;
+    font-size: 34px;
     padding: 2px 10px;
 }
 .portrait .left-bid {
@@ -636,7 +661,7 @@ button.submit-bid-button.armed:hover {
 }
 .portrait .top-bid {
     left: 400px;
-    top: 274px;
+    top: 282px;
     transform: translateX(-50%);
 }
 .portrait .bottom-bid {
